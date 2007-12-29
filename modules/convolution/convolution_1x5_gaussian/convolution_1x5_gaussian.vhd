@@ -35,16 +35,17 @@ entity convolution_1x5_gaussian is
   Port ( CLK : in  STD_LOGIC;
          CLKEN : in STD_LOGIC;
          RST : in  STD_LOGIC;
-         DATA_IN : in  unsigned (11 downto 0);
+         DATA_IN0 : in  unsigned (11 downto 0);
+         DATA_IN1 : in  unsigned (11 downto 0);
+         DATA_IN2 : in  unsigned (11 downto 0);
+         DATA_IN3 : in  unsigned (11 downto 0);
+         DATA_IN4 : in  unsigned (11 downto 0);
          DATA_OUT : out  unsigned (11 downto 0);
          DATA_VALID : out  STD_LOGIC);
 end convolution_1x5_gaussian;
 
 architecture Behavioral of convolution_1x5_gaussian is
-
-  signal data_buf0, data_buf1, data_buf2, data_buf3 : unsigned (11 downto 0);  
-                                        -- Convolution buffers, newest stored data in data_buf0
-  signal buffer_count : unsigned (3 DOWNTO 0) := (others => '0');  
+  signal buffer_count : unsigned (2 DOWNTO 0) := (others => '0');  
                                         -- Keeps track of valid elements in buffer
   signal data_valid_reg : std_logic := '0';  -- Register for data_valid signal
   SIGNAL prod_0_p0,prod_1_p0,prod_2_p0,prod_3_p0,prod_4_p0 : unsigned (27 DOWNTO 0);  -- Holds data to be output
@@ -56,7 +57,7 @@ begin
   
   data_valid_set: PROCESS (BUFFER_count) IS
   BEGIN  -- PROCESS data_valid
-  if buffer_count >= "1000" then
+  if buffer_count >= "100" then
     DATA_VALID_REG <= '1';
   else
     DATA_VALID_REG <= '0';
@@ -73,12 +74,6 @@ begin
       if RST = '1' then                 -- synchronous reset (active high)
         buffer_count <= (others => '0');
       elsif (CLKEN='1') then
-        -- Shift register
-        data_buf0 <= DATA_IN;
-        data_buf1 <= data_buf0;
-        data_buf2 <= data_buf1;
-        data_buf3 <= data_buf2;
-
         -- Valid data counter
         if data_valid_reg='0' then
           buffer_count <= buffer_count + 1;
@@ -87,23 +82,23 @@ begin
         -- Compute multiplication, use 3 pipeline levels to allow fast DSP48E inference
         -- Multiplication is 0:8:10 * 0:8:10 with a 0:16:20 result.  Result
         -- converted to 0:8:5 to allow for rounding
-        prod_0_p0 <= ((DATA_IN & (5 DOWNTO 0 => '0')) * K_0(9 DOWNTO 0));
+        prod_0_p0 <= ((DATA_IN0 & (5 DOWNTO 0 => '0')) * K_0(9 DOWNTO 0));
         prod_0_p1 <= prod_0_p0(27 DOWNTO 15);
         prod_0 <= prod_0_p1;
 
-        prod_1_p0 <= ((data_buf0 & (5 DOWNTO 0 => '0')) * K_1(9 DOWNTO 0));
+        prod_1_p0 <= ((DATA_IN1 & (5 DOWNTO 0 => '0')) * K_1(9 DOWNTO 0));
         prod_1_p1 <= prod_1_p0(27 DOWNTO 15);
         prod_1 <= prod_1_p1;
         
-        prod_2_p0 <= ((data_buf1 & (5 DOWNTO 0 => '0')) * K_2(9 DOWNTO 0));
+        prod_2_p0 <= ((DATA_IN2 & (5 DOWNTO 0 => '0')) * K_2(9 DOWNTO 0));
         prod_2_p1 <= prod_2_p0(27 DOWNTO 15);
         prod_2 <= prod_2_p1;
         
-        prod_3_p0 <= ((data_buf2 & (5 DOWNTO 0 => '0')) * K_1(9 DOWNTO 0));
+        prod_3_p0 <= ((DATA_IN3 & (5 DOWNTO 0 => '0')) * K_1(9 DOWNTO 0));
         prod_3_p1 <= prod_3_p0(27 DOWNTO 15);
         prod_3 <= prod_3_p1;
         
-        prod_4_p0 <= ((data_buf3 & (5 DOWNTO 0 => '0')) * K_0(9 DOWNTO 0));
+        prod_4_p0 <= ((DATA_IN4 & (5 DOWNTO 0 => '0')) * K_0(9 DOWNTO 0));
         prod_4_p1 <= prod_4_p0(27 DOWNTO 15);
         prod_4 <= prod_4_p1;
 

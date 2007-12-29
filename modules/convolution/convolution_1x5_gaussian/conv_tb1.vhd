@@ -37,7 +37,7 @@ END conv_tb1_vhd;
 ARCHITECTURE behavior OF conv_tb1_vhd IS 
 
 	-- Component Declaration for the Unit Under Test (UUT)
-	COMPONENT convolution_1x5_gaussian
+	COMPONENT convolution_1d_linear_5x1
 	PORT(
 		CLK : IN std_logic;
                 CLKEN : IN std_logic;
@@ -61,7 +61,7 @@ ARCHITECTURE behavior OF conv_tb1_vhd IS
 BEGIN
   CLK <= not CLK after 5 ns;
 	-- Instantiate the Unit Under Test (UUT)
-	uut: convolution_1x5_gaussian PORT MAP(
+	uut: convolution_1d_linear_5x1 PORT MAP(
 		CLK => CLK,
                 CLKEN => CLKEN,
 		RST => RST,

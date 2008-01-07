@@ -1,0 +1,106 @@
+NET  CLK                  LOC="L19" | TNM_NET = "CLK";   # Bank 3, Vcco=2.5V, No DCI      200Mhz
+TIMESPEC TS_CLK = PERIOD CLK 5000 ps;
+NET  RST		  LOC="E9";
+NET RST TIG;
+
+NET  FPGA_ROTARY[0]     LOC="AH30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  FPGA_ROTARY[1]     LOC="AG30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  FPGA_ROTARY[2]     LOC="AH29";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  GPIO_DIP_SW[0]         LOC="U25";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  GPIO_DIP_SW[1]         LOC="AG27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  GPIO_DIP_SW[2]         LOC="AF25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  GPIO_DIP_SW[3]         LOC="AF26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  GPIO_DIP_SW[4]         LOC="AE27";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  GPIO_DIP_SW[5]         LOC="AE26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  GPIO_DIP_SW[6]         LOC="AC25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  GPIO_DIP_SW[7]         LOC="AC24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  GPIO_LED[0]           LOC="H18";   # Bank 3, Vcco=2.5V, No DCI
+NET  GPIO_LED[1]           LOC="L18";   # Bank 3, Vcco=2.5V, No DCI
+NET  GPIO_LED[2]           LOC="G15";   # Bank 3, Vcco=2.5V, No DCI
+NET  GPIO_LED[3]           LOC="AD26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  GPIO_LED[4]           LOC="G16";   # Bank 3, Vcco=2.5V, No DCI
+NET  GPIO_LED[5]           LOC="AD25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  GPIO_LED[6]           LOC="AD24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  GPIO_LED[7]           LOC="AE24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+#NET  GPIO_LED_C           LOC="E8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  GPIO_LED_E           LOC="AG23";  # Bank 2, Vcco=3.3V
+#NET  GPIO_LED_N           LOC="AF13";  # Bank 2, Vcco=3.3V
+#NET  GPIO_LED_S           LOC="AG12";  # Bank 2, Vcco=3.3V
+#NET  GPIO_LED_W           LOC="AF23";  # Bank 2, Vcco=3.3V
+
+
+NET  GPIO_SW[0]            LOC="U8";    # Bank 18, Vcco=3.3V, No DCI N
+NET  GPIO_SW[1]            LOC="AK7";   # Bank 18, Vcco=3.3V, No DCI E
+NET  GPIO_SW[2]            LOC="V8";    # Bank 18, Vcco=3.3V, No DCI S
+NET  GPIO_SW[3]            LOC="AJ7";   # Bank 18, Vcco=3.3V, No DCI W
+NET  GPIO_SW[4]            LOC="AJ6";   # Bank 18, Vcco=3.3V, No DCI C
+
+NET  SRAM_ADV_LD_B         LOC="H8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+NET  SRAM_BW[0]             LOC="D10";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+NET  SRAM_BW[1]             LOC="D11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+NET  SRAM_BW[2]             LOC="J11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+NET  SRAM_BW[3]             LOC="K11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+NET  SRAM_CLK             LOC="AG21";  # Bank 4, Vcco=3.3V, No DCI      
+NET  SRAM_CLK             LOC="G8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+NET  SRAM_CS_B            LOC="J10";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+NET  SRAM_D[0]             LOC="N10";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+NET  SRAM_D[1]             LOC="E13";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+NET  SRAM_D[2]             LOC="E12";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+NET  SRAM_D[3]             LOC="L9";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+NET  SRAM_D[4]             LOC="M10";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+NET  SRAM_D[5]             LOC="E11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_D[6]             LOC="F11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_D[7]             LOC="L8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_D[8]             LOC="M8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_D[9]             LOC="G12";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_D[10]             LOC="G11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_D[11]             LOC="C13";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_D[12]             LOC="B13";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_D[13]             LOC="K9";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_D[14]             LOC="K8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_D[15]             LOC="J9";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_DQP[0]            LOC="D12";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_DQP[1]            LOC="C12";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_DQP[2]            LOC="H10";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_DQP[3]            LOC="H9";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_FLASH_A[0]        LOC="K12";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[1]        LOC="K13";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[2]        LOC="H23";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[3]        LOC="G23";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[4]        LOC="H12";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[5]        LOC="J12";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[6]        LOC="K22";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[7]        LOC="K23";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[8]        LOC="K14";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[9]        LOC="L14";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[10]       LOC="H22";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[11]       LOC="G22";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[12]       LOC="J15";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[13]       LOC="K16";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[14]       LOC="K21";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[15]       LOC="J22";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[16]       LOC="L16";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[17]       LOC="L15";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[18]       LOC="L20";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[19]       LOC="L21";   # Bank 1, Vcco=3.3V
+NET  SRAM_FLASH_A[20]       LOC="AE23";  # Bank 2, Vcco=3.3V
+NET  SRAM_FLASH_A[21]       LOC="AE22";  # Bank 2, Vcco=3.3V
+NET  SRAM_FLASH_D[0]        LOC="AD19";  # Bank 2, Vcco=3.3V
+NET  SRAM_FLASH_D[1]        LOC="AE19";  # Bank 2, Vcco=3.3V
+NET  SRAM_FLASH_D[2]        LOC="AE17";  # Bank 2, Vcco=3.3V
+NET  SRAM_FLASH_D[3]        LOC="AF16";  # Bank 2, Vcco=3.3V
+NET  SRAM_FLASH_D[4]        LOC="AD20";  # Bank 2, Vcco=3.3V
+NET  SRAM_FLASH_D[5]        LOC="AE21";  # Bank 2, Vcco=3.3V
+NET  SRAM_FLASH_D[6]        LOC="AE16";  # Bank 2, Vcco=3.3V
+NET  SRAM_FLASH_D[7]        LOC="AF15";  # Bank 2, Vcco=3.3V
+NET  SRAM_FLASH_D[8]        LOC="AH13";  # Bank 4, Vcco=3.3V, No DCI
+NET  SRAM_FLASH_D[9]        LOC="AH14";  # Bank 4, Vcco=3.3V, No DCI
+NET  SRAM_FLASH_D[10]       LOC="AH19";  # Bank 4, Vcco=3.3V, No DCI
+NET  SRAM_FLASH_D[11]       LOC="AH20";  # Bank 4, Vcco=3.3V, No DCI
+NET  SRAM_FLASH_D[12]       LOC="AG13";  # Bank 4, Vcco=3.3V, No DCI
+NET  SRAM_FLASH_D[13]       LOC="AH12";  # Bank 4, Vcco=3.3V, No DCI
+NET  SRAM_FLASH_D[14]       LOC="AH22";  # Bank 4, Vcco=3.3V, No DCI
+NET  SRAM_FLASH_D[15]       LOC="AG22";  # Bank 4, Vcco=3.3V, No DCI
+NET  SRAM_FLASH_WE_B        LOC="AF20";  # Bank 2, Vcco=3.3V
+#NET  SRAM_MODE             LOC="A13";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  SRAM_OE_B              LOC="B12" | DCI_VALUE = 50;   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors

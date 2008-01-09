@@ -29,78 +29,353 @@ NET  GPIO_LED[7]           LOC="AE24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm
 #NET  GPIO_LED_W           LOC="AF23";  # Bank 2, Vcco=3.3V
 
 
-NET  GPIO_SW[0]            LOC="U8";    # Bank 18, Vcco=3.3V, No DCI N
-NET  GPIO_SW[1]            LOC="AK7";   # Bank 18, Vcco=3.3V, No DCI E
-NET  GPIO_SW[2]            LOC="V8";    # Bank 18, Vcco=3.3V, No DCI S
-NET  GPIO_SW[3]            LOC="AJ7";   # Bank 18, Vcco=3.3V, No DCI W
-NET  GPIO_SW[4]            LOC="AJ6";   # Bank 18, Vcco=3.3V, No DCI C
+NET  GPIO_SW[0]            LOC="U8" | IOSTANDARD=LVCMOS33 | SLEW=SLOW;    # Bank 18, Vcco=3.3V, No DCI N
+NET  GPIO_SW[1]            LOC="AK7"| IOSTANDARD=LVCMOS33 | SLEW=SLOW;   # Bank 18, Vcco=3.3V, No DCI E
+NET  GPIO_SW[2]            LOC="V8"| IOSTANDARD=LVCMOS33 | SLEW=SLOW;    # Bank 18, Vcco=3.3V, No DCI S
+NET  GPIO_SW[3]            LOC="AJ7"| IOSTANDARD=LVCMOS33 | SLEW=SLOW;   # Bank 18, Vcco=3.3V, No DCI W
+NET  GPIO_SW[4]            LOC="AJ6"| IOSTANDARD=LVCMOS33 | SLEW=SLOW;   # Bank 18, Vcco=3.3V, No DCI C
 
-NET  SRAM_ADV_LD_B         LOC="H8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
-NET  SRAM_BW[0]             LOC="D10";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
-NET  SRAM_BW[1]             LOC="D11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
-NET  SRAM_BW[2]             LOC="J11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
-NET  SRAM_BW[3]             LOC="K11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
-NET  SRAM_CLK             LOC="AG21";  # Bank 4, Vcco=3.3V, No DCI      
-NET  SRAM_CLK             LOC="G8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
-NET  SRAM_CS_B            LOC="J10";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
-NET  SRAM_D[0]             LOC="N10";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
-NET  SRAM_D[1]             LOC="E13";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
-NET  SRAM_D[2]             LOC="E12";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
-NET  SRAM_D[3]             LOC="L9";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
-NET  SRAM_D[4]             LOC="M10";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
-NET  SRAM_D[5]             LOC="E11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_D[6]             LOC="F11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_D[7]             LOC="L8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_D[8]             LOC="M8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_D[9]             LOC="G12";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_D[10]             LOC="G11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_D[11]             LOC="C13";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_D[12]             LOC="B13";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_D[13]             LOC="K9";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_D[14]             LOC="K8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_D[15]             LOC="J9";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_DQP[0]            LOC="D12";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_DQP[1]            LOC="C12";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_DQP[2]            LOC="H10";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_DQP[3]            LOC="H9";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_FLASH_A[0]        LOC="K12";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[1]        LOC="K13";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[2]        LOC="H23";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[3]        LOC="G23";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[4]        LOC="H12";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[5]        LOC="J12";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[6]        LOC="K22";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[7]        LOC="K23";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[8]        LOC="K14";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[9]        LOC="L14";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[10]       LOC="H22";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[11]       LOC="G22";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[12]       LOC="J15";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[13]       LOC="K16";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[14]       LOC="K21";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[15]       LOC="J22";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[16]       LOC="L16";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[17]       LOC="L15";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[18]       LOC="L20";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[19]       LOC="L21";   # Bank 1, Vcco=3.3V
-NET  SRAM_FLASH_A[20]       LOC="AE23";  # Bank 2, Vcco=3.3V
-NET  SRAM_FLASH_A[21]       LOC="AE22";  # Bank 2, Vcco=3.3V
-NET  SRAM_FLASH_D[0]        LOC="AD19";  # Bank 2, Vcco=3.3V
-NET  SRAM_FLASH_D[1]        LOC="AE19";  # Bank 2, Vcco=3.3V
-NET  SRAM_FLASH_D[2]        LOC="AE17";  # Bank 2, Vcco=3.3V
-NET  SRAM_FLASH_D[3]        LOC="AF16";  # Bank 2, Vcco=3.3V
-NET  SRAM_FLASH_D[4]        LOC="AD20";  # Bank 2, Vcco=3.3V
-NET  SRAM_FLASH_D[5]        LOC="AE21";  # Bank 2, Vcco=3.3V
-NET  SRAM_FLASH_D[6]        LOC="AE16";  # Bank 2, Vcco=3.3V
-NET  SRAM_FLASH_D[7]        LOC="AF15";  # Bank 2, Vcco=3.3V
-NET  SRAM_FLASH_D[8]        LOC="AH13";  # Bank 4, Vcco=3.3V, No DCI
-NET  SRAM_FLASH_D[9]        LOC="AH14";  # Bank 4, Vcco=3.3V, No DCI
-NET  SRAM_FLASH_D[10]       LOC="AH19";  # Bank 4, Vcco=3.3V, No DCI
-NET  SRAM_FLASH_D[11]       LOC="AH20";  # Bank 4, Vcco=3.3V, No DCI
-NET  SRAM_FLASH_D[12]       LOC="AG13";  # Bank 4, Vcco=3.3V, No DCI
-NET  SRAM_FLASH_D[13]       LOC="AH12";  # Bank 4, Vcco=3.3V, No DCI
-NET  SRAM_FLASH_D[14]       LOC="AH22";  # Bank 4, Vcco=3.3V, No DCI
-NET  SRAM_FLASH_D[15]       LOC="AG22";  # Bank 4, Vcco=3.3V, No DCI
-NET  SRAM_FLASH_WE_B        LOC="AF20";  # Bank 2, Vcco=3.3V
+
+
+Net SRAM_CLK LOC=G8;
+Net SRAM_CLK SLEW = FAST;
+Net SRAM_CLK DRIVE = 12;
+Net SRAM_CLK IOSTANDARD=LVCMOS33;
+Net SRAM_CLK_FB LOC=AG21;
+Net SRAM_CLK_FB IOSTANDARD=LVCMOS33;
+
+
+Net SRAM_A<17> LOC=K12;
+Net SRAM_A<17> SLEW = FAST;
+Net SRAM_A<17> DRIVE = 8;
+Net SRAM_A<17> IOSTANDARD=LVCMOS33;
+Net SRAM_A<16> LOC=K13;
+Net SRAM_A<16> SLEW = FAST;
+Net SRAM_A<16> DRIVE = 8;
+Net SRAM_A<16> IOSTANDARD=LVCMOS33;
+Net SRAM_A<15> LOC=H23;
+Net SRAM_A<15> SLEW = FAST;
+Net SRAM_A<15> DRIVE = 8;
+Net SRAM_A<15> IOSTANDARD=LVCMOS33;
+Net SRAM_A<14> LOC=G23;
+Net SRAM_A<14> SLEW = FAST;
+Net SRAM_A<14> DRIVE = 8;
+Net SRAM_A<14> IOSTANDARD=LVCMOS33;
+Net SRAM_A<13> LOC=H12;
+Net SRAM_A<13> SLEW = FAST;
+Net SRAM_A<13> DRIVE = 8;
+Net SRAM_A<13> IOSTANDARD=LVCMOS33;
+Net SRAM_A<12> LOC=J12;
+Net SRAM_A<12> SLEW = FAST;
+Net SRAM_A<12> DRIVE = 8;
+Net SRAM_A<12> IOSTANDARD=LVCMOS33;
+Net SRAM_A<11> LOC=K22;
+Net SRAM_A<11> SLEW = FAST;
+Net SRAM_A<11> DRIVE = 8;
+Net SRAM_A<11> IOSTANDARD=LVCMOS33;
+Net SRAM_A<10> LOC=K23;
+Net SRAM_A<10> SLEW = FAST;
+Net SRAM_A<10> DRIVE = 8;
+Net SRAM_A<10> IOSTANDARD=LVCMOS33;
+Net SRAM_A<9> LOC=K14;
+Net SRAM_A<9> SLEW = FAST;
+Net SRAM_A<9> DRIVE = 8;
+Net SRAM_A<9> IOSTANDARD=LVCMOS33;
+Net SRAM_A<8> LOC=L14;
+Net SRAM_A<8> SLEW = FAST;
+Net SRAM_A<8> DRIVE = 8;
+Net SRAM_A<8> IOSTANDARD=LVCMOS33;
+Net SRAM_A<7> LOC=H22;
+Net SRAM_A<7> SLEW = FAST;
+Net SRAM_A<7> DRIVE = 8;
+Net SRAM_A<7> IOSTANDARD=LVCMOS33;
+Net SRAM_A<6> LOC=G22;
+Net SRAM_A<6> SLEW = FAST;
+Net SRAM_A<6> DRIVE = 8;
+Net SRAM_A<6> IOSTANDARD=LVCMOS33;
+Net SRAM_A<5> LOC=J15;
+Net SRAM_A<5> SLEW = FAST;
+Net SRAM_A<5> DRIVE = 8;
+Net SRAM_A<5> IOSTANDARD=LVCMOS33;
+Net SRAM_A<4> LOC=K16;
+Net SRAM_A<4> SLEW = FAST;
+Net SRAM_A<4> DRIVE = 8;
+Net SRAM_A<4> IOSTANDARD=LVCMOS33;
+Net SRAM_A<3> LOC=K21;
+Net SRAM_A<3> SLEW = FAST;
+Net SRAM_A<3> DRIVE = 8;
+Net SRAM_A<3> IOSTANDARD=LVCMOS33;
+Net SRAM_A<2> LOC=J22;
+Net SRAM_A<2> SLEW = FAST;
+Net SRAM_A<2> DRIVE = 8;
+Net SRAM_A<2> IOSTANDARD=LVCMOS33;
+Net SRAM_A<1> LOC=L16;
+Net SRAM_A<1> SLEW = FAST;
+Net SRAM_A<1> DRIVE = 8;
+Net SRAM_A<1> IOSTANDARD=LVCMOS33;
+Net SRAM_A<0> LOC=L15;
+Net SRAM_A<0> SLEW = FAST;
+Net SRAM_A<0> DRIVE = 8;
+Net SRAM_A<0> IOSTANDARD=LVCMOS33;
+
+
+#Net SRAM_A<5> LOC=L20;
+#Net SRAM_A<5> SLEW = FAST;
+#Net SRAM_A<5> DRIVE = 8;
+#Net SRAM_A<5> IOSTANDARD=LVCMOS33;
+#Net SRAM_A<4> LOC=L21;
+#Net SRAM_A<4> SLEW = FAST;
+#Net SRAM_A<4> DRIVE = 8;
+#Net SRAM_A<4> IOSTANDARD=LVCMOS33;
+#Net SRAM_A<3> LOC=AE23;
+#Net SRAM_A<3> SLEW = FAST;
+#Net SRAM_A<3> DRIVE = 8;
+#Net SRAM_A<3> IOSTANDARD=LVCMOS33;
+#Net SRAM_A<2> LOC=AE22;
+#Net SRAM_A<2> SLEW = FAST;
+#Net SRAM_A<2> DRIVE = 8;
+#Net SRAM_A<2> IOSTANDARD=LVCMOS33;
+#Net SRAM_A<1> LOC=AE12;
+#Net SRAM_A<1> SLEW = FAST;
+#Net SRAM_A<1> DRIVE = 8;
+#Net SRAM_A<1> IOSTANDARD=LVCMOS33;
+#Net SRAM_A<0> LOC=AE13;
+#Net SRAM_A<0> SLEW = FAST;
+#Net SRAM_A<0> DRIVE = 8;
+#Net SRAM_A<0> IOSTANDARD=LVCMOS33;
+
+Net SRAM_BW_B<3> LOC=J11;
+Net SRAM_BW_B<3> IOSTANDARD=LVDCI_33;
+Net SRAM_BW_B<2> LOC=K11;
+Net SRAM_BW_B<2> IOSTANDARD=LVDCI_33;
+Net SRAM_BW_B<1> LOC=D10;
+Net SRAM_BW_B<1> IOSTANDARD=LVDCI_33;
+Net SRAM_BW_B<0> LOC=D11;
+Net SRAM_BW_B<0> IOSTANDARD=LVDCI_33;
+
+Net SRAM_WE_B LOC=AF20;
+Net SRAM_WE_B SLEW = FAST;
+Net SRAM_WE_B DRIVE = 12;
+Net SRAM_WE_B IOSTANDARD=LVCMOS33;
+
+Net SRAM_OE_B LOC=B12;
+Net SRAM_OE_B IOSTANDARD=LVDCI_33;
+
+Net SRAM_D<0> LOC=AG22;
+Net SRAM_D<0> PULLDOWN;
+Net SRAM_D<0> SLEW = FAST;
+Net SRAM_D<0> DRIVE = 12;
+Net SRAM_D<0> IOSTANDARD=LVCMOS33;
+Net SRAM_D<1> LOC=AH22;
+Net SRAM_D<1> PULLDOWN;
+Net SRAM_D<1> SLEW = FAST;
+Net SRAM_D<1> DRIVE = 12;
+Net SRAM_D<1> IOSTANDARD=LVCMOS33;
+Net SRAM_D<2> LOC=AH12;
+Net SRAM_D<2> PULLDOWN;
+Net SRAM_D<2> SLEW = FAST;
+Net SRAM_D<2> DRIVE = 12;
+Net SRAM_D<2> IOSTANDARD=LVCMOS33;
+Net SRAM_D<3> LOC=AG13;
+Net SRAM_D<3> PULLDOWN;
+Net SRAM_D<3> SLEW = FAST;
+Net SRAM_D<3> DRIVE = 12;
+Net SRAM_D<3> IOSTANDARD=LVCMOS33;
+Net SRAM_D<4> LOC=AH20;
+Net SRAM_D<4> PULLDOWN;
+Net SRAM_D<4> SLEW = FAST;
+Net SRAM_D<4> DRIVE = 12;
+Net SRAM_D<4> IOSTANDARD=LVCMOS33;
+Net SRAM_D<5> LOC=AH19;
+Net SRAM_D<5> PULLDOWN;
+Net SRAM_D<5> SLEW = FAST;
+Net SRAM_D<5> DRIVE = 12;
+Net SRAM_D<5> IOSTANDARD=LVCMOS33;
+Net SRAM_D<6> LOC=AH14;
+Net SRAM_D<6> PULLDOWN;
+Net SRAM_D<6> SLEW = FAST;
+Net SRAM_D<6> DRIVE = 12;
+Net SRAM_D<6> IOSTANDARD=LVCMOS33;
+Net SRAM_D<7> LOC=AH13;
+Net SRAM_D<7> PULLDOWN;
+Net SRAM_D<7> SLEW = FAST;
+Net SRAM_D<7> DRIVE = 12;
+Net SRAM_D<7> IOSTANDARD=LVCMOS33;
+#Net SRAM_D<8> LOC=AF15;
+#Net SRAM_D<8> PULLDOWN;
+#Net SRAM_D<8> SLEW = FAST;
+#Net SRAM_D<8> DRIVE = 12;
+#Net SRAM_D<8> IOSTANDARD=LVCMOS33;
+#Net SRAM_D<9> LOC=AE16;
+#Net SRAM_D<9> PULLDOWN;
+#Net SRAM_D<9> SLEW = FAST;
+#Net SRAM_D<9> DRIVE = 12;
+#Net SRAM_D<9> IOSTANDARD=LVCMOS33;
+#Net SRAM_D<10> LOC=AE21;
+#Net SRAM_D<10> PULLDOWN;
+#Net SRAM_D<10> SLEW = FAST;
+#Net SRAM_D<10> DRIVE = 12;
+#Net SRAM_D<10> IOSTANDARD=LVCMOS33;
+#Net SRAM_D<11> LOC=AD20;
+#Net SRAM_D<11> PULLDOWN;
+#Net SRAM_D<11> SLEW = FAST;
+#Net SRAM_D<11> DRIVE = 12;
+#Net SRAM_D<11> IOSTANDARD=LVCMOS33;
+#Net SRAM_D<12> LOC=AF16;
+#Net SRAM_D<12> PULLDOWN;
+#Net SRAM_D<12> SLEW = FAST;
+#Net SRAM_D<12> DRIVE = 12;
+#Net SRAM_D<12> IOSTANDARD=LVCMOS33;
+#Net SRAM_D<13> LOC=AE17;
+#Net SRAM_D<13> PULLDOWN;
+#Net SRAM_D<13> SLEW = FAST;
+#Net SRAM_D<13> DRIVE = 12;
+#Net SRAM_D<13> IOSTANDARD=LVCMOS33;
+#Net SRAM_D<14> LOC=AE19;
+#Net SRAM_D<14> PULLDOWN;
+#Net SRAM_D<14> SLEW = FAST;
+#Net SRAM_D<14> DRIVE = 12;
+#Net SRAM_D<14> IOSTANDARD=LVCMOS33;
+#Net SRAM_D<15> LOC=AD19;
+#Net SRAM_D<15> PULLDOWN;
+#Net SRAM_D<15> SLEW = FAST;
+#Net SRAM_D<15> DRIVE = 12;
+#Net SRAM_D<15> IOSTANDARD=LVCMOS33;
+#Net SRAM_D<16> LOC=J9;
+#Net SRAM_D<16> PULLDOWN;
+#Net SRAM_D<16> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<17> LOC=K8;
+#Net SRAM_D<17> PULLDOWN;
+#Net SRAM_D<17> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<18> LOC=K9;
+#Net SRAM_D<18> PULLDOWN;
+#Net SRAM_D<18> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<19> LOC=B13;
+#Net SRAM_D<19> PULLDOWN;
+#Net SRAM_D<19> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<20> LOC=C13;
+#Net SRAM_D<20> PULLDOWN;
+#Net SRAM_D<20> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<21> LOC=G11;
+#Net SRAM_D<21> PULLDOWN;
+#Net SRAM_D<21> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<22> LOC=G12;
+#Net SRAM_D<22> PULLDOWN;
+#Net SRAM_D<22> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<23> LOC=M8;
+#Net SRAM_D<23> PULLDOWN;
+#Net SRAM_D<23> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<24> LOC=L8;
+#Net SRAM_D<24> PULLDOWN;
+#Net SRAM_D<24> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<25> LOC=F11;
+#Net SRAM_D<25> PULLDOWN;
+#Net SRAM_D<25> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<26> LOC=E11;
+#Net SRAM_D<26> PULLDOWN;
+#Net SRAM_D<26> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<27> LOC=M10;
+#Net SRAM_D<27> PULLDOWN;
+#Net SRAM_D<27> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<28> LOC=L9;
+#Net SRAM_D<28> PULLDOWN;
+#Net SRAM_D<28> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<29> LOC=E12;
+#Net SRAM_D<29> PULLDOWN;
+#Net SRAM_D<29> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<30> LOC=E13;
+#Net SRAM_D<30> PULLDOWN;
+#Net SRAM_D<30> IOSTANDARD=LVDCI_33;
+#Net SRAM_D<31> LOC=N10;
+#Net SRAM_D<31> PULLDOWN;
+#Net SRAM_D<31> IOSTANDARD=LVDCI_33;
+
+Net SRAM_CS_B LOC=J10;
+Net SRAM_CS_B IOSTANDARD=LVDCI_33;
+
+Net SRAM_ADV_LD_B LOC=H8;
+Net SRAM_ADV_LD_B IOSTANDARD=LVDCI_33;
+
+
+
+
+
+#NET  SRAM_ADV_LD_B         LOC="H8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+#NET  SRAM_BW[0]             LOC="D10";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+#NET  SRAM_BW[1]             LOC="D11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+#NET  SRAM_BW[2]             LOC="J11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+#NET  SRAM_BW[3]             LOC="K11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+#NET  SRAM_CLK             LOC="AG21";  # Bank 4, Vcco=3.3V, No DCI      
+#NET  SRAM_CLK             LOC="G8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+#NET  SRAM_CS_B            LOC="J10";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+
+
+
+#NET  SRAM_D[0]             LOC="N10" | DRIVE=8 | IOSTANDARD=LVCMOS33 | SLEW=FAST;   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+#NET  SRAM_D[1]             LOC="E13";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+#NET  SRAM_D[2]             LOC="E12";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+#NET  SRAM_D[3]             LOC="L9";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+#NET  SRAM_D[4]             LOC="M10";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors      
+#NET  SRAM_D[5]             LOC="E11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_D[6]             LOC="F11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_D[7]             LOC="L8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_D[8]             LOC="M8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_D[9]             LOC="G12";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_D[10]             LOC="G11";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_D[11]             LOC="C13";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_D[12]             LOC="B13";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_D[13]             LOC="K9";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_D[14]             LOC="K8";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_D[15]             LOC="J9";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_DQP[0]            LOC="D12";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_DQP[1]            LOC="C12";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_DQP[2]            LOC="H10";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_DQP[3]            LOC="H9";    # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_FLASH_A[0]        LOC="K12";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[1]        LOC="K13";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[2]        LOC="H23";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[3]        LOC="G23";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[4]        LOC="H12";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[5]        LOC="J12";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[6]        LOC="K22";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[7]        LOC="K23";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[8]        LOC="K14";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[9]        LOC="L14";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[10]       LOC="H22";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[11]       LOC="G22";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[12]       LOC="J15";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[13]       LOC="K16";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[14]       LOC="K21";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[15]       LOC="J22";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[16]       LOC="L16";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[17]       LOC="L15";   # Bank 1, Vcco=3.3V
+
+#The following are not connected
+#NET  SRAM_FLASH_A[18]       LOC="L20";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[19]       LOC="L21";   # Bank 1, Vcco=3.3V
+#NET  SRAM_FLASH_A[20]       LOC="AE23";  # Bank 2, Vcco=3.3V
+#NET  SRAM_FLASH_A[21]       LOC="AE22";  # Bank 2, Vcco=3.3V
+#NET  SRAM_FLASH_A[22]       LOC="AE12";  # Bank 2, Vcco=3.3V   CFG_1   
+#NET  SRAM_FLASH_A[23]       LOC="AE13";  # Bank 2, Vcco=3.3V   CFG_2
+
+
+#NET  SRAM_FLASH_D[0]        LOC="AD19";  # Bank 2, Vcco=3.3V
+#NET  SRAM_FLASH_D[1]        LOC="AE19";  # Bank 2, Vcco=3.3V
+#NET  SRAM_FLASH_D[2]        LOC="AE17";  # Bank 2, Vcco=3.3V
+#NET  SRAM_FLASH_D[3]        LOC="AF16";  # Bank 2, Vcco=3.3V
+#NET  SRAM_FLASH_D[4]        LOC="AD20";  # Bank 2, Vcco=3.3V
+#NET  SRAM_FLASH_D[5]        LOC="AE21";  # Bank 2, Vcco=3.3V
+#NET  SRAM_FLASH_D[6]        LOC="AE16";  # Bank 2, Vcco=3.3V
+#NET  SRAM_FLASH_D[7]        LOC="AF15";  # Bank 2, Vcco=3.3V
+#NET  SRAM_FLASH_D[8]        LOC="AH13";  # Bank 4, Vcco=3.3V, No DCI
+#NET  SRAM_FLASH_D[9]        LOC="AH14";  # Bank 4, Vcco=3.3V, No DCI
+#NET  SRAM_FLASH_D[10]       LOC="AH19";  # Bank 4, Vcco=3.3V, No DCI
+#NET  SRAM_FLASH_D[11]       LOC="AH20";  # Bank 4, Vcco=3.3V, No DCI
+#NET  SRAM_FLASH_D[12]       LOC="AG13";  # Bank 4, Vcco=3.3V, No DCI
+#NET  SRAM_FLASH_D[13]       LOC="AH12";  # Bank 4, Vcco=3.3V, No DCI
+#NET  SRAM_FLASH_D[14]       LOC="AH22";  # Bank 4, Vcco=3.3V, No DCI
+#NET  SRAM_FLASH_D[15]       LOC="AG22";  # Bank 4, Vcco=3.3V, No DCI
+#NET  SRAM_FLASH_WE_B        LOC="AF20";  # Bank 2, Vcco=3.3V
 #NET  SRAM_MODE             LOC="A13";   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
-NET  SRAM_OE_B              LOC="B12" | DCI_VALUE = 50;   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  SRAM_OE_B              LOC="B12";# | DCI_VALUE = 50;   # Bank 20, Vcco=3.3V, DCI using 49.9 ohm resistors
+

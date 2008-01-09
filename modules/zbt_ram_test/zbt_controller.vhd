@@ -39,7 +39,7 @@ USE UNISIM.VComponents.ALL;
 ENTITY zbt_controller IS
   PORT (
     CLK : IN std_logic;
-    RST : IN std_logic;
+--    RST : IN std_logic;
 
     --Connections to misc board devices
     FPGA_ROTARY : IN  std_logic_vector (2 DOWNTO 0);
@@ -49,47 +49,49 @@ ENTITY zbt_controller IS
 
     -- Connections to SRAM
     SRAM_CS_B        : OUT   std_logic;
-    SRAM_BW          : OUT   std_logic_vector (3 DOWNTO 0);
+    SRAM_BW_B          : OUT   std_logic_vector (3 DOWNTO 0);
     SRAM_ADV_LD_B    : OUT   std_logic;
     SRAM_OE_B        : OUT   std_logic;
-    SRAM_FLASH_WE_B  : OUT   std_logic;
+    SRAM_WE_B  : OUT   std_logic;
     SRAM_CLK         : OUT   std_logic;
-    SRAM_FLASH_A     : OUT   std_logic_vector (17 DOWNTO 0);
+   -- SRAM_CLK_FB : IN std_logic;
+    SRAM_A     : OUT   std_logic_vector (17 DOWNTO 0);
     -- SRAM_DQP         : INOUT STD_LOGIC_VECTOR (3 DOWNTO 0);
-    -- SRAM_D           : INOUT STD_LOGIC_VECTOR (15 DOWNTO 0);
-    SRAM_FLASH_D_OUT : OUT   std_logic_vector(7 DOWNTO 0);
-    SRAM_FLASH_D     : INOUT std_logic_vector (7 DOWNTO 0));
+    SRAM_D           : INOUT STD_LOGIC_VECTOR (7 DOWNTO 0);--(31 DOWNTO 0);--(15 DOWNTO 0);
+    SRAM_FLASH_D_OUT : OUT   std_logic_vector(7 DOWNTO 0));
+    --SRAM_FLASH_D     : INOUT std_logic_vector (7 DOWNTO 0));
   -- (15 DOWNTO 0));
 END zbt_controller;
 
 ARCHITECTURE Behavioral OF zbt_controller IS
   TYPE   ZBT_STATE IS (IDLE, WRITE_START, WRITE_CMD, WRITE_WAIT, WRITE, READ_START, READ_CMD, READ_WAIT, READ);
-                                                                       -- This is the type that defines the possible states the system can be in.
---SIGNAL clk0 : std_logic;                
+                                        -- This is the type that defines the possible states the system can be in.
+  SIGNAL RST : std_logic;
+                                        
   SIGNAL cur_state           : ZBT_STATE                     := IDLE;  -- Current system state
-  SIGNAL cur_addr            : unsigned (2 DOWNTO 0)         := (OTHERS => '0');  --(17 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL cur_addr            : unsigned (1 DOWNTO 0)         := (OTHERS => '0');  --(17 DOWNTO 0) := (OTHERS => '0');
   SIGNAL sram_flash_we_b_reg : std_logic                     := '1';
   SIGNAL sram_cs_b_reg       : std_logic                     := '1';
   SIGNAL gpio_led_reg        : std_logic_vector (7 DOWNTO 0) := (OTHERS => '0');
   SIGNAL initial_read        : std_logic                     := '0';
-                                                                       -- This is 1 if the initial read has occured to set gpio_led_reg
+                                                                      -- This is 1 if the initial read has occured to set gpio_led_reg
   SIGNAL sram_flash_d_reg    : std_logic_vector (7 DOWNTO 0) := (OTHERS => '0');
-                                                                       -- This is a reg for the used portion of the sram_flash_d_res input, it is used to enable tri-state output on the register
-  SIGNAL sram_flash_d_oe_b     : std_logic                     := '0';
-                                                                       -- This is a register that determines if the sram_flash_d_reg is connected to the inout port, or floated
-  SIGNAL user_input_enable : std_logic := '1';  -- This is a trivial way to fix button bouncing, after each command, require that a dedicated button be pressed to allow input to occur again.
+                                                                      -- This is a reg for the used portion of the sram_flash_d_res input, it is used to enable tri-state output on the register
+  SIGNAL sram_flash_d_oe_b   : std_logic                     := '0';
+                                                                      -- This is a register that determines if the sram_flash_d_reg is connected to the inout port, or floated
+  SIGNAL user_input_enable   : std_logic                     := '1';  -- This is a trivial way to fix button bouncing, after each command, require that a dedicated button be pressed to allow input to occur again.
 -- TODO generate SRAM_CLK from input clock, use it for all processing in this
 -- module;
 BEGIN
-  SRAM_BW          <= "0000";
+  RST <= '1';
+  SRAM_BW_B          <= "0000";
   SRAM_ADV_LD_B    <= '0';
-  SRAM_FLASH_A     <= ("000000000000000"&std_logic_vector(cur_addr));
-  SRAM_FLASH_WE_B  <= sram_flash_we_b_reg;
+  SRAM_A     <= ("0000000000000000"&std_logic_vector(cur_addr));
+  SRAM_WE_B  <= sram_flash_we_b_reg;
   SRAM_CS_B        <= sram_cs_b_reg;
   GPIO_LED         <= gpio_led_reg;
-  SRAM_CLK         <= CLK WHEN GPIO_SW(1)='0' ELSE
-    '0';
-  SRAM_FLASH_D_OUT <= SRAM_FLASH_D;
+  SRAM_CLK         <= CLK;
+  SRAM_FLASH_D_OUT <= SRAM_D(7 DOWNTO 0);
 
 -- purpose: This determines if the sram_flash_d_reg is connected to the inout
 -- port
@@ -99,9 +101,9 @@ BEGIN
   PROCESS (sram_flash_d_reg, sram_flash_d_oe_b) IS
   BEGIN  -- PROCESS
     IF sram_flash_d_oe_b = '0' THEN
-      SRAM_FLASH_D <= sram_flash_d_reg;
+      SRAM_D(7 DOWNTO 0) <= sram_flash_d_reg;
     ELSE
-      SRAM_FLASH_D <= (OTHERS => 'Z');
+      SRAM_D(7 DOWNTO 0) <= (OTHERS => 'Z');
     END IF;
   END PROCESS;
 
@@ -112,12 +114,12 @@ BEGIN
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       IF RST = '0' THEN                 -- synchronous reset (active low)
-        cur_addr        <= (OTHERS => '0');
-        initial_read    <= '0';
-        cur_state       <= IDLE;
-        sram_cs_b_reg   <= '1';
+        cur_addr          <= (OTHERS => '0');
+        initial_read      <= '0';
+        cur_state         <= IDLE;
+        sram_cs_b_reg     <= '1';
         sram_flash_d_oe_b <= '1';
-        SRAM_OE_B        <= '1';    -- Disable SRAM output
+        SRAM_OE_B         <= '1';       -- Disable SRAM output
         user_input_enable <= '1';
       ELSE
         -------------------------------------------------------------------------
@@ -127,76 +129,83 @@ BEGIN
         -- preconditions must be satisfied.
         ZBT_FSM : CASE cur_state IS
           WHEN IDLE =>
-            sram_flash_d_oe_b <= '1';     -- Set ALL used data reg lines to
+            sram_flash_d_oe_b <= '1';   -- Set ALL used data reg lines to
                                         -- High Z when they are not to
-                                        -- be written to
-            sram_cs_b_reg   <= '1';
-            SRAM_OE_B       <= '1';    -- Disable SRAM output
+                                        -- be written TO
+            IF GPIO_SW(3) = '0' THEN
+              sram_cs_b_reg <= '1';
+              SRAM_OE_B     <= '1';     -- Disable SRAM output
+            ELSE
+              SRAM_OE_B     <= '0';
+              sram_cs_b_reg <= '0';
+            END IF;
+
+
             -------------------------------------------------------------------------
             -- This is the main control structure for user input and state initialization
             control : IF initial_read = '0' THEN
-              initial_read        <= '1';
-              cur_state           <= READ_START;
-            ELSIF user_input_enable='1' THEN
+              initial_read <= '1';
+              cur_state    <= READ_START;
+            ELSIF user_input_enable = '1' THEN
               cmd_input : IF FPGA_ROTARY(0) = '1' THEN
                 user_input_enable <= '0';
-                cur_addr            <= cur_addr - 1;          -- Dec
-                cur_state           <= READ_START;
+                cur_addr          <= cur_addr - 1;  -- Dec
+                cur_state         <= READ_START;
               ELSIF FPGA_ROTARY(1) = '1' THEN
                 user_input_enable <= '0';
-                cur_addr            <= cur_addr + 1;          -- Inc
-                cur_state           <= READ_START;
-              ELSIF FPGA_ROTARY(2) = '1' THEN     -- Save
+                cur_addr          <= cur_addr + 1;  -- Inc
+                cur_state         <= READ_START;
+              ELSIF FPGA_ROTARY(2) = '1' THEN    -- Save
                 user_input_enable <= '0';
-                cur_state           <= WRITE_START;
-              ELSIF GPIO_SW(0)='1' THEN
+                cur_state         <= WRITE_START;
+              ELSIF GPIO_SW(0) = '1' THEN
                 user_input_enable <= '0';
-                cur_addr <= (OTHERS => '0');
-                cur_state           <= READ_START;
-              ELSIF GPIO_SW(2)='1' THEN
+                cur_addr          <= (OTHERS => '0');
+                cur_state         <= READ_START;
+              ELSIF GPIO_SW(1) = '1' THEN
                 user_input_enable <= '0';
-                cur_addr <= (OTHERS => '1');
-                cur_state           <= READ_START;
+                cur_state         <= READ_START;
+              ELSIF GPIO_SW(2) = '1' THEN
+                user_input_enable <= '0';
+                cur_addr          <= (OTHERS => '1');
+                cur_state         <= READ_START;
               END IF;
-            ELSIF GPIO_SW(4)='1' THEN
-                user_input_enable <= '1';
+            ELSIF GPIO_SW(4) = '1' THEN
+              user_input_enable <= '1';
             END IF;
           WHEN WRITE_START =>
             cur_state           <= WRITE_CMD;
-            sram_cs_b_reg       <= '0';       -- Enable command
-            sram_flash_we_b_reg <= '0';       -- Enable write
-            sram_flash_d_oe_b <= '1';
-            SRAM_OE_B       <= '1';    -- Disable SRAM output
-          WHEN WRITE_CMD =>             
-            sram_cs_b_reg <= '1';             -- Disable chip commands
-            cur_state     <= WRITE_WAIT;
-          WHEN WRITE_WAIT =>            
-            sram_flash_d_reg <= GPIO_DIP_SW;-- Put DIP values on data bus
-            sram_flash_d_oe_b              <= '0';  -- Enable data reg output
-            cur_state                    <= WRITE;
-
-          WHEN WRITE =>                 
-            cur_state                    <= READ_START;
-            sram_flash_d_reg <= (OTHERS => '0');  -- Clear sram data buffer
-            sram_flash_d_oe_b <= '1';   -- Disable data reg output
+            sram_cs_b_reg       <= '0';          -- Enable command
+            sram_flash_we_b_reg <= '0';          -- Enable write
+            sram_flash_d_oe_b   <= '0';          -- Enable data reg output
+            SRAM_OE_B           <= '1';          -- Disable SRAM output
+            sram_flash_d_reg    <= GPIO_DIP_SW;  -- Put DIP values on data bus
+          WHEN WRITE_CMD =>
+            sram_flash_we_b_reg <= '1';          -- Disable write (read mode)
+            sram_cs_b_reg       <= '1';          -- Disable chip commands
+            cur_state           <= WRITE_WAIT;
+          WHEN WRITE_WAIT =>
+            cur_state <= WRITE;
+          WHEN WRITE =>
+            --cur_state                    <= READ_START;
+            cur_state <= IDLE;
+            --sram_flash_d_reg <= (OTHERS => '0');  -- Clear sram data buffer
+            --sram_flash_d_oe_b <= '1';   -- Disable data reg output
           WHEN READ_START =>
             cur_state           <= READ_CMD;
-            sram_cs_b_reg       <= '0';       -- Enable command
-            sram_flash_we_b_reg <= '1';       -- Enable read
-            sram_flash_d_oe_b   <= '1';  -- Disable data reg output
-            SRAM_OE_B           <= '1';    -- Disable SRAM output
+            sram_cs_b_reg       <= '0';          -- Enable command
+            sram_flash_we_b_reg <= '1';          -- Enable read
+            sram_flash_d_oe_b   <= '1';          -- Disable data reg output
+            SRAM_OE_B           <= '0';          -- Enable SRAM output
           WHEN READ_CMD =>              -- Disable chip commands
             sram_cs_b_reg <= '1';
-            SRAM_OE_B  <= '0';    -- Enable SRAM output, this is one CT early
-                                  -- as to meet setup time restrictions on chip
             cur_state     <= READ_WAIT;
           WHEN READ_WAIT =>
-            cur_state                    <= READ;
+            cur_state <= READ;
           WHEN READ =>                  -- Save value on the data bus to the
                                         -- LED reg
-            gpio_led_reg <= SRAM_FLASH_D;
+            gpio_led_reg <= SRAM_D(7 DOWNTO 0);
             cur_state    <= IDLE;
-            SRAM_OE_B <= '1';           -- Disable SRAM output
           WHEN OTHERS => NULL;
         END CASE;
       END IF;

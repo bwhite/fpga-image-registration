@@ -1,6 +1,7 @@
-NET  CLK                  LOC="L19" | TNM_NET = "CLK";   # Bank 3, Vcco=2.5V, No DCI      200Mhz
-TIMESPEC TS_CLK = PERIOD CLK 5000 ps;
-NET  RST		  LOC="E9";
+NET  CLK_P                  LOC="L19" | period = 5000 ps;   # Bank 3, Vcco=2.5V, No DCI      200Mhz
+NET  CLK_N                  LOC="K19" | period = 5000 ps;   # Bank 3, Vcco=2.5V, No DCI      200Mhz
+
+NET  RST		  LOC="E9" | IOSTANDARD=LVDCI_33;
 NET RST TIG;
 
 NET  FPGA_ROTARY[0]     LOC="AH30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
@@ -29,11 +30,11 @@ NET  GPIO_LED[7]           LOC="AE24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm
 #NET  GPIO_LED_W           LOC="AF23";  # Bank 2, Vcco=3.3V
 
 
-NET  GPIO_SW[0]            LOC="U8" | IOSTANDARD=LVCMOS33 | SLEW=SLOW;    # Bank 18, Vcco=3.3V, No DCI N
-NET  GPIO_SW[1]            LOC="AK7"| IOSTANDARD=LVCMOS33 | SLEW=SLOW;   # Bank 18, Vcco=3.3V, No DCI E
-NET  GPIO_SW[2]            LOC="V8"| IOSTANDARD=LVCMOS33 | SLEW=SLOW;    # Bank 18, Vcco=3.3V, No DCI S
-NET  GPIO_SW[3]            LOC="AJ7"| IOSTANDARD=LVCMOS33 | SLEW=SLOW;   # Bank 18, Vcco=3.3V, No DCI W
-NET  GPIO_SW[4]            LOC="AJ6"| IOSTANDARD=LVCMOS33 | SLEW=SLOW;   # Bank 18, Vcco=3.3V, No DCI C
+NET  GPIO_SW[0]            LOC="U8" | IOSTANDARD=LVCMOS33;    # Bank 18, Vcco=3.3V, No DCI N
+NET  GPIO_SW[1]            LOC="AK7"| IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI E
+NET  GPIO_SW[2]            LOC="V8"| IOSTANDARD=LVCMOS33;    # Bank 18, Vcco=3.3V, No DCI S
+NET  GPIO_SW[3]            LOC="AJ7"| IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI W
+NET  GPIO_SW[4]            LOC="AJ6"| IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI C
 
 
 
@@ -43,6 +44,8 @@ Net SRAM_CLK DRIVE = 12;
 Net SRAM_CLK IOSTANDARD=LVCMOS33;
 Net SRAM_CLK_FB LOC=AG21;
 Net SRAM_CLK_FB IOSTANDARD=LVCMOS33;
+Net SRAM_CLK_FB FEEDBACK = 100 ps NET SRAM_CLK;
+
 
 
 Net SRAM_A<17> LOC=K12;

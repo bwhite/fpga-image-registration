@@ -38,8 +38,8 @@ USE UNISIM.VComponents.ALL;
 
 ENTITY zbt_controller IS
   PORT (
-    CLK : IN std_logic;
---    RST : IN std_logic;
+    CLK_P, CLK_N : IN std_logic;
+    RST : IN std_logic;
 
     --Connections to misc board devices
     FPGA_ROTARY : IN  std_logic_vector (2 DOWNTO 0);
@@ -49,50 +49,131 @@ ENTITY zbt_controller IS
 
     -- Connections to SRAM
     SRAM_CS_B        : OUT   std_logic;
-    SRAM_BW_B          : OUT   std_logic_vector (3 DOWNTO 0);
+    SRAM_BW_B        : OUT   std_logic_vector (3 DOWNTO 0);
     SRAM_ADV_LD_B    : OUT   std_logic;
     SRAM_OE_B        : OUT   std_logic;
-    SRAM_WE_B  : OUT   std_logic;
+    SRAM_WE_B        : OUT   std_logic;
     SRAM_CLK         : OUT   std_logic;
-   -- SRAM_CLK_FB : IN std_logic;
-    SRAM_A     : OUT   std_logic_vector (17 DOWNTO 0);
-    -- SRAM_DQP         : INOUT STD_LOGIC_VECTOR (3 DOWNTO 0);
-    SRAM_D           : INOUT STD_LOGIC_VECTOR (7 DOWNTO 0);--(31 DOWNTO 0);--(15 DOWNTO 0);
+    SRAM_CLK_FB      : IN    std_logic;
+    SRAM_A           : OUT   std_logic_vector (17 DOWNTO 0);
+    SRAM_D           : INOUT std_logic_vector (7 DOWNTO 0);  --(31 DOWNTO 0);--(15 DOWNTO 0);
     SRAM_FLASH_D_OUT : OUT   std_logic_vector(7 DOWNTO 0));
-    --SRAM_FLASH_D     : INOUT std_logic_vector (7 DOWNTO 0));
-  -- (15 DOWNTO 0));
 END zbt_controller;
 
 ARCHITECTURE Behavioral OF zbt_controller IS
   TYPE   ZBT_STATE IS (IDLE, WRITE_START, WRITE_CMD, WRITE_WAIT, WRITE, READ_START, READ_CMD, READ_WAIT, READ);
-                                        -- This is the type that defines the possible states the system can be in.
-  SIGNAL RST : std_logic;
-                                        
+                                           -- This is the type that defines the possible states the system can be in.
+--  SIGNAL RST                 : std_logic;
+  SIGNAL clk_int,clk_buf,clk_intbuf, clk,clk_0               : std_logic;  -- Delay corrected clock for SRAM
   SIGNAL cur_state           : ZBT_STATE                     := IDLE;  -- Current system state
-  SIGNAL cur_addr            : unsigned (1 DOWNTO 0)         := (OTHERS => '0');  --(17 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL cur_addr            : unsigned (17 DOWNTO 0)         := (OTHERS => '0');  --(17 DOWNTO 0) := (OTHERS => '0');
   SIGNAL sram_flash_we_b_reg : std_logic                     := '1';
   SIGNAL sram_cs_b_reg       : std_logic                     := '1';
   SIGNAL gpio_led_reg        : std_logic_vector (7 DOWNTO 0) := (OTHERS => '0');
   SIGNAL initial_read        : std_logic                     := '0';
-                                                                      -- This is 1 if the initial read has occured to set gpio_led_reg
+                                           -- This is 1 if the initial read has occured to set gpio_led_reg
   SIGNAL sram_flash_d_reg    : std_logic_vector (7 DOWNTO 0) := (OTHERS => '0');
-                                                                      -- This is a reg for the used portion of the sram_flash_d_res input, it is used to enable tri-state output on the register
+                                           -- This is a reg for the used portion of the sram_flash_d_res input, it is used to enable tri-state output on the register
   SIGNAL sram_flash_d_oe_b   : std_logic                     := '0';
-                                                                      -- This is a register that determines if the sram_flash_d_reg is connected to the inout port, or floated
+                                           -- This is a register that determines if the sram_flash_d_reg is connected to the inout port, or floated
   SIGNAL user_input_enable   : std_logic                     := '1';  -- This is a trivial way to fix button bouncing, after each command, require that a dedicated button be pressed to allow input to occur again.
 -- TODO generate SRAM_CLK from input clock, use it for all processing in this
 -- module;
+  SIGNAL global_reset        : std_logic;  -- This combines all of the reset
+                                           -- signals (active low)
+  SIGNAL sram_dll_locked, int_dll_locked, startup_dcm_rst     : std_logic;
 BEGIN
-  RST <= '1';
-  SRAM_BW_B          <= "0000";
+  global_reset     <= RST and sram_dll_locked and int_dll_locked;
+--  RST              <= '1';
+  SRAM_BW_B        <= "0000";
   SRAM_ADV_LD_B    <= '0';
-  SRAM_A     <= ("0000000000000000"&std_logic_vector(cur_addr));
-  SRAM_WE_B  <= sram_flash_we_b_reg;
+  SRAM_A           <= std_logic_vector(cur_addr);
+  SRAM_WE_B        <= sram_flash_we_b_reg;
   SRAM_CS_B        <= sram_cs_b_reg;
   GPIO_LED         <= gpio_led_reg;
-  SRAM_CLK         <= CLK;
+  SRAM_CLK         <= clk_0;--CLK;
   SRAM_FLASH_D_OUT <= SRAM_D(7 DOWNTO 0);
+  
+-------------------------------------------------------------------------------
+  --This is the differential input clock BUFFER
+     IBUFGDS_inst : IBUFGDS
+   generic map (
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => clk,  -- Clock buffer output
+      I => CLK_P,  -- Diff_p clock buffer input
+      IB => CLK_N -- Diff_n clock buffer input
+   );
+   BUFGCTRL_inst : BUFGCTRL
+   generic map (
+      INIT_OUT => 0,         -- Inital value of 0 or 1 after configuration
+      PRESELECT_I0 => FALSE, -- TRUE/FALSE set the I0 input after configuration
+      PRESELECT_I1 => FALSE) -- TRUE/FALSE set the I1 input after configuration
+   port map (
+      O => clk_buf,              -- Clock MUX output
+      CE0 => '1',          -- Clock enable0 input
+      CE1 => '1',          -- Clock enable1 input
+      I0 => clk,            -- Clock0 input
+      I1 => '0',            -- Clock1 input
+      IGNORE0 => '0',  -- Ignore clock select0 input
+      IGNORE1 => '0',  -- Ignore clock select1 input
+      S0 => '1',            -- Clock select0 input
+      S1 => '0'             -- Clock select1 input
+   );
+  
+-----------------------------------------------------------------------------
+ --This shift register forces the DCM/DLL's to reset immediately after the fpga
+ --is setup, this is to prevent the sram DCM from trying to lock before its
+ --feedback pin is permitted to take current.
+     SRL16_startup_rst : SRL16
+   generic map (
+      INIT => X"FFFF")
+   port map (
+      Q => startup_dcm_rst,       -- SRL data output
+      A0 => '1',     -- Select[0] input
+      A1 => '1',     -- Select[1] input
+      A2 => '1',     -- Select[2] input
+      A3 => '1',     -- Select[3] input
+      CLK => clk,   -- Clock input
+      D => '0'        -- SRL data input
+   );
+  
+-------------------------------------------------------------------------------
+  --This DDL is used to align the internal FPGA clock
+  CLKDLLHF_internal : CLKDLLHF
+    GENERIC MAP (
+      DUTY_CYCLE_CORRECTION => true,    --  Duty cycle correct, TRUE or FALSE
+      FACTORY_JF            => X"C080")  --  FACTORY JF Values
+    PORT MAP (
+      CLK0   => clk_int,                  -- 0 degree DLL CLK ouptput
+      LOCKED => int_dll_locked,        -- DLL LOCK status output
+      CLKFB  => clk_intbuf,            -- DLL clock feedback
+      CLKIN  => clk_buf,  -- Clock input (from IBUFG, BUFG or DLL)
+      RST    => startup_dcm_rst               -- DLL asynchronous reset input
+      );
+     BUFG_inst : BUFG
+   port map (
+      O => clk_intbuf,     -- Clock buffer output
+      I => clk_int      -- Clock buffer input
+   );
+  
+  
+-----------------------------------------------------------------------------
+  --This DLL is used to align the input clock to the child sram clock to
+  --eliminate delay.
+  CLKDLLHF_sram : CLKDLLHF
+    GENERIC MAP (
+      DUTY_CYCLE_CORRECTION => true,    --  Duty cycle correct, TRUE or FALSE
+      FACTORY_JF            => X"C080")  --  FACTORY JF Values
+    PORT MAP (
+      CLK0   => clk_0,                  -- 0 degree DLL CLK ouptput
+      LOCKED => sram_dll_locked,        -- DLL LOCK status output
+      CLKFB  => SRAM_CLK_FB,            -- DLL clock feedback
+      CLKIN  => clk_buf,  -- Clock input (from IBUFG, BUFG or DLL)
+      RST    => startup_dcm_rst         -- DLL asynchronous reset input
+      );
 
+-------------------------------------------------------------------------------  
 -- purpose: This determines if the sram_flash_d_reg is connected to the inout
 -- port
 -- type   : combinational
@@ -107,13 +188,14 @@ BEGIN
     END IF;
   END PROCESS;
 
+-------------------------------------------------------------------------------  
 -- Currently Implemented Method
 -- Only uses the lower 8 bits to store the data in it.
 
-  PROCESS (CLK) IS
+  PROCESS (clk_intbuf) IS
   BEGIN  -- PROCESS
-    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      IF RST = '0' THEN                 -- synchronous reset (active low)
+    IF clk_intbuf'event AND clk_intbuf= '1' THEN     -- rising clock edge
+      IF global_reset = '0' THEN        -- synchronous reset (active low)
         cur_addr          <= (OTHERS => '0');
         initial_read      <= '0';
         cur_state         <= IDLE;
@@ -177,20 +259,18 @@ BEGIN
             cur_state           <= WRITE_CMD;
             sram_cs_b_reg       <= '0';          -- Enable command
             sram_flash_we_b_reg <= '0';          -- Enable write
-            sram_flash_d_oe_b   <= '0';          -- Enable data reg output
-            SRAM_OE_B           <= '1';          -- Disable SRAM output
-            sram_flash_d_reg    <= GPIO_DIP_SW;  -- Put DIP values on data bus
           WHEN WRITE_CMD =>
             sram_flash_we_b_reg <= '1';          -- Disable write (read mode)
             sram_cs_b_reg       <= '1';          -- Disable chip commands
             cur_state           <= WRITE_WAIT;
           WHEN WRITE_WAIT =>
             cur_state <= WRITE;
+            SRAM_OE_B           <= '1';          -- Disable SRAM output
+            sram_flash_d_reg    <= GPIO_DIP_SW;  -- Put DIP values on data bus
+            sram_flash_d_oe_b   <= '0';          -- Enable data reg output
           WHEN WRITE =>
             --cur_state                    <= READ_START;
             cur_state <= IDLE;
-            --sram_flash_d_reg <= (OTHERS => '0');  -- Clear sram data buffer
-            --sram_flash_d_oe_b <= '1';   -- Disable data reg output
           WHEN READ_START =>
             cur_state           <= READ_CMD;
             sram_cs_b_reg       <= '0';          -- Enable command

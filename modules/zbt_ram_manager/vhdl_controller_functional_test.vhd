@@ -52,6 +52,7 @@ END vhdl_controller_functional_test;
 ARCHITECTURE Behavioral OF vhdl_controller_functional_test IS
   COMPONENT zbt_controller IS
     PORT (CLK : IN std_logic;
+          CLK_5x : IN std_logic;
           RST : IN std_logic;
 
           -- Control signals
@@ -76,7 +77,7 @@ ARCHITECTURE Behavioral OF vhdl_controller_functional_test IS
           SRAM_DATA     : INOUT std_logic_vector (35 DOWNTO 0)); 
   END COMPONENT zbt_controller;
 
-  SIGNAL clk,clk_predcm,clk0_initial,clk_int,clk_intbuf,startup_dcm_rst,clk_buf,clk_0                        : std_logic;
+  SIGNAL clk,clk_predcm,clk0_initial,clk_int,clk_int_5x,clk_intbuf,startup_dcm_rst,clk_buf,clk_0                        : std_logic;
   SIGNAL data_write                 : std_logic_vector (35 DOWNTO 0);
   SIGNAL we_b                       : std_logic;
   SIGNAL addr                       : std_logic_vector (17 DOWNTO 0);
@@ -106,9 +107,10 @@ BEGIN
     GENERIC MAP (
       CLKDV_DIVIDE          => 2.0,  -- Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5
       --   7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0
-      -- 125 Mhz, 5/8, 6ns
+      -- 125 Mhz, 5/8, 8ns
+      -- 100 Mhz, 4/8, 10ns
       CLKFX_DIVIDE          => 8,       -- Can be any interger from 1 to 32
-      CLKFX_MULTIPLY        => 5,       -- Can be any integer from 2 to 32
+      CLKFX_MULTIPLY        => 4,       -- Can be any integer from 2 to 32
       CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
       CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
@@ -182,9 +184,9 @@ BEGIN
       CLKDV_DIVIDE          => 2.0,  -- Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5
       --   7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0
       CLKFX_DIVIDE          => 1,       -- Can be any interger from 1 to 32
-      CLKFX_MULTIPLY        => 4,       -- Can be any integer from 2 to 32
+      CLKFX_MULTIPLY        => 5,       -- Can be any integer from 2 to 32
       CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
-      CLKIN_PERIOD          => 8.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
+      CLKIN_PERIOD          => 10.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
       DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
@@ -205,7 +207,7 @@ BEGIN
       --CLK2X180 => CLK2X180, -- 2X, 180 degree DCM CLK out
       --CLK90 => CLK90,       -- 90 degree DCM CLK output
       --CLKDV => CLKDV,       -- Divided DCM CLK out (CLKDV_DIVIDE)
-      --CLKFX => clk_int,       -- DCM CLK synthesis out (M/D)
+      CLKFX => clk_int_5x,       -- DCM CLK synthesis out (M/D)
       --CLKFX180 => CLKFX180, -- 180 degree CLK synthesis out
       --LOCKED => int_dll_locked,         -- DCM LOCK status output
       CLKFB  => clk_intbuf,             -- DCM clock feedback
@@ -231,7 +233,7 @@ BEGIN
       CLKFX_DIVIDE          => 4,       -- Can be any interger from 1 to 32
       CLKFX_MULTIPLY        => 3,       -- Can be any integer from 2 to 32
       CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
-      CLKIN_PERIOD          => 8.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
+      CLKIN_PERIOD          => 10.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
       DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
@@ -242,7 +244,7 @@ BEGIN
       DLL_FREQUENCY_MODE    => "HIGH",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
       DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
       FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0" 
-      PHASE_SHIFT           => 64,  -- Amount of fixed phase shift from -255 to 1023
+      PHASE_SHIFT           => 0,  -- Amount of fixed phase shift from -255 to 1023
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
     PORT MAP (
       CLK0   => clk_0,                  -- 0 degree DCM CLK ouptput
@@ -263,6 +265,7 @@ BEGIN
 
   zbt_controller_i : zbt_controller PORT MAP (
     CLK => clk_intbuf,
+    CLK_5X => clk_int_5x,
     RST => NOT RST,
 
     -- Control signals
@@ -314,7 +317,7 @@ BEGIN
           WHEN "100" =>                 -- ADDR 0 - Write
             addr       <= addr0;
             data_write <= data2;
-            we_b       <= '1';
+            we_b       <= '0';
           WHEN "101" =>                 -- ADDR 1 - Write
             addr       <= addr1;
             data_write <= data3;
@@ -322,11 +325,11 @@ BEGIN
           WHEN "110" =>                 -- ADDR 0 - Read
             addr       <= addr0;
             data_write <= NOT data0;  -- During read, this shouldn't change anything
-            we_b       <= '0';
+            we_b       <= '1';
           WHEN "111" =>                 -- ADDR 1 - Read
             addr       <= addr1;
             data_write <= NOT data0;  -- During read, this shouldn't change anything
-            we_b       <= '0';
+            we_b       <= '1';
           WHEN OTHERS => NULL;
         END CASE;
     END IF;

@@ -36,6 +36,7 @@ USE IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 ENTITY zbt_controller IS
   PORT (CLK : IN std_logic;
+        CLK_5X : IN std_logic;
         RST : IN std_logic;
 
         -- Control signals
@@ -64,6 +65,7 @@ ARCHITECTURE Behavioral OF zbt_controller IS
   SIGNAL data_write_delay0, data_write_delay1, data_write_delay2 : std_logic_vector(35 DOWNTO 0);  -- These take the data to be written and apply them 2 clock times after the command started.
   SIGNAL we_b_delay, cs_b_delay                                  : std_logic_vector(2 DOWNTO 0) := (OTHERS => '1');
   SIGNAL data_read_valid_reg : std_logic := '0';
+  SIGNAL edge_count : std_logic_vector(1 DOWNTO 0) := (OTHERS => '0');
 BEGIN
   SRAM_ADV_LD_B <= ADV_LD_B;
   SRAM_ADDR     <= ADDR;
@@ -72,25 +74,32 @@ BEGIN
   SRAM_CKE_B    <= CKE_B;
   SRAM_CS_B     <= CS_B;
   DATA_READ     <= SRAM_DATA;
-
-
   DATA_READ_VALID <= data_read_valid_reg;
+
+-- purpose: This is used to control the data out register and the OE_B wire to avoid collisions and satisfy setup times.
+-- type   : sequential
+-- inputs : CLK_3X
+PROCESS (CLK_5X) IS
+BEGIN  -- PROCESS
+  IF CLK_5X'event AND CLK_5X = '1' THEN  -- rising clock edge
+  
+    IF CLK='0' THEN
+      SRAM_OE_B     <= NOT we_b_delay(0);
+    END IF;
+  END IF;
+END PROCESS;
   
 -- purpose: This is the SRAM manager body, it receives data and outputs it with the correct timing to the ZBT ram.  It signals when read data is available (not provided by this module, it is read directly from the RAM,  this module just says when it is valid for reading).
 -- type   : sequential
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      SRAM_OE_B     <= NOT we_b_delay(0);
-
-       -- Control write data output
+      -- Control write data output
       IF  we_b_delay(0) = '0' AND cs_b_delay(0) = '0' THEN
         SRAM_DATA <= data_write_delay0;
       ELSE
         SRAM_DATA <= (OTHERS => 'Z');
       END IF;
-
-      
       --SRAM_DATA <= data_write_delay0 WHEN we_b_delay(0) = '0' AND cs_b_delay(0) = '0' ELSE (OTHERS => 'Z');
 
       data_write_delay0 <= DATA_WRITE;

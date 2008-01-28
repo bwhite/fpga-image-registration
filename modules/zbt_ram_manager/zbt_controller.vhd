@@ -36,7 +36,7 @@ USE IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 ENTITY zbt_controller IS
   PORT (CLK : IN std_logic;
-        CLK_5X : IN std_logic;
+        CLK_3X : IN std_logic;
         RST : IN std_logic;
 
         -- Control signals
@@ -79,9 +79,9 @@ BEGIN
 -- purpose: This is used to control the data out register and the OE_B wire to avoid collisions and satisfy setup times.
 -- type   : sequential
 -- inputs : CLK_3X
-PROCESS (CLK_5X) IS
+PROCESS (CLK_3X) IS
 BEGIN  -- PROCESS
-  IF CLK_5X'event AND CLK_5X = '1' THEN  -- rising clock edge
+  IF CLK_3X'event AND CLK_3X = '1' THEN  -- rising clock edge
   
     IF CLK='0' THEN
       SRAM_OE_B     <= NOT we_b_delay(0);

@@ -111,7 +111,7 @@ BEGIN
       -- 125 Mhz, 5/8, 8ns
       -- 100 Mhz, 4/8, 10ns
       CLKFX_DIVIDE          => 8,       -- Can be any interger from 1 to 32
-      CLKFX_MULTIPLY        => 6,       -- Can be any integer from 2 to 32
+      CLKFX_MULTIPLY        => 5,       -- Can be any integer from 2 to 32
       CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
       CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
@@ -187,7 +187,7 @@ BEGIN
       CLKFX_DIVIDE          => 1,       -- Can be any interger from 1 to 32
       CLKFX_MULTIPLY        => 3,       -- Can be any integer from 2 to 32
       CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
-      CLKIN_PERIOD          => 6.67,  -- Specify period of input clock in ns from 1.25 to 1000.00
+      CLKIN_PERIOD          => 8.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
       DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
@@ -234,7 +234,7 @@ BEGIN
       CLKFX_DIVIDE          => 4,       -- Can be any interger from 1 to 32
       CLKFX_MULTIPLY        => 3,       -- Can be any integer from 2 to 32
       CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
-      CLKIN_PERIOD          => 6.67,  -- Specify period of input clock in ns from 1.25 to 1000.00
+      CLKIN_PERIOD          => 8.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
       DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE

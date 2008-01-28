@@ -110,7 +110,7 @@ BEGIN
       -- 125 Mhz, 5/8, 8ns
       -- 100 Mhz, 4/8, 10ns
       CLKFX_DIVIDE          => 8,       -- Can be any interger from 1 to 32
-      CLKFX_MULTIPLY        => 4,       -- Can be any integer from 2 to 32
+      CLKFX_MULTIPLY        => 5,       -- Can be any integer from 2 to 32
       CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
       CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
@@ -184,9 +184,9 @@ BEGIN
       CLKDV_DIVIDE          => 2.0,  -- Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5
       --   7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0
       CLKFX_DIVIDE          => 1,       -- Can be any interger from 1 to 32
-      CLKFX_MULTIPLY        => 5,       -- Can be any integer from 2 to 32
+      CLKFX_MULTIPLY        => 3,       -- Can be any integer from 2 to 32
       CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
-      CLKIN_PERIOD          => 10.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
+      CLKIN_PERIOD          => 8.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
       DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
@@ -233,7 +233,7 @@ BEGIN
       CLKFX_DIVIDE          => 4,       -- Can be any interger from 1 to 32
       CLKFX_MULTIPLY        => 3,       -- Can be any integer from 2 to 32
       CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
-      CLKIN_PERIOD          => 10.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
+      CLKIN_PERIOD          => 8.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
       DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE

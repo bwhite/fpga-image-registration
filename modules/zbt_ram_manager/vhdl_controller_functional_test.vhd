@@ -22,38 +22,36 @@ USE IEEE.STD_LOGIC_1164.ALL;
 USE IEEE.STD_LOGIC_ARITH.ALL;
 USE IEEE.STD_LOGIC_UNSIGNED.ALL;
 
----- Uncomment the following library declaration if instantiating
----- any Xilinx primitives in this code.
 LIBRARY UNISIM;
 USE UNISIM.VComponents.ALL;
 
 ENTITY vhdl_controller_functional_test IS
-  PORT (CLK_P     : IN  std_logic;
-        CLK_N     : IN  std_logic;
-        RST       : IN  std_logic;      -- Active low reset
+  PORT (CLK_P : IN std_logic;
+        CLK_N : IN std_logic;
+        RST   : IN std_logic;           -- Active low reset
 
         -- SRAM Connections
-        SRAM_CLK_FB     : IN    std_logic;
-        SRAM_CLK        : OUT   std_logic;
-        SRAM_ADV_LD_B   : OUT   std_logic;
-        SRAM_ADDR       : OUT   std_logic_vector (17 DOWNTO 0);
-        SRAM_WE_B       : OUT   std_logic;
-        SRAM_BW_B       : OUT   std_logic_vector (3 DOWNTO 0);
-        SRAM_CKE_B      : OUT   std_logic;  -- NOTE Unconnected for now
-        SRAM_CS_B       : OUT   std_logic;
-        SRAM_OE_B       : OUT   std_logic;
-        SRAM_DATA       : INOUT std_logic_vector (35 DOWNTO 0);
+        SRAM_CLK_FB   : IN    std_logic;
+        SRAM_CLK      : OUT   std_logic;
+        SRAM_ADV_LD_B : OUT   std_logic;
+        SRAM_ADDR     : OUT   std_logic_vector (17 DOWNTO 0);
+        SRAM_WE_B     : OUT   std_logic;
+        SRAM_BW_B     : OUT   std_logic_vector (3 DOWNTO 0);
+        SRAM_CKE_B    : OUT   std_logic;  -- NOTE Unconnected for now
+        SRAM_CS_B     : OUT   std_logic;
+        SRAM_OE_B     : OUT   std_logic;
+        SRAM_DATA     : INOUT std_logic_vector (35 DOWNTO 0);
 
         -- Psuedo IO Ports used to probe with Chipscope
-        DATA_READ       : OUT   std_logic_vector (35 DOWNTO 0);
-        DATA_READ_VALID : OUT   std_logic);
+        DATA_READ       : OUT std_logic_vector (35 DOWNTO 0);
+        DATA_READ_VALID : OUT std_logic);
 END vhdl_controller_functional_test;
 
 ARCHITECTURE Behavioral OF vhdl_controller_functional_test IS
   COMPONENT zbt_controller IS
-    PORT (CLK : IN std_logic;
+    PORT (CLK    : IN std_logic;
           CLK_3X : IN std_logic;
-          RST : IN std_logic;
+          RST    : IN std_logic;
 
           -- Control signals
           ADV_LD_B        : IN  std_logic;
@@ -74,16 +72,16 @@ ARCHITECTURE Behavioral OF vhdl_controller_functional_test IS
           SRAM_CKE_B    : OUT   std_logic;
           SRAM_CS_B     : OUT   std_logic;
           SRAM_OE_B     : OUT   std_logic;
-          SRAM_DATA     : INOUT std_logic_vector (35 DOWNTO 0)); 
+          SRAM_DATA     : INOUT std_logic_vector (35 DOWNTO 0));
   END COMPONENT zbt_controller;
 
-  SIGNAL clk,clk_predcm,clk0_initial,clk_int,clk_int_3x,clk_intbuf,startup_dcm_rst,clk_buf,clk_0                        : std_logic;
-  SIGNAL data_write                 : std_logic_vector (35 DOWNTO 0);
-  SIGNAL we_b                       : std_logic;
-  SIGNAL addr                       : std_logic_vector (17 DOWNTO 0);
-  SIGNAL data_count                 : std_logic_vector(3 DOWNTO 0) := (OTHERS => '0');
-  SIGNAL addr0, addr1, addr2, addr3               : std_logic_vector(17 DOWNTO 0);
-  SIGNAL data0, data1, data2, data3,data4, data5 : std_logic_vector(35 DOWNTO 0);
+  SIGNAL clk, clk_predcm, clk0_initial, clk_int, clk_int_3x, clk_intbuf, startup_dcm_rst, clk_buf, clk_0 : std_logic;
+  SIGNAL data_write                                                                                      : std_logic_vector (35 DOWNTO 0);
+  SIGNAL we_b                                                                                            : std_logic;
+  SIGNAL addr                                                                                            : std_logic_vector (17 DOWNTO 0);
+  SIGNAL data_count                                                                                      : std_logic_vector(3 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL addr0, addr1, addr2, addr3                                                                      : std_logic_vector(17 DOWNTO 0);
+  SIGNAL data0, data1, data2, data3, data4, data5                                                        : std_logic_vector(35 DOWNTO 0);
 BEGIN
   addr0 <= "001100111110110001";
   addr1 <= "100101110111100100";
@@ -96,7 +94,7 @@ BEGIN
   data3 <= "111010010101011010110001011010111110";  -- E956B16BE
   data4 <= "000000000000000000000000000000000000";  -- 000000000
   data5 <= "111111111111111111111111111111111111";  -- FFFFFFFFF
-  
+
 -------------------------------------------------------------------------------
   --This is the differential input clock BUFFER
   IBUFGDS_inst : IBUFGDS
@@ -132,19 +130,11 @@ BEGIN
       PHASE_SHIFT           => 0,  -- Amount of fixed phase shift from -255 to 1023
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
     PORT MAP (
-      CLK0   => clk0_initial,           -- 0 degree DCM CLK ouptput
-      --CLK180 => CLK180,     -- 180 degree DCM CLK output
-      --CLK270 => CLK270,     -- 270 degree DCM CLK output
-      --CLK2X => CLK2X,       -- 2X DCM CLK output
-      --CLK2X180 => CLK2X180, -- 2X, 180 degree DCM CLK out
-      --CLK90 => CLK90,       -- 90 degree DCM CLK output
-      --CLKDV => CLKDV,       -- Divided DCM CLK out (CLKDV_DIVIDE)
-      CLKFX  => clk,                    -- DCM CLK synthesis out (M/D)
-      --CLKFX180 => CLKFX180, -- 180 degree CLK synthesis out
-      --LOCKED => initial_dll_locked,     -- DCM LOCK status output
-      CLKFB  => clk0_initial,           -- DCM clock feedback
-      CLKIN  => clk_predcm,        -- Clock input (from IBUFG, BUFG or DCM)
-      RST    => '0'                     -- DCM asynchronous reset input
+      CLK0  => clk0_initial,            -- 0 degree DCM CLK ouptput
+      CLKFX => clk,                     -- DCM CLK synthesis out (M/D)
+      CLKFB => clk0_initial,            -- DCM clock feedback
+      CLKIN => clk_predcm,         -- Clock input (from IBUFG, BUFG or DCM)
+      RST   => '0'                      -- DCM asynchronous reset input
       );
 
 
@@ -195,7 +185,7 @@ BEGIN
       CLKIN_PERIOD          => 10.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
-      DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
+      DCM_AUTOCALIBRATION   => true,  -- DCM calibrartion circuitry TRUE/FALSE
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
                                         --   an integer from 0 to 15
@@ -206,19 +196,11 @@ BEGIN
       PHASE_SHIFT           => 0,  -- Amount of fixed phase shift from -255 to 1023
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
     PORT MAP (
-      CLK0   => clk_int,                -- 0 degree DCM CLK ouptput
-      --CLK180 => CLK180,     -- 180 degree DCM CLK output
-      --CLK270 => CLK270,     -- 270 degree DCM CLK output
-      --CLK2X => CLK2X,       -- 2X DCM CLK output
-      --CLK2X180 => CLK2X180, -- 2X, 180 degree DCM CLK out
-      --CLK90 => CLK90,       -- 90 degree DCM CLK output
-      --CLKDV => CLKDV,       -- Divided DCM CLK out (CLKDV_DIVIDE)
-      CLKFX => clk_int_3x,       -- DCM CLK synthesis out (M/D)
-      --CLKFX180 => CLKFX180, -- 180 degree CLK synthesis out
-      --LOCKED => int_dll_locked,         -- DCM LOCK status output
-      CLKFB  => clk_intbuf,             -- DCM clock feedback
-      CLKIN  => clk_buf,           -- Clock input (from IBUFG, BUFG or DCM)
-      RST    => startup_dcm_rst         -- DCM asynchronous reset input
+      CLK0  => clk_int,                 -- 0 degree DCM CLK ouptput
+      CLKFX => clk_int_3x,              -- DCM CLK synthesis out (M/D)
+      CLKFB => clk_intbuf,              -- DCM clock feedback
+      CLKIN => clk_buf,            -- Clock input (from IBUFG, BUFG or DCM)
+      RST   => startup_dcm_rst          -- DCM asynchronous reset input
       );
   BUFG_inst : BUFG
     PORT MAP (
@@ -242,7 +224,7 @@ BEGIN
       CLKIN_PERIOD          => 10.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
-      DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
+      DCM_AUTOCALIBRATION   => true,  -- DCM calibrartion circuitry TRUE/FALSE
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
                                         --   an integer from 0 to 15
@@ -253,26 +235,17 @@ BEGIN
       PHASE_SHIFT           => 0,  -- Amount of fixed phase shift from -255 to 1023
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
     PORT MAP (
-      CLK0   => clk_0,                  -- 0 degree DCM CLK ouptput
-      --CLK180 => CLK180,     -- 180 degree DCM CLK output
-      --CLK270 => CLK270,     -- 270 degree DCM CLK output
-      --CLK2X => CLK2X,       -- 2X DCM CLK output
-      --CLK2X180 => CLK2X180, -- 2X, 180 degree DCM CLK out
-      --CLK90 => CLK90,       -- 90 degree DCM CLK output
-      --CLKDV => CLKDV,       -- Divided DCM CLK out (CLKDV_DIVIDE)
-      --CLKFX => clk_0,       -- DCM CLK synthesis out (M/D)
-      --CLKFX180 => CLKFX180, -- 180 degree CLK synthesis out
-      --LOCKED => sram_dll_locked,        -- DCM LOCK status output
-      CLKFB  => SRAM_CLK_FB,            -- DCM clock feedback
-      CLKIN  => clk_buf,           -- Clock input (from IBUFG, BUFG or DCM)
-      RST    => startup_dcm_rst         -- DCM asynchronous reset input
+      CLK0  => clk_0,                   -- 0 degree DCM CLK ouptput
+      CLKFB => SRAM_CLK_FB,             -- DCM clock feedback
+      CLKIN => clk_buf,            -- Clock input (from IBUFG, BUFG or DCM)
+      RST   => startup_dcm_rst          -- DCM asynchronous reset input
       );
   SRAM_CLK <= clk_0;
 
   zbt_controller_i : zbt_controller PORT MAP (
-    CLK => clk_intbuf,
+    CLK    => clk_intbuf,
     CLK_3X => clk_int_3x,
-    RST => NOT RST,
+    RST    => NOT RST,
 
     -- Control signals
     ADV_LD_B        => '0',
@@ -294,7 +267,7 @@ BEGIN
     SRAM_CS_B     => SRAM_CS_B,
     SRAM_OE_B     => SRAM_OE_B,
     SRAM_DATA     => SRAM_DATA);
- 
+
 
 -------------------------------------------------------------------------------
 -- Test Suite States
@@ -316,83 +289,83 @@ BEGIN
 -- E            F               1                       W       FFFFFFFFF
 -- F            0               2                       R       000000000
 -------------------------------------------------------------------------------
-  
+
   PROCESS (clk_intbuf) IS
   BEGIN  -- PROCESS
-    IF clk_intbuf'event AND clk_intbuf = '1' THEN     -- rising clock edge
+    IF clk_intbuf'event AND clk_intbuf = '1' THEN  -- rising clock edge
       IF RST = '0' THEN                 -- synchronous reset (active low)
         data_count <= (OTHERS => '0');
-      ELSE 
+      ELSE
         data_count <= data_count + 1;
       END IF;
-       CASE data_count IS
-          WHEN "0000" =>                 -- ADDR 0 - Write
-            addr       <= addr0;
-            data_write <= data0;
-            we_b       <= '0';
-          WHEN "0001" =>                 -- ADDR 1 - Write
-            addr       <= addr1;
-            data_write <= data1;
-            we_b       <= '0';
-          WHEN "0010" =>                 -- ADDR 0 - Read
-            addr       <= addr0;
-            data_write <= (OTHERS => '0');  -- During read, this shouldn't change anything
-            we_b       <= '1';
-          WHEN "0011" =>                 -- ADDR 1 - Read
-            addr       <= addr1;
-            data_write <= (OTHERS => '1');  -- During read, this shouldn't change anything
-            we_b       <= '1';
-          WHEN "0100" =>                 -- ADDR 0 - Write
-            addr       <= addr0;
-            data_write <= data2;
-            we_b       <= '0';
-          WHEN "0101" =>                 -- ADDR 1 - Write
-            addr       <= addr1;
-            data_write <= data3;
-            we_b       <= '0';
-          WHEN "0110" =>                 -- ADDR 0 - Read
-            addr       <= addr0;
-            data_write <= NOT data0;  -- During read, this shouldn't change anything
-            we_b       <= '1';
-          WHEN "0111" =>                 -- ADDR 1 - Read
-            addr       <= addr1;
-            data_write <= NOT data0;  -- During read, this shouldn't change anything
-            we_b       <= '1';
-            
-          WHEN "1000" =>                 -- ADDR 2 - Write
-            addr       <= addr2;
-            data_write <= data4;
-            we_b       <= '0';
-          WHEN "1001" =>                 -- ADDR 2 - Read
-            addr       <= addr2;
-            data_write <= data0;               -- During read, this shouldn't change anything
-            we_b       <= '1';
-          WHEN "1010" =>                 -- ADDR 2 - Read
-            addr       <= addr2;
-            data_write <= data1;  -- During read, this shouldn't change anything
-            we_b       <= '1';
-          WHEN "1011" =>                 -- ADDR 3 - Write
-            addr       <= addr3;
-            data_write <= data5;
-            we_b       <= '0';
-          WHEN "1100" =>                 -- ADDR 3 - Write
-            addr       <= addr3;
-            data_write <= data4;
-            we_b       <= '0';
-          WHEN "1101" =>                 -- ADDR 3 - Read
-            addr       <= addr3;
-            data_write <= data0;        -- During read, this shouldn't change anything
-            we_b       <= '1';
-          WHEN "1110" =>                 -- ADDR 2 - Write
-            addr       <= addr2;
-            data_write <= data5;  
-            we_b       <= '0';
-          WHEN "1111" =>                 -- ADDR 2 - Read
-            addr       <= addr2;
-            data_write <= NOT data1;  -- During read, this shouldn't change anything
-            we_b       <= '1';
-          WHEN OTHERS => NULL;
-        END CASE;
+      CASE data_count IS
+        WHEN "0000" =>                  -- ADDR 0 - Write
+          addr       <= addr0;
+          data_write <= data0;
+          we_b       <= '0';
+        WHEN "0001" =>                  -- ADDR 1 - Write
+          addr       <= addr1;
+          data_write <= data1;
+          we_b       <= '0';
+        WHEN "0010" =>                  -- ADDR 0 - Read
+          addr       <= addr0;
+          data_write <= (OTHERS => '0');  -- During read, this shouldn't change anything
+          we_b       <= '1';
+        WHEN "0011" =>                  -- ADDR 1 - Read
+          addr       <= addr1;
+          data_write <= (OTHERS => '1');  -- During read, this shouldn't change anything
+          we_b       <= '1';
+        WHEN "0100" =>                  -- ADDR 0 - Write
+          addr       <= addr0;
+          data_write <= data2;
+          we_b       <= '0';
+        WHEN "0101" =>                  -- ADDR 1 - Write
+          addr       <= addr1;
+          data_write <= data3;
+          we_b       <= '0';
+        WHEN "0110" =>                  -- ADDR 0 - Read
+          addr       <= addr0;
+          data_write <= NOT data0;  -- During read, this shouldn't change anything
+          we_b       <= '1';
+        WHEN "0111" =>                  -- ADDR 1 - Read
+          addr       <= addr1;
+          data_write <= NOT data0;  -- During read, this shouldn't change anything
+          we_b       <= '1';
+
+        WHEN "1000" =>                  -- ADDR 2 - Write
+          addr       <= addr2;
+          data_write <= data4;
+          we_b       <= '0';
+        WHEN "1001" =>                  -- ADDR 2 - Read
+          addr       <= addr2;
+          data_write <= data0;  -- During read, this shouldn't change anything
+          we_b       <= '1';
+        WHEN "1010" =>                  -- ADDR 2 - Read
+          addr       <= addr2;
+          data_write <= data1;  -- During read, this shouldn't change anything
+          we_b       <= '1';
+        WHEN "1011" =>                  -- ADDR 3 - Write
+          addr       <= addr3;
+          data_write <= data5;
+          we_b       <= '0';
+        WHEN "1100" =>                  -- ADDR 3 - Write
+          addr       <= addr3;
+          data_write <= data4;
+          we_b       <= '0';
+        WHEN "1101" =>                  -- ADDR 3 - Read
+          addr       <= addr3;
+          data_write <= data0;  -- During read, this shouldn't change anything
+          we_b       <= '1';
+        WHEN "1110" =>                  -- ADDR 2 - Write
+          addr       <= addr2;
+          data_write <= data5;
+          we_b       <= '0';
+        WHEN "1111" =>                  -- ADDR 2 - Read
+          addr       <= addr2;
+          data_write <= NOT data1;  -- During read, this shouldn't change anything
+          we_b       <= '1';
+        WHEN OTHERS => NULL;
+      END CASE;
     END IF;
   END PROCESS;
 

@@ -81,16 +81,21 @@ ARCHITECTURE Behavioral OF vhdl_controller_functional_test IS
   SIGNAL data_write                 : std_logic_vector (35 DOWNTO 0);
   SIGNAL we_b                       : std_logic;
   SIGNAL addr                       : std_logic_vector (17 DOWNTO 0);
-  SIGNAL data_count                 : std_logic_vector(2 DOWNTO 0) := (OTHERS => '0');
-  SIGNAL addr0, addr1               : std_logic_vector(17 DOWNTO 0);
-  SIGNAL data0, data1, data2, data3 : std_logic_vector(35 DOWNTO 0);
+  SIGNAL data_count                 : std_logic_vector(3 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL addr0, addr1, addr2, addr3               : std_logic_vector(17 DOWNTO 0);
+  SIGNAL data0, data1, data2, data3,data4, data5 : std_logic_vector(35 DOWNTO 0);
 BEGIN
   addr0 <= "001100111110110001";
   addr1 <= "100101110111100100";
+  addr2 <= "000000000000000000";
+  addr3 <= "111111111111111111";
+
   data0 <= "110001111111000000110001110110000001";  -- C7F031D81
   data1 <= "011101010001110111101001101101011010";  -- 751DE9B5A
   data2 <= "111110000101101000010101111000100111";  -- F85A15E27
   data3 <= "111010010101011010110001011010111110";  -- E956B16BE
+  data4 <= "000000000000000000000000000000000000";  -- 000000000
+  data5 <= "111111111111111111111111111111111111";  -- FFFFFFFFF
   
 -------------------------------------------------------------------------------
   --This is the differential input clock BUFFER
@@ -289,6 +294,28 @@ BEGIN
     SRAM_CS_B     => SRAM_CS_B,
     SRAM_OE_B     => SRAM_OE_B,
     SRAM_DATA     => SRAM_DATA);
+ 
+
+-------------------------------------------------------------------------------
+-- Test Suite States
+-- State        Observed State  Observed Data State     CMD     Data Present
+-- 0            1               3                       W       000000000
+-- 1            2               4                       W       FFFFFFFFF
+-- 2            3               5                       R       FFFFFFFFF
+-- 3            4               6                       R       C7F031D81
+-- 4            5               7                       W       751DE9B5A
+-- 5            6               8                       W       C7F031D81
+-- 6            7               9                       R       751DE9B5A
+-- 7            8               A                       R       F85A15E27
+-- 8            9               B                       W       E956B16BE
+-- 9            A               C                       R       F85A15E27
+-- A            B               D                       R       E956B16BE
+-- B            C               E                       W       000000000
+-- C            D               F                       W       000000000
+-- D            E               0                       R       000000000
+-- E            F               1                       W       FFFFFFFFF
+-- F            0               2                       R       000000000
+-------------------------------------------------------------------------------
   
   PROCESS (clk_intbuf) IS
   BEGIN  -- PROCESS
@@ -299,37 +326,70 @@ BEGIN
         data_count <= data_count + 1;
       END IF;
        CASE data_count IS
-          WHEN "000" =>                 -- ADDR 0 - Write
+          WHEN "0000" =>                 -- ADDR 0 - Write
             addr       <= addr0;
             data_write <= data0;
             we_b       <= '0';
-          WHEN "001" =>                 -- ADDR 1 - Write
+          WHEN "0001" =>                 -- ADDR 1 - Write
             addr       <= addr1;
             data_write <= data1;
             we_b       <= '0';
-          WHEN "010" =>                 -- ADDR 0 - Read
+          WHEN "0010" =>                 -- ADDR 0 - Read
             addr       <= addr0;
             data_write <= (OTHERS => '0');  -- During read, this shouldn't change anything
             we_b       <= '1';
-          WHEN "011" =>                 -- ADDR 1 - Read
+          WHEN "0011" =>                 -- ADDR 1 - Read
             addr       <= addr1;
             data_write <= (OTHERS => '1');  -- During read, this shouldn't change anything
             we_b       <= '1';
-          WHEN "100" =>                 -- ADDR 0 - Write
+          WHEN "0100" =>                 -- ADDR 0 - Write
             addr       <= addr0;
             data_write <= data2;
             we_b       <= '0';
-          WHEN "101" =>                 -- ADDR 1 - Write
+          WHEN "0101" =>                 -- ADDR 1 - Write
             addr       <= addr1;
             data_write <= data3;
             we_b       <= '0';
-          WHEN "110" =>                 -- ADDR 0 - Read
+          WHEN "0110" =>                 -- ADDR 0 - Read
             addr       <= addr0;
             data_write <= NOT data0;  -- During read, this shouldn't change anything
             we_b       <= '1';
-          WHEN "111" =>                 -- ADDR 1 - Read
+          WHEN "0111" =>                 -- ADDR 1 - Read
             addr       <= addr1;
             data_write <= NOT data0;  -- During read, this shouldn't change anything
+            we_b       <= '1';
+            
+          WHEN "1000" =>                 -- ADDR 2 - Write
+            addr       <= addr2;
+            data_write <= data4;
+            we_b       <= '0';
+          WHEN "1001" =>                 -- ADDR 2 - Read
+            addr       <= addr2;
+            data_write <= data0;               -- During read, this shouldn't change anything
+            we_b       <= '1';
+          WHEN "1010" =>                 -- ADDR 2 - Read
+            addr       <= addr2;
+            data_write <= data1;  -- During read, this shouldn't change anything
+            we_b       <= '1';
+          WHEN "1011" =>                 -- ADDR 3 - Write
+            addr       <= addr3;
+            data_write <= data5;
+            we_b       <= '0';
+          WHEN "1100" =>                 -- ADDR 3 - Write
+            addr       <= addr3;
+            data_write <= data4;
+            we_b       <= '0';
+          WHEN "1101" =>                 -- ADDR 3 - Read
+            addr       <= addr3;
+            data_write <= data0;        -- During read, this shouldn't change anything
+            we_b       <= '1';
+          WHEN "1110" =>                 -- ADDR 2 - Write
+            addr       <= addr2;
+            data_write <= data5;  
+            we_b       <= '0';
+          WHEN "1111" =>                 -- ADDR 2 - Read
+            addr       <= addr2;
+            data_write <= NOT data1;  -- During read, this shouldn't change anything
             we_b       <= '1';
           WHEN OTHERS => NULL;
         END CASE;

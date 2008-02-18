@@ -16,16 +16,14 @@
 -- Revision 0.01 - File Created
 -- Additional Comments: 
 --
+-- NOTE The data is in little endian byte ordering, data is sent lowest byte
+-- first, highest bit first (I2C convention).
 ----------------------------------------------------------------------------------
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
 USE IEEE.STD_LOGIC_ARITH.ALL;
 USE IEEE.STD_LOGIC_UNSIGNED.ALL;
 
----- Uncomment the following library declaration if instantiating
----- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 ENTITY i2c_core IS
   PORT (clk            : IN  std_logic;
@@ -107,7 +105,6 @@ BEGIN
           ELSE
             i2c_clock_counter <= i2c_clock_counter + 1;
           END IF;
-          
         END IF;
 
         -- Main I2C Logic

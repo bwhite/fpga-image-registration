@@ -56,7 +56,9 @@ ENTITY vga_input IS
         ODD_EVEN_B     : OUT std_logic;
         SOGOUT         : OUT std_logic;
         CLAMP          : OUT std_logic;
-        COAST          : OUT std_logic);
+        COAST          : OUT std_logic;
+        HCOUNT         : OUT STD_LOGIC_VECTOR(9 DOWNTO 0);
+        VCOUNT         : OUT STD_LOGIC_VECTOR(9 DOWNTO 0));
 END vga_input;
 
 ARCHITECTURE Behavioral OF vga_input IS
@@ -69,9 +71,18 @@ ARCHITECTURE Behavioral OF vga_input IS
           i2c_scl       : OUT std_logic;
           received_data : OUT std_logic);
   END COMPONENT;
+  COMPONENT vga_timing_decode IS
+    PORT (PIXEL_CLK : IN  std_logic;
+           VSYNC    : IN  std_logic;
+           HSYNC    : IN  std_logic;
+           HCOUNT   : OUT std_logic_vector(9 DOWNTO 0);
+           VCOUNT   : OUT std_logic_vector(9 DOWNTO 0));
+  END COMPONENT;
+
+
   SIGNAL received_data : std_logic;
-  SIGNAL new_data      : std_logic                     := '0';
-  SIGNAL data_count    : unsigned(2 DOWNTO 0)          := (OTHERS => '0');  -- Used to count the data
+  SIGNAL new_data      : std_logic            := '0';
+  SIGNAL data_count    : unsigned(2 DOWNTO 0) := (OTHERS => '0');  -- Used to count the data
   SIGNAL i2c_data      : std_logic_vector(23 DOWNTO 0);
                                         -- bytes sent over I2C
   SIGNAL i2c_clk       : std_logic;     -- 50Mhz i2c module input clock
@@ -86,17 +97,17 @@ BEGIN
         i2c_data <= std_logic_vector(to_unsigned(16#000298#, 24));
       WHEN "010" =>
         i2c_data <= std_logic_vector(to_unsigned(16#600398#, 24));
-      --WHEN "011" =>
-      --  i2c_data <= std_logic_vector(to_unsigned(16#A81298#, 24));
-      --WHEN "100" =>
-      --  i2c_data <= std_logic_vector(to_unsigned(16#7A1D98#, 24));
-      --  i2c_data <= std_logic_vector(to_unsigned(16#DC1498#, 24));
+        --WHEN "011" =>
+        --  i2c_data <= std_logic_vector(to_unsigned(16#A81298#, 24));
+        --WHEN "100" =>
+        --  i2c_data <= std_logic_vector(to_unsigned(16#7A1D98#, 24));
+        --  i2c_data <= std_logic_vector(to_unsigned(16#DC1498#, 24));
       WHEN OTHERS =>
         i2c_data <= (OTHERS => '0');
-                     
+        
     END CASE;
   END PROCESS;
-  
+
   -- DCM to divide input clock (200 mhz) by 16 to produce a 12.5 Mhz I2C Input
   -- clock (which will be divided by 500 for the SCL clock and 100 for the
   -- internal clock)
@@ -105,7 +116,7 @@ BEGIN
     GENERIC MAP (
       CLKDV_DIVIDE          => 2.0,  -- Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5
       --   7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0
-      CLKFX_DIVIDE          => 32,       -- Can be any interger from 1 to 32
+      CLKFX_DIVIDE          => 32,      -- Can be any interger from 1 to 32
       CLKFX_MULTIPLY        => 2,       -- Can be any integer from 2 to 32
       CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
       CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
@@ -147,8 +158,8 @@ BEGIN
     IF i2c_clk'event AND i2c_clk = '1' THEN  -- rising clock edge
       IF new_data = '0' AND received_data = '0' THEN
         new_data <= '1';
-      END IF;   
-        
+      END IF;
+
       IF new_data = '1' AND received_data = '1' THEN
         new_data <= '0';
         IF data_count < 2 THEN          -- Prevents overflow
@@ -178,5 +189,12 @@ BEGIN
       i2c_sda       => I2C_SDA,
       i2c_scl       => I2C_SCL,
       received_data => received_data);
+  vga_timing_decode_i : vga_timing_decode
+    PORT MAP (
+      PIXEL_CLK => VGA_PIXEL_CLK,
+      VSYNC => VGA_VSYNC,
+      VCOUNT => VCOUNT,
+      HSYNC     => VGA_HSYNC,
+      HCOUNT    => HCOUNT);
 END Behavioral;
 

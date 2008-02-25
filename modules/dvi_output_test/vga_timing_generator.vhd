@@ -37,7 +37,7 @@ ENTITY vga_timing_generator IS
            );
   PORT (PIXEL_CLOCK : IN  std_logic;
         RESET       : IN  std_logic;
-        --BLANK_Z     : OUT std_logic;
+        CLKEN       : IN  std_logic;
         H_SYNC_Z    : OUT std_logic;
         V_SYNC_Z    : OUT std_logic;
         PIXEL_COUNT : OUT std_logic_vector(10 DOWNTO 0);
@@ -52,8 +52,8 @@ ARCHITECTURE Behavioral OF vga_timing_generator IS
   SIGNAL vsync_reg, hsync_reg : std_logic := '0';
 BEGIN
   
-  pixel_count <= pixel_count_reg;
-  line_count  <= line_count_reg;
+  PIXEL_COUNT <= pixel_count_reg;
+  LINE_COUNT  <= line_count_reg;
   H_SYNC_Z <= hsync_reg;
   V_SYNC_Z <= vsync_reg;
   PROCESS(PIXEL_CLOCK)
@@ -64,25 +64,26 @@ BEGIN
         v_blank         <= '0';
         h_blank         <= '0';
         line_count_reg  <= (OTHERS => '0');
-       -- BLANK_Z         <= '0';
         pixel_count_reg <= (OTHERS => '0');
         hsync_reg <= '0';
         vsync_reg <= '0';
       ELSE
-        -- Horizontal Line Counter
-        IF (pixel_count_reg = (H_TOTAL-1)) THEN
-          pixel_count_reg <= (OTHERS => '0');
-        ELSE
-          pixel_count_reg <= pixel_count_reg + 1;
-        END IF;
+        IF CLKEN='1' THEN
+          -- Horizontal Line Counter
+          IF (pixel_count_reg = (H_TOTAL-1)) THEN
+            pixel_count_reg <= (OTHERS => '0');
+          ELSE
+            pixel_count_reg <= pixel_count_reg + 1;
+          END IF;
 
-        -- Vertical Line Counter
-        IF (pixel_count_reg = (H_TOTAL - 1) AND (line_count_reg = (V_TOTAL - 1))) THEN
-          line_count_reg <= (OTHERS => '0');
-        ELSIF (pixel_count_reg = (H_TOTAL - 1)) THEN
-          line_count_reg <= line_count_reg + 1;
+          -- Vertical Line Counter
+          IF (pixel_count_reg = (H_TOTAL - 1) AND (line_count_reg = (V_TOTAL - 1))) THEN
+            line_count_reg <= (OTHERS => '0');
+          ELSIF (pixel_count_reg = (H_TOTAL - 1)) THEN
+            line_count_reg <= line_count_reg + 1;
+          END IF;
         END IF;
-
+        
         -- Vertical Sync Pulse
         IF (pixel_count_reg = (H_TOTAL - 1) AND line_count_reg = (V_ACTIVE + V_FRONT_PORCH -1)) THEN
           vsync_reg <= '1';
@@ -96,29 +97,6 @@ BEGIN
         ELSIF (pixel_count_reg = (H_TOTAL - H_BACK_PORCH - 1)) THEN
           hsync_reg <= '0';
         END IF;
-
-        -- NOTE the blanking signals below haven't been used or tested
-        
-        -- Vertical Blanking Signal
-        --IF (line_count_reg = (V_ACTIVE - 1) AND pixel_count_reg = (H_TOTAL - 2)) THEN
-        --  v_blank <= '1';
-        --ELSIF (line_count_reg = (V_TOTAL - 1) AND pixel_count_reg = (H_TOTAL - 2)) THEN
-        --  v_blank <= '0';
-        --END IF;
-
-        -- Horizontal Blanking Signal
-        --IF (pixel_count_reg = (H_ACTIVE - 2)) THEN
-        --  h_blank <= '1';
-        --ELSIF (pixel_count_reg = (H_TOTAL - 2)) THEN
-        --  h_blank <= '0';
-        --END IF;
-
-        -- Composite Blanking Signal
-        --IF (h_blank = '1' OR v_blank = '1') THEN
-        --  BLANK_Z <= '1';
-        --ELSE
-        --  BLANK_Z <= '0';
-        --END IF;
       END IF;
     END IF;
   END PROCESS;

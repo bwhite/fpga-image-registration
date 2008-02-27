@@ -1,0 +1,64 @@
+NET  CLK                  LOC="L19" | period = 5000 ps;   # Bank 3, Vcco=2.5V, No DCI      200Mhz
+
+NET  "DVI_D<0>"               LOC="AB8" | IOSTANDARD="LVDCI_33";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  "DVI_D<1>"               LOC="AC8" | IOSTANDARD="LVDCI_33";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  "DVI_D<2>"               LOC="AN12" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  "DVI_D<3>"               LOC="AP12" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  "DVI_D<4>"               LOC="AA9" | IOSTANDARD="LVDCI_33";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  "DVI_D<5>"               LOC="AA8" | IOSTANDARD="LVDCI_33";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  "DVI_D<6>"               LOC="AM13" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  "DVI_D<7>"               LOC="AN13" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  "DVI_D<8>"               LOC="AA10" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  "DVI_D<9>"               LOC="AB10" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  "DVI_D<10>"              LOC="AP14" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  "DVI_D<11>"              LOC="AN14" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_DE               LOC="AE8" | IOSTANDARD="LVDCI_33";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+#NET  DVI_GPIO1            LOC="N30" | IOSTANDARD="LVDCI_33";   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+NET  DVI_H                LOC="AM12" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_RESET_B          LOC="AK6" | IOSTANDARD="LVCMOS33";   # Bank 18, Vcco=3.3V, No DCI
+NET  DVI_V                LOC="AM11" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_XCLK_N           LOC="AL10" | IOSTANDARD="LVCMOS33" | DRIVE=24 | SLEW=FAST;  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET  DVI_XCLK_P           LOC="AL11" | IOSTANDARD="LVCMOS33" | DRIVE=24 | SLEW=FAST;  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET I2C_SCL LOC="U27" | PULLUP | IOSTANDARD=LVCMOS18;
+NET I2C_SDA LOC="T29" | PULLUP | IOSTANDARD=LVCMOS18;
+
+NET  VGA_IN_BLUE0         LOC="AC4" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_BLUE1         LOC="AC5" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_BLUE2         LOC="AB6" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_BLUE3         LOC="AB7" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_BLUE4         LOC="AA5" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_BLUE5         LOC="AB5" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_BLUE6         LOC="AC7" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_BLUE7         LOC="AD7" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_CLAMP         LOC="AH7" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_COAST         LOC="AG7" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_PIXEL_CLK        LOC="AH18" | IOSTANDARD=LVCMOS33;  # Bank 4, Vcco=3.3V, No DCI
+NET  VGA_Y[0]             LOC="Y8" | IOSTANDARD=LVCMOS33;    # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_Y[1]        	  LOC="Y9" | IOSTANDARD=LVCMOS33;    # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_Y[2]        	  LOC="AD4" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_Y[3]        	  LOC="AD5" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_Y[4]        	  LOC="AA6" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_Y[5]        	  LOC="Y7" | IOSTANDARD=LVCMOS33;    # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_Y[6]        	  LOC="AD6" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_Y[7]        	  LOC="AE6" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_HSYNC	          LOC="AE7" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_ODD_EVEN_B    LOC="W6" | IOSTANDARD=LVCMOS33;    # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_RED0          LOC="AG5" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_RED1          LOC="AF5" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_RED2          LOC="W7" | IOSTANDARD=LVCMOS33;    # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_RED3          LOC="V7" | IOSTANDARD=LVCMOS33;    # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_RED4          LOC="AH5" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_RED5          LOC="AG6" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_RED6          LOC="Y11" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_IN_RED7          LOC="W11" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_SOGOUT        LOC="AF6" | IOSTANDARD=LVCMOS33;   # Bank 18, Vcco=3.3V, No DCI
+NET  VGA_VSYNC            LOC="Y6" | IOSTANDARD=LVCMOS33;    # Bank 18, Vcco=3.3V, No DCI
+NET VGA_ODD_EVEN_B OFFSET = IN 1000 ps BEFORE "VGA_PIXEL_CLK";
+NET VGA_HSYNC OFFSET = IN 1000 ps BEFORE "VGA_PIXEL_CLK";
+NET VGA_VSYNC OFFSET = IN 1000 ps BEFORE "VGA_PIXEL_CLK";
+NET VGA_CLAMP OFFSET = IN 1000 ps BEFORE "VGA_PIXEL_CLK";
+NET VGA_COAST OFFSET = IN 1000 ps BEFORE "VGA_PIXEL_CLK";
+NET VGA_SOGOUT OFFSET = IN 1000 ps BEFORE "VGA_PIXEL_CLK";
+NET BUTTON1 LOC="AJ6" | IOSTANDARD=LVCMOS33;
+NET BUTTON2 LOC="U8" | IOSTANDARD=LVCMOS33;
+NET RST LOC="E9";

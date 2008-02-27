@@ -40,35 +40,33 @@ ENTITY vga_timing_generator IS
         CLKEN       : IN  std_logic;
         H_SYNC_Z    : OUT std_logic;
         V_SYNC_Z    : OUT std_logic;
+        DATA_VALID  : OUT std_logic;
         PIXEL_COUNT : OUT std_logic_vector(10 DOWNTO 0);
         LINE_COUNT  : OUT std_logic_vector(10 DOWNTO 0));
 END vga_timing_generator;
 
 ARCHITECTURE Behavioral OF vga_timing_generator IS
-  SIGNAL pixel_count_reg : std_logic_vector(10 DOWNTO 0) := (OTHERS => '0');
-  SIGNAL line_count_reg  : std_logic_vector(10 DOWNTO 0) := (OTHERS => '0');
-  SIGNAL h_blank : std_logic := '0';
-  SIGNAL v_blank : std_logic := '0';
-  SIGNAL vsync_reg, hsync_reg : std_logic := '0';
+  SIGNAL pixel_count_reg      : std_logic_vector(10 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL line_count_reg       : std_logic_vector(10 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL vsync_reg, hsync_reg : std_logic                     := '0';  -- NOTE These are active high signals
 BEGIN
   
   PIXEL_COUNT <= pixel_count_reg;
   LINE_COUNT  <= line_count_reg;
-  H_SYNC_Z <= hsync_reg;
-  V_SYNC_Z <= vsync_reg;
+  H_SYNC_Z    <= NOT hsync_reg;
+  V_SYNC_Z    <= NOT vsync_reg;
+  DATA_VALID  <= '0' WHEN (hsync_reg = '1' OR vsync_reg = '1') ELSE '1';  -- Data valid signal (high when there is no syncing going on, low else)
   PROCESS(PIXEL_CLOCK)
   BEGIN
     -- Horizontal Pixel Count
     IF (PIXEL_CLOCK'event AND PIXEL_CLOCK = '1') THEN
       IF (RESET = '1') THEN
-        v_blank         <= '0';
-        h_blank         <= '0';
         line_count_reg  <= (OTHERS => '0');
         pixel_count_reg <= (OTHERS => '0');
-        hsync_reg <= '0';
-        vsync_reg <= '0';
+        hsync_reg       <= '0';
+        vsync_reg       <= '0';
       ELSE
-        IF CLKEN='1' THEN
+        IF CLKEN = '1' THEN
           -- Horizontal Line Counter
           IF (pixel_count_reg = (H_TOTAL-1)) THEN
             pixel_count_reg <= (OTHERS => '0');
@@ -83,7 +81,7 @@ BEGIN
             line_count_reg <= line_count_reg + 1;
           END IF;
         END IF;
-        
+
         -- Vertical Sync Pulse
         IF (pixel_count_reg = (H_TOTAL - 1) AND line_count_reg = (V_ACTIVE + V_FRONT_PORCH -1)) THEN
           vsync_reg <= '1';

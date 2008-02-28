@@ -96,7 +96,7 @@ BEGIN
   -- controller input
   DCM_BASE_i2c : DCM_BASE
     GENERIC MAP (
-      CLKDV_DIVIDE          => 2.0,  -- Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5
+      CLKDV_DIVIDE          => 16.0,  -- Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5
       --   7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0
       CLKFX_DIVIDE          => 32,      -- Can be any interger from 1 to 32
       CLKFX_MULTIPLY        => 2,       -- Can be any integer from 2 to 32
@@ -116,7 +116,7 @@ BEGIN
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
     PORT MAP (
       CLK0  => i2c_dcm_fb,              -- 0 degree DCM CLK ouptput
-      CLKFX => i2c_clk,                 -- DCM CLK synthesis out (M/D)
+      CLKDV => i2c_clk,                 
       CLKFB => i2c_dcm_fb,              -- DCM clock feedback
       CLKIN => CLK200Mhz,          -- Clock input (from IBUFG, BUFG or DCM)
       RST   => '0'                      -- DCM asynchronous reset input

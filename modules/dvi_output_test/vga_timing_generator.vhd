@@ -27,13 +27,11 @@ ENTITY vga_timing_generator IS
            H_FRONT_PORCH : std_logic_vector(10 DOWNTO 0) := "00000011000";  -- 24
            H_SYNC        : std_logic_vector(10 DOWNTO 0) := "00010001000";  -- 136
            H_BACK_PORCH  : std_logic_vector(10 DOWNTO 0) := "00010100000";  -- 160
-           H_TOTAL       : std_logic_vector(10 DOWNTO 0) := "10101000000";  -- 1344
-
+          
            V_ACTIVE      : std_logic_vector(10 DOWNTO 0) := "01100000000";  -- 768
            V_FRONT_PORCH : std_logic_vector(10 DOWNTO 0) := "00000000011";  -- 3
            V_SYNC        : std_logic_vector(10 DOWNTO 0) := "00000000110";  -- 6
-           V_BACK_PORCH  : std_logic_vector(10 DOWNTO 0) := "00000011101";  -- 29
-           V_TOTAL       : std_logic_vector(10 DOWNTO 0) := "01100100110"  -- 806
+           V_BACK_PORCH  : std_logic_vector(10 DOWNTO 0) := "00000011101"  -- 29
            );
   PORT (PIXEL_CLOCK : IN  std_logic;
         RESET       : IN  std_logic;
@@ -55,7 +53,7 @@ BEGIN
   LINE_COUNT  <= line_count_reg;
   H_SYNC_Z    <= NOT hsync_reg;
   V_SYNC_Z    <= NOT vsync_reg;
-  DATA_VALID  <= '0' WHEN (hsync_reg = '1' OR vsync_reg = '1') ELSE '1';  -- Data valid signal (high when there is no syncing going on, low else)
+  
   PROCESS(PIXEL_CLOCK)
   BEGIN
     -- Horizontal Pixel Count
@@ -66,33 +64,40 @@ BEGIN
         hsync_reg       <= '0';
         vsync_reg       <= '0';
       ELSE
+        -- Data valid signal
+        IF (pixel_count_reg < H_ACTIVE AND line_count_reg < V_ACTIVE) THEN
+          DATA_VALID <= '1';
+        ELSE
+          DATA_VALID <= '0';
+        END IF;
+        
         IF CLKEN = '1' THEN
           -- Horizontal Line Counter
-          IF (pixel_count_reg = (H_TOTAL-1)) THEN
+          IF (pixel_count_reg = (H_ACTIVE+H_FRONT_PORCH+H_SYNC+H_BACK_PORCH-1)) THEN
             pixel_count_reg <= (OTHERS => '0');
           ELSE
             pixel_count_reg <= pixel_count_reg + 1;
           END IF;
 
           -- Vertical Line Counter
-          IF (pixel_count_reg = (H_TOTAL - 1) AND (line_count_reg = (V_TOTAL - 1))) THEN
+          IF (pixel_count_reg = (H_ACTIVE+H_FRONT_PORCH+H_SYNC+H_BACK_PORCH - 1) AND (line_count_reg = (V_ACTIVE+V_FRONT_PORCH+V_SYNC+V_BACK_PORCH - 1))) THEN
             line_count_reg <= (OTHERS => '0');
-          ELSIF (pixel_count_reg = (H_TOTAL - 1)) THEN
+          ELSIF (pixel_count_reg = (H_ACTIVE+H_FRONT_PORCH+H_SYNC+H_BACK_PORCH - 1)) THEN
             line_count_reg <= line_count_reg + 1;
           END IF;
         END IF;
 
         -- Vertical Sync Pulse
-        IF (pixel_count_reg = (H_TOTAL - 1) AND line_count_reg = (V_ACTIVE + V_FRONT_PORCH -1)) THEN
+        IF (pixel_count_reg = (H_ACTIVE+H_FRONT_PORCH+H_SYNC+H_BACK_PORCH - 1) AND line_count_reg = (V_ACTIVE + V_FRONT_PORCH -1)) THEN
           vsync_reg <= '1';
-        ELSIF (pixel_count_reg = (H_TOTAL - 1) AND line_count_reg = (V_TOTAL - V_BACK_PORCH -1)) THEN
+        ELSIF (pixel_count_reg = (H_ACTIVE+H_FRONT_PORCH+H_SYNC+H_BACK_PORCH - 1) AND line_count_reg = (V_ACTIVE+V_FRONT_PORCH+V_SYNC-1)) THEN
           vsync_reg <= '0';
         END IF;
 
         -- Horizontal Sync Pulse
         IF (pixel_count_reg = (H_ACTIVE + H_FRONT_PORCH - 1)) THEN
           hsync_reg <= '1';
-        ELSIF (pixel_count_reg = (H_TOTAL - H_BACK_PORCH - 1)) THEN
+        ELSIF (pixel_count_reg = (H_ACTIVE+H_FRONT_PORCH+H_SYNC - 1)) THEN
           hsync_reg <= '0';
         END IF;
       END IF;

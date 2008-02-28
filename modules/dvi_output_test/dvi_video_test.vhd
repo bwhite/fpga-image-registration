@@ -25,7 +25,8 @@ LIBRARY UNISIM;
 USE UNISIM.VComponents.ALL;
 
 ENTITY dvi_video_test IS
-  PORT (CLK     : IN  std_logic;
+  PORT (CLK_P     : IN  std_logic;
+        CLK_N     : IN  std_logic;
         -- I2C Signals
         I2C_SDA : OUT std_logic;
         I2C_SCL : OUT std_logic;
@@ -93,7 +94,7 @@ ARCHITECTURE Behavioral OF dvi_video_test IS
           HCOUNT    : OUT std_logic_vector(9 DOWNTO 0);
           VCOUNT    : OUT std_logic_vector(9 DOWNTO 0));
   END COMPONENT;
-  SIGNAL pix_clk            : std_logic;  -- This is the pixel clock for the DVI output and sync generator
+  SIGNAL pix_clk                     : std_logic;  -- This is the pixel clock for the DVI output and sync generator
   SIGNAL clk_fb, data_valid, clk_buf : std_logic;
 
   COMPONENT i2c_video_programmer IS
@@ -104,6 +105,45 @@ ARCHITECTURE Behavioral OF dvi_video_test IS
   END COMPONENT;
 BEGIN
 
+  -----------------------------------------------------------------------------
+  -- CLK Management
+    IBUFGDS_inst : IBUFGDS
+   generic map (
+      IOSTANDARD => "DEFAULT")
+   port map (
+      O => clk_buf,  -- Clock buffer output
+      I => CLK_P,  -- Diff_p clock buffer input
+      IB => CLK_N -- Diff_n clock buffer input
+   );
+    
+  DCM_BASE_dvi : DCM_BASE
+    GENERIC MAP (
+      CLKDV_DIVIDE          => 8.0,  -- Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5
+      --   7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0
+      CLKFX_DIVIDE          => 16,      -- Can be any interger from 1 to 32
+      CLKFX_MULTIPLY        => 2,       -- Can be any integer from 2 to 32
+      CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
+      CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
+      CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
+      CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
+      DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
+      DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
+      DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
+                                        --   an integer from 0 to 15
+      DFS_FREQUENCY_MODE    => "HIGH",  -- LOW or HIGH frequency mode for frequency synthesis
+      DLL_FREQUENCY_MODE    => "HIGH",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
+      DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
+      FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0" 
+      PHASE_SHIFT           => 0,  -- Amount of fixed phase shift from -255 to 1023
+      STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
+    PORT MAP (
+      CLK0  => clk_fb,                  -- 0 degree DCM CLK ouptput
+      CLKDV => pix_clk,
+      CLKFB => clk_fb,                  -- DCM clock feedback
+      CLKIN => clk_buf,            -- Clock input (from IBUFG, BUFG or DCM)
+      RST   => '0'                      -- DCM asynchronous reset input
+      );
+  
   -----------------------------------------------------------------------------
   -- I2C Code
   i2c_video_programmer_i : i2c_video_programmer
@@ -152,38 +192,7 @@ BEGIN
   DVI_RESET_B <= '1';
   DVI_D       <= "111111111111" WHEN data_valid = '1' ELSE (OTHERS => '0');
 
-  DCM_BASE_dvi : DCM_BASE
-    GENERIC MAP (
-      CLKDV_DIVIDE          => 8.0,  -- Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5
-      --   7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0
-      CLKFX_DIVIDE          => 16,      -- Can be any interger from 1 to 32
-      CLKFX_MULTIPLY        => 2,       -- Can be any integer from 2 to 32
-      CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
-      CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
-      CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
-      CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
-      DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
-      DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
-      DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
-                                        --   an integer from 0 to 15
-      DFS_FREQUENCY_MODE    => "HIGH",  -- LOW or HIGH frequency mode for frequency synthesis
-      DLL_FREQUENCY_MODE    => "HIGH",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
-      DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
-      FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0" 
-      PHASE_SHIFT           => 0,  -- Amount of fixed phase shift from -255 to 1023
-      STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
-    PORT MAP (
-      CLK0  => clk_fb,                  -- 0 degree DCM CLK ouptput
-      CLKDV => pix_clk,                 
-      CLKFB => clk_fb,                  -- DCM clock feedback
-      CLKIN => clk_buf,            -- Clock input (from IBUFG, BUFG or DCM)
-      RST   => '0'                      -- DCM asynchronous reset input
-      );
-  BUFG_inst : BUFG
-    PORT MAP (
-      O => clk_buf,                     -- Clock buffer output
-      I => CLK                          -- Clock buffer input
-      );
+  
   vga_timing_generator_i : vga_timing_generator
     GENERIC MAP(H_ACTIVE      => std_logic_vector(to_unsigned(10#640#, 11)),
                 H_FRONT_PORCH => std_logic_vector(to_unsigned(10#16#, 11)),

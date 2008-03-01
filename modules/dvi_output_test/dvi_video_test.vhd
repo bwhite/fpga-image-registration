@@ -266,7 +266,9 @@ BEGIN
 
   -----------------------------------------------------------------------------
   -- VGA Input
-  Y          <= VGA_Y;
+  
+  -- Hooks to chipscope outputs
+  Y          <= VGA_Y_GREEN;
   HSYNC      <= VGA_HSYNC;
   VSYNC      <= VGA_VSYNC;
   ODD_EVEN_B <= VGA_ODD_EVEN_B;

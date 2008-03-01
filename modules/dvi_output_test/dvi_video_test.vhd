@@ -25,8 +25,8 @@ LIBRARY UNISIM;
 USE UNISIM.VComponents.ALL;
 
 ENTITY dvi_video_test IS
-  PORT (CLK_P     : IN  std_logic;
-        CLK_N     : IN  std_logic;
+  PORT (CLK_P   : IN  std_logic;
+        CLK_N   : IN  std_logic;
         -- I2C Signals
         I2C_SDA : OUT std_logic;
         I2C_SCL : OUT std_logic;
@@ -82,6 +82,7 @@ ARCHITECTURE Behavioral OF dvi_video_test IS
           CLKEN       : IN  std_logic;
           H_SYNC_Z    : OUT std_logic;
           V_SYNC_Z    : OUT std_logic;
+          PIXEL_COUNT : OUT std_logic_vector(10 DOWNTO 0);
           DATA_VALID  : OUT std_logic);
     --PIXEL_COUNT : OUT std_logic_vector(10 DOWNTO 0);
     --LINE_COUNT  : OUT std_logic_vector(10 DOWNTO 0));
@@ -94,8 +95,6 @@ ARCHITECTURE Behavioral OF dvi_video_test IS
           HCOUNT    : OUT std_logic_vector(9 DOWNTO 0);
           VCOUNT    : OUT std_logic_vector(9 DOWNTO 0));
   END COMPONENT;
-  SIGNAL pix_clk                     : std_logic;  -- This is the pixel clock for the DVI output and sync generator
-  SIGNAL clk_fb, data_valid, clk_buf : std_logic;
 
   COMPONENT i2c_video_programmer IS
     PORT (CLK200Mhz : IN  std_logic;
@@ -103,19 +102,24 @@ ARCHITECTURE Behavioral OF dvi_video_test IS
           I2C_SDA   : OUT std_logic;
           I2C_SCL   : OUT std_logic);
   END COMPONENT;
+
+  SIGNAL pix_clk                      : std_logic;  -- This is the pixel clock for the DVI output and sync generator
+  SIGNAL clk_fb, data_valid, clk_buf  : std_logic;
+  SIGNAL h_pixel_count                : std_logic_vector(10 DOWNTO 0);
+  SIGNAL dvi_red, dvi_green, dvi_blue : std_logic_vector(7 DOWNTO 0);  -- These hold the values for the packed RGB DVI output data
 BEGIN
 
   -----------------------------------------------------------------------------
   -- CLK Management
-    IBUFGDS_inst : IBUFGDS
-   generic map (
+  IBUFGDS_inst : IBUFGDS
+    GENERIC MAP (
       IOSTANDARD => "DEFAULT")
-   port map (
-      O => clk_buf,  -- Clock buffer output
-      I => CLK_P,  -- Diff_p clock buffer input
-      IB => CLK_N -- Diff_n clock buffer input
-   );
-    
+    PORT MAP (
+      O  => clk_buf,                    -- Clock buffer output
+      I  => CLK_P,                      -- Diff_p clock buffer input
+      IB => CLK_N                       -- Diff_n clock buffer input
+      );
+
   DCM_BASE_dvi : DCM_BASE
     GENERIC MAP (
       CLKDV_DIVIDE          => 8.0,  -- Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5
@@ -143,7 +147,7 @@ BEGIN
       CLKIN => clk_buf,            -- Clock input (from IBUFG, BUFG or DCM)
       RST   => '0'                      -- DCM asynchronous reset input
       );
-  
+
   -----------------------------------------------------------------------------
   -- I2C Code
   i2c_video_programmer_i : i2c_video_programmer
@@ -190,8 +194,51 @@ BEGIN
       );
 
   DVI_RESET_B <= '1';
-  DVI_D       <= "111111111111" WHEN data_valid = '1' ELSE (OTHERS => '0');
+  PROCESS (h_pixel_count) IS
+  BEGIN  -- PROCESS
+    IF h_pixel_count < "00000000100" THEN
+      dvi_red   <= "00000000";
+      dvi_green <= "00000000";
+      dvi_blue  <= "11111111";
+    ELSIF h_pixel_count < "00000001000" THEN
+      dvi_red   <= "00000000";
+      dvi_green <= "11111111";
+      dvi_blue  <= "00000000";
+    ELSIF h_pixel_count > "01001111000" THEN
+      dvi_red   <= "11111111";
+      dvi_green <= "00000000";
+      dvi_blue  <= "00000000";
+    ELSE
+      dvi_red   <= "00000000";
+      dvi_green <= "00000000";
+      dvi_blue  <= "11111111";
+    END IF;
+  END PROCESS;
 
+  ODDR_dvi_d0 : ODDR
+    PORT MAP (DVI_D(0), pix_clk, '1', dvi_green(4), dvi_blue(0), NOT data_valid, '0');
+  ODDR_dvi_d1 : ODDR
+    PORT MAP (DVI_D(1), pix_clk, '1', dvi_green(5), dvi_blue(1), NOT data_valid, '0');
+  ODDR_dvi_d2 : ODDR
+    PORT MAP (DVI_D(2), pix_clk, '1', dvi_green(6), dvi_blue(2), NOT data_valid, '0');
+  ODDR_dvi_d3 : ODDR
+    PORT MAP (DVI_D(3), pix_clk, '1', dvi_green(7), dvi_blue(3), NOT data_valid, '0');
+  ODDR_dvi_d4 : ODDR
+    PORT MAP (DVI_D(4), pix_clk, '1', dvi_red(0), dvi_blue(4), NOT data_valid, '0');
+  ODDR_dvi_d5 : ODDR
+    PORT MAP (DVI_D(5), pix_clk, '1', dvi_red(1), dvi_blue(5), NOT data_valid, '0');
+  ODDR_dvi_d6 : ODDR
+    PORT MAP (DVI_D(6), pix_clk, '1', dvi_red(2), dvi_blue(6), NOT data_valid, '0');
+  ODDR_dvi_d7 : ODDR
+    PORT MAP (DVI_D(7), pix_clk, '1', dvi_red(3), dvi_blue(7), NOT data_valid, '0');
+  ODDR_dvi_d8 : ODDR
+    PORT MAP (DVI_D(8), pix_clk, '1', dvi_red(4), dvi_green(0), NOT data_valid, '0');
+  ODDR_dvi_d9 : ODDR
+    PORT MAP (DVI_D(9), pix_clk, '1', dvi_red(5), dvi_green(1), NOT data_valid, '0');
+  ODDR_dvi_d10 : ODDR
+    PORT MAP (DVI_D(10), pix_clk, '1', dvi_red(6), dvi_green(2), NOT data_valid, '0');
+  ODDR_dvi_d11 : ODDR
+    PORT MAP (DVI_D(11), pix_clk, '1', dvi_red(7), dvi_green(3), NOT data_valid, '0');
   
   vga_timing_generator_i : vga_timing_generator
     GENERIC MAP(H_ACTIVE      => std_logic_vector(to_unsigned(10#640#, 11)),
@@ -210,6 +257,7 @@ BEGIN
       H_SYNC_Z    => DVI_H,
       V_SYNC_Z    => DVI_V,
       DATA_VALID  => data_valid,
+      PIXEL_COUNT => h_pixel_count,
       PIXEL_CLOCK => pix_clk);
 
   -----------------------------------------------------------------------------

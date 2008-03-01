@@ -41,7 +41,9 @@ ENTITY dvi_video_test IS
 
         -- VGA Chip connections
         VGA_PIXEL_CLK  : IN std_logic;
-        VGA_Y          : IN std_logic_vector (7 DOWNTO 0);
+        VGA_Y_GREEN    : IN std_logic_vector (7 DOWNTO 0);
+        VGA_CBCR_RED   : IN std_logic_vector (7 DOWNTO 0);
+        VGA_BLUE       : IN std_logic_vector(7 DOWNTO 0);
         VGA_HSYNC      : IN std_logic;
         VGA_VSYNC      : IN std_logic;
         VGA_ODD_EVEN_B : IN std_logic;
@@ -214,7 +216,9 @@ BEGIN
       dvi_blue  <= "11111111";
     END IF;
   END PROCESS;
-
+  -- This outputs the color values in the DVI chips DDR mode, if the
+  -- dvi_reg/green/blue wires are used on the posedge of the pix_clk, then
+  -- knowledge of this DDR format isn't necessary
   ODDR_dvi_d0 : ODDR
     PORT MAP (DVI_D(0), pix_clk, '1', dvi_green(4), dvi_blue(0), NOT data_valid, '0');
   ODDR_dvi_d1 : ODDR
@@ -239,7 +243,7 @@ BEGIN
     PORT MAP (DVI_D(10), pix_clk, '1', dvi_red(6), dvi_green(2), NOT data_valid, '0');
   ODDR_dvi_d11 : ODDR
     PORT MAP (DVI_D(11), pix_clk, '1', dvi_red(7), dvi_green(3), NOT data_valid, '0');
-  
+
   vga_timing_generator_i : vga_timing_generator
     GENERIC MAP(H_ACTIVE      => std_logic_vector(to_unsigned(10#640#, 11)),
                 H_FRONT_PORCH => std_logic_vector(to_unsigned(10#16#, 11)),
@@ -262,7 +266,6 @@ BEGIN
 
   -----------------------------------------------------------------------------
   -- VGA Input
-  --PIX_CLK    <= VGA_PIXEL_CLK;
   Y          <= VGA_Y;
   HSYNC      <= VGA_HSYNC;
   VSYNC      <= VGA_VSYNC;

@@ -53,16 +53,20 @@ ENTITY dvi_video_test IS
 
         -- Dummy Chipscope outputs
         -- PIX_CLK    : OUT std_logic;
-        Y           : OUT std_logic_vector (7 DOWNTO 0);
-        HSYNC       : OUT std_logic;
-        VSYNC       : OUT std_logic;
-        ODD_EVEN_B  : OUT std_logic;
-        SOGOUT      : OUT std_logic;
-        CLAMP       : OUT std_logic;
-        COAST       : OUT std_logic;
-        HCOUNT      : OUT std_logic_vector(9 DOWNTO 0);
-        VCOUNT      : OUT std_logic_vector(9 DOWNTO 0);
-        DVI_RESET_B : OUT std_logic);
+        PIXEL_X_COORD  : OUT std_logic_vector(10 DOWNTO 0);
+        PIXEL_Y_COORD  : OUT std_logic_vector(10 DOWNTO 0);
+        TOTAL_PIXEL_COUNT : OUT std_logic_vector(21 DOWNTO 0);
+        VGA_DATA_VALID : OUT std_logic;
+        Y              : OUT std_logic_vector (7 DOWNTO 0);
+        HSYNC          : OUT std_logic;
+        VSYNC          : OUT std_logic;
+        ODD_EVEN_B     : OUT std_logic;
+        SOGOUT         : OUT std_logic;
+        CLAMP          : OUT std_logic;
+        COAST          : OUT std_logic;
+        HCOUNT         : OUT std_logic_vector(9 DOWNTO 0);
+        VCOUNT         : OUT std_logic_vector(9 DOWNTO 0);
+        DVI_RESET_B    : OUT std_logic);
 END dvi_video_test;
 
 ARCHITECTURE Behavioral OF dvi_video_test IS
@@ -91,11 +95,15 @@ ARCHITECTURE Behavioral OF dvi_video_test IS
   END COMPONENT;
 
   COMPONENT vga_timing_decode IS
-    PORT (PIXEL_CLK : IN  std_logic;
-          VSYNC     : IN  std_logic;
-          HSYNC     : IN  std_logic;
-          HCOUNT    : OUT std_logic_vector(9 DOWNTO 0);
-          VCOUNT    : OUT std_logic_vector(9 DOWNTO 0));
+    PORT (PIXEL_CLK     : IN  std_logic;
+          VSYNC         : IN  std_logic;
+          HSYNC         : IN  std_logic;
+          HCOUNT        : OUT std_logic_vector(9 DOWNTO 0);
+          VCOUNT        : OUT std_logic_vector(9 DOWNTO 0);
+          DATA_VALID    : OUT std_logic;
+          PIXEL_X_COORD : OUT std_logic_vector(10 DOWNTO 0);
+          PIXEL_Y_COORD : OUT std_logic_vector(10 DOWNTO 0);
+          TOTAL_PIXEL_COUNT : OUT std_logic_vector(21 DOWNTO 0));
   END COMPONENT;
 
   COMPONENT i2c_video_programmer IS
@@ -266,7 +274,7 @@ BEGIN
 
   -----------------------------------------------------------------------------
   -- VGA Input
-  
+
   -- Hooks to chipscope outputs
   Y          <= VGA_Y_GREEN;
   HSYNC      <= VGA_HSYNC;
@@ -278,10 +286,14 @@ BEGIN
 
   vga_timing_decode_i : vga_timing_decode
     PORT MAP (
-      PIXEL_CLK => VGA_PIXEL_CLK,
-      VSYNC     => VGA_VSYNC,
-      VCOUNT    => VCOUNT,
-      HSYNC     => VGA_HSYNC,
-      HCOUNT    => HCOUNT);
+      PIXEL_CLK     => VGA_PIXEL_CLK,
+      VSYNC         => VGA_VSYNC,
+      VCOUNT        => VCOUNT,
+      HSYNC         => VGA_HSYNC,
+      HCOUNT        => HCOUNT,
+      DATA_VALID    => VGA_DATA_VALID,
+      PIXEL_X_COORD => PIXEL_X_COORD,
+      PIXEL_Y_COORD => PIXEL_Y_COORD,
+      TOTAL_PIXEL_COUNT => TOTAL_PIXEL_COUNT);
 END Behavioral;
 

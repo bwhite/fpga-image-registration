@@ -36,7 +36,6 @@ ENTITY vga_timing_decode IS
         HSYNC             : IN  std_logic;
         HCOUNT            : OUT std_logic_vector(9 DOWNTO 0);
         VCOUNT            : OUT std_logic_vector(9 DOWNTO 0);
-        --H_PIXEL_COUNT : out  STD_LOGIC_VECTOR(10 DOWNTO 0);
         PIXEL_Y_COORD     : OUT std_logic_vector(10 DOWNTO 0);
         TOTAL_PIXEL_COUNT : OUT std_logic_vector(21 DOWNTO 0);
         DATA_VALID        : OUT std_logic;
@@ -80,7 +79,7 @@ BEGIN
       END IF;
 
       IF VSYNC = '0' THEN
-        IF HSYNC = '1' AND prev_hsync = '0' AND vcount_reg >= V_BACK_PORCH AND vcount_reg < V_BACK_PORCH+HEIGHT THEN
+        IF HSYNC = '1' AND prev_hsync = '0' AND vcount_reg >= V_BACK_PORCH AND vcount_reg < V_BACK_PORCH+HEIGHT-1 THEN
           pixel_y_coord_reg <= pixel_y_coord_reg + 1;
         END IF;
       ELSE

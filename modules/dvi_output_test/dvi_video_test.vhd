@@ -32,12 +32,13 @@ ENTITY dvi_video_test IS
         I2C_SCL : OUT std_logic;
 
         -- DVI Signals
-        DVI_D      : OUT std_logic_vector (11 DOWNTO 0);
-        DVI_H      : OUT std_logic;
-        DVI_V      : OUT std_logic;
-        DVI_DE     : OUT std_logic;
-        DVI_XCLK_N : OUT std_logic;
-        DVI_XCLK_P : OUT std_logic;
+        DVI_D       : OUT std_logic_vector (11 DOWNTO 0);
+        DVI_H       : OUT std_logic;
+        DVI_V       : OUT std_logic;
+        DVI_DE      : OUT std_logic;
+        DVI_XCLK_N  : OUT std_logic;
+        DVI_XCLK_P  : OUT std_logic;
+        DVI_RESET_B : OUT std_logic;
 
         -- VGA Chip connections
         VGA_PIXEL_CLK  : IN std_logic;
@@ -52,21 +53,14 @@ ENTITY dvi_video_test IS
         VGA_COAST      : IN std_logic;
 
         -- Dummy Chipscope outputs
-        -- PIX_CLK    : OUT std_logic;
-        PIXEL_X_COORD  : OUT std_logic_vector(10 DOWNTO 0);
-        PIXEL_Y_COORD  : OUT std_logic_vector(10 DOWNTO 0);
-        TOTAL_PIXEL_COUNT : OUT std_logic_vector(21 DOWNTO 0);
-        VGA_DATA_VALID : OUT std_logic;
-        Y              : OUT std_logic_vector (7 DOWNTO 0);
-        HSYNC          : OUT std_logic;
-        VSYNC          : OUT std_logic;
-        ODD_EVEN_B     : OUT std_logic;
-        SOGOUT         : OUT std_logic;
-        CLAMP          : OUT std_logic;
-        COAST          : OUT std_logic;
-        HCOUNT         : OUT std_logic_vector(9 DOWNTO 0);
-        VCOUNT         : OUT std_logic_vector(9 DOWNTO 0);
-        DVI_RESET_B    : OUT std_logic);
+        PIXEL_X_COORD     : OUT std_logic_vector(9 DOWNTO 0);
+        PIXEL_Y_COORD     : OUT std_logic_vector(9 DOWNTO 0);
+        TOTAL_PIXEL_COUNT : OUT std_logic_vector(19 DOWNTO 0);
+        VGA_DATA_VALID    : OUT std_logic;
+        Y                 : OUT std_logic_vector (7 DOWNTO 0);
+        HSYNC             : OUT std_logic;
+        VSYNC             : OUT std_logic
+        );
 END dvi_video_test;
 
 ARCHITECTURE Behavioral OF dvi_video_test IS
@@ -95,15 +89,23 @@ ARCHITECTURE Behavioral OF dvi_video_test IS
   END COMPONENT;
 
   COMPONENT vga_timing_decode IS
-    PORT (PIXEL_CLK     : IN  std_logic;
-          VSYNC         : IN  std_logic;
-          HSYNC         : IN  std_logic;
-          HCOUNT        : OUT std_logic_vector(9 DOWNTO 0);
-          VCOUNT        : OUT std_logic_vector(9 DOWNTO 0);
-          DATA_VALID    : OUT std_logic;
-          PIXEL_X_COORD : OUT std_logic_vector(10 DOWNTO 0);
-          PIXEL_Y_COORD : OUT std_logic_vector(10 DOWNTO 0);
-          TOTAL_PIXEL_COUNT : OUT std_logic_vector(21 DOWNTO 0));
+    GENERIC (
+      HEIGHT      : integer := 480;
+      WIDTH       : integer := 640;
+      H_BP        : integer := 117;
+      V_BP        : integer := 34;
+      HEIGHT_BITS : integer := 10;
+      WIDTH_BITS  : integer := 10;
+      DATA_DELAY  : integer := 0
+      );
+    PORT (CLK         : IN  std_logic;
+          RST         : IN  std_logic;
+          VSYNC       : IN  std_logic;
+          HSYNC       : IN  std_logic;
+          X_COORD     : OUT std_logic_vector (WIDTH_BITS-1 DOWNTO 0);
+          Y_COORD     : OUT std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);
+          PIXEL_COUNT : OUT std_logic_vector(HEIGHT_BITS+WIDTH_BITS-1 DOWNTO 0);
+          DATA_VALID  : OUT std_logic);
   END COMPONENT;
 
   COMPONENT i2c_video_programmer IS
@@ -279,21 +281,15 @@ BEGIN
   Y          <= VGA_Y_GREEN;
   HSYNC      <= VGA_HSYNC;
   VSYNC      <= VGA_VSYNC;
-  ODD_EVEN_B <= VGA_ODD_EVEN_B;
-  SOGOUT     <= VGA_SOGOUT;
-  CLAMP      <= VGA_CLAMP;
-  COAST      <= VGA_COAST;
 
   vga_timing_decode_i : vga_timing_decode
     PORT MAP (
-      PIXEL_CLK     => VGA_PIXEL_CLK,
-      VSYNC         => VGA_VSYNC,
-      VCOUNT        => VCOUNT,
-      HSYNC         => VGA_HSYNC,
-      HCOUNT        => HCOUNT,
-      DATA_VALID    => VGA_DATA_VALID,
-      PIXEL_X_COORD => PIXEL_X_COORD,
-      PIXEL_Y_COORD => PIXEL_Y_COORD,
-      TOTAL_PIXEL_COUNT => TOTAL_PIXEL_COUNT);
+      CLK         => VGA_PIXEL_CLK,
+      RST         => '0',
+      VSYNC       => VGA_VSYNC,
+      HSYNC       => VGA_HSYNC,
+      DATA_VALID  => VGA_DATA_VALID,
+      X_COORD     => PIXEL_X_COORD,
+      Y_COORD     => PIXEL_Y_COORD,
+      PIXEL_COUNT => TOTAL_PIXEL_COUNT);
 END Behavioral;
-

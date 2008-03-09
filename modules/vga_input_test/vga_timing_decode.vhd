@@ -33,8 +33,8 @@ ENTITY vga_timing_decode IS
     );
   PORT (CLK         : IN  std_logic;
         RST         : IN  std_logic;
-        VSYNC       : IN  std_logic;
         HSYNC       : IN  std_logic;
+        VSYNC       : IN  std_logic;
         X_COORD     : OUT std_logic_vector (WIDTH_BITS-1 DOWNTO 0);
         Y_COORD     : OUT std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);
         PIXEL_COUNT : OUT std_logic_vector(HEIGHT_BITS+WIDTH_BITS-1 DOWNTO 0);
@@ -42,8 +42,8 @@ ENTITY vga_timing_decode IS
 END vga_timing_decode;
 
 ARCHITECTURE Behavioral OF vga_timing_decode IS
-  SIGNAL hcount_reg      : unsigned(WIDTH_BITS-1 DOWNTO 0)             := (OTHERS => '0');
-  SIGNAL vcount_reg      : unsigned(HEIGHT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
+  SIGNAL hcount      : unsigned(WIDTH_BITS-1 DOWNTO 0)             := (OTHERS => '0');
+  SIGNAL vcount      : unsigned(HEIGHT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
   SIGNAL pixel_count_reg : unsigned(HEIGHT_BITS+WIDTH_BITS-1 DOWNTO 0) := (OTHERS => '0');
   SIGNAL x_coord_reg     : unsigned(WIDTH_BITS-1 DOWNTO 0)             := (OTHERS => '0');
   SIGNAL y_coord_reg     : unsigned(HEIGHT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
@@ -59,8 +59,8 @@ BEGIN
   BEGIN  -- PROCESS 
     IF CLK'event AND CLK = '1' THEN
       IF RST = '1' THEN
-        hcount_reg      <= (OTHERS => '0');
-        vcount_reg      <= (OTHERS => '0');
+        hcount      <= (OTHERS => '0');
+        vcount      <= (OTHERS => '0');
         pixel_count_reg <= (OTHERS => '0');
         x_coord_reg     <= (OTHERS => '0');
         y_coord_reg     <= (OTHERS => '0');
@@ -68,9 +68,14 @@ BEGIN
         data_valid_reg  <= '0';
       ELSE
         prev_hsync <= HSYNC;
- 
+        -----------------------------------------------------------------------
+        -- Zones w.r.t. hcount
+        -- 0<=X<H_BP-1                  -       Back Porch of H
+        -- H_BP-1=<X<H_BP+WIDTH-1       -       Active horizontal data
+        -- H_BP+WIDTH-1<=X              -       Front Porch/HSYNC
+        
         -- The backporch -1 is due to the register delay
-        IF HSYNC = '0' AND VSYNC = '0' AND hcount_reg >= H_BP-DATA_DELAY-1 AND hcount_reg < H_BP+WIDTH-DATA_DELAY-1 AND vcount_reg >= V_BP AND vcount_reg < V_BP+HEIGHT THEN
+        IF HSYNC = '0' AND VSYNC = '0' AND hcount >= H_BP-DATA_DELAY-1 AND hcount < H_BP+WIDTH-DATA_DELAY-1 AND vcount >= V_BP AND vcount < V_BP+HEIGHT THEN
           data_valid_reg <= '1';
           IF data_valid_reg = '1' THEN  -- This makes the first valid pixel 0,
                                         -- instead of 1
@@ -79,7 +84,7 @@ BEGIN
 
           -- This makes the first valid pixel 0, and properly increments the
           -- first pixels of every other line
-          IF (data_valid_reg = '1' AND vcount_reg = V_BP) OR vcount_reg > V_BP THEN
+          IF (data_valid_reg = '1' AND vcount = V_BP) OR vcount > V_BP THEN
             pixel_count_reg <= pixel_count_reg + 1;
           END IF;
         ELSE
@@ -88,21 +93,21 @@ BEGIN
         END IF;
 
         IF VSYNC = '0' THEN
-          IF HSYNC = '1' AND prev_hsync = '0' AND vcount_reg >= V_BP AND vcount_reg < V_BP+HEIGHT-1 THEN
+          IF HSYNC = '1' AND prev_hsync = '0' AND vcount >= V_BP AND vcount < V_BP+HEIGHT-1 THEN
             y_coord_reg <= y_coord_reg + 1;
           END IF;
         ELSE
-          vcount_reg      <= (OTHERS => '0');
+          vcount      <= (OTHERS => '0');
           pixel_count_reg <= (OTHERS => '0');
           y_coord_reg     <= (OTHERS => '0');
         END IF;
 
         IF HSYNC = '0' THEN
-          hcount_reg <= hcount_reg + 1;
+          hcount <= hcount + 1;
         ELSE
-          hcount_reg <= (OTHERS => '0');
+          hcount <= (OTHERS => '0');
           IF prev_hsync = '0' THEN
-            vcount_reg <= vcount_reg + 1;
+            vcount <= vcount + 1;
           END IF;
         END IF;
       END IF;

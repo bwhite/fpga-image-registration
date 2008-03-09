@@ -53,39 +53,44 @@ ENTITY dvi_video_test IS
         VGA_COAST      : IN std_logic;
 
         -- Dummy Chipscope outputs
+        SOGOUT            : OUT std_logic;
         PIXEL_X_COORD     : OUT std_logic_vector(9 DOWNTO 0);
         PIXEL_Y_COORD     : OUT std_logic_vector(9 DOWNTO 0);
         TOTAL_PIXEL_COUNT : OUT std_logic_vector(19 DOWNTO 0);
         VGA_DATA_VALID    : OUT std_logic;
         Y                 : OUT std_logic_vector (7 DOWNTO 0);
         HSYNC             : OUT std_logic;
-        VSYNC             : OUT std_logic
+        VSYNC             : OUT std_logic;
+        DVI_PIXEL_COUNT   : OUT std_logic_vector(19 DOWNTO 0);
+        DVI_X_COORD       : OUT std_logic_vector(9 DOWNTO 0);
+        DVI_Y_COORD       : OUT std_logic_vector(9 DOWNTO 0);
+        DVI_DATA_VALID    : OUT std_logic
         );
 END dvi_video_test;
 
 ARCHITECTURE Behavioral OF dvi_video_test IS
   COMPONENT vga_timing_generator IS
-    GENERIC (H_ACTIVE      : std_logic_vector(10 DOWNTO 0);
-             H_FRONT_PORCH : std_logic_vector(10 DOWNTO 0);
-             H_SYNC        : std_logic_vector(10 DOWNTO 0);
-             H_BACK_PORCH  : std_logic_vector(10 DOWNTO 0);
-
-
-             V_ACTIVE      : std_logic_vector(10 DOWNTO 0);
-             V_FRONT_PORCH : std_logic_vector(10 DOWNTO 0);
-             V_SYNC        : std_logic_vector(10 DOWNTO 0);
-             V_BACK_PORCH  : std_logic_vector(10 DOWNTO 0)
-
+    GENERIC (WIDTH       : integer := 1024;
+             H_FP        : integer := 24;
+             H_SYNC      : integer := 136;
+             H_BP        : integer := 160;
+             HEIGHT      : integer := 768;
+             V_FP        : integer := 3;
+             V_SYNC      : integer := 6;
+             V_BP        : integer := 29;
+             HEIGHT_BITS : integer := 10;
+             WIDTH_BITS  : integer := 10;
+             DATA_DELAY  : integer := 0
              );
-    PORT (PIXEL_CLOCK : IN  std_logic;
-          RESET       : IN  std_logic;
-          CLKEN       : IN  std_logic;
-          H_SYNC_Z    : OUT std_logic;
-          V_SYNC_Z    : OUT std_logic;
-          PIXEL_COUNT : OUT std_logic_vector(10 DOWNTO 0);
-          DATA_VALID  : OUT std_logic);
-    --PIXEL_COUNT : OUT std_logic_vector(10 DOWNTO 0);
-    --LINE_COUNT  : OUT std_logic_vector(10 DOWNTO 0));
+    PORT (CLK            : IN  std_logic;
+          RST            : IN  std_logic;
+          HSYNC          : OUT std_logic;
+          VSYNC          : OUT std_logic;
+          X_COORD        : OUT std_logic_vector(WIDTH_BITS-1 DOWNTO 0);
+          Y_COORD        : OUT std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);
+          PIXEL_COUNT    : OUT std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);
+          DATA_VALID     : OUT std_logic;
+          DATA_VALID_EXT : OUT std_logic);
   END COMPONENT;
 
   COMPONENT vga_timing_decode IS
@@ -115,10 +120,13 @@ ARCHITECTURE Behavioral OF dvi_video_test IS
           I2C_SCL   : OUT std_logic);
   END COMPONENT;
 
-  SIGNAL pix_clk                      : std_logic;  -- This is the pixel clock for the DVI output and sync generator
-  SIGNAL clk_fb, data_valid, clk_buf  : std_logic;
-  SIGNAL h_pixel_count                : std_logic_vector(10 DOWNTO 0);
-  SIGNAL dvi_red, dvi_green, dvi_blue : std_logic_vector(7 DOWNTO 0);  -- These hold the values for the packed RGB DVI output data
+  SIGNAL pix_clk                                     : std_logic;  -- This is the pixel clock for the DVI output and sync generator
+  SIGNAL clk_fb, data_valid, data_valid_ext, clk_buf : std_logic;
+  SIGNAL h_pixel_count                               : std_logic_vector(10 DOWNTO 0);
+  SIGNAL dvi_red, dvi_green, dvi_blue                : std_logic_vector(7 DOWNTO 0);  -- These hold the values for the packed RGB DVI output data
+  SIGNAL dvi_h_wire, dvi_v_wire                      : std_logic;
+  SIGNAL dvi_x_coord_wire, dvi_y_coord_wire          : std_logic_vector(9 DOWNTO 0);
+  SIGNAL dvi_pixel_count_wire                        : std_logic_vector(19 DOWNTO 0);
 BEGIN
 
   -----------------------------------------------------------------------------
@@ -172,7 +180,7 @@ BEGIN
 
   -------------------------------------------------------------------------------
   -- DVI Code
-  DVI_DE <= data_valid;
+  DVI_DE <= data_valid_ext;
 
   -- This is a way to generate a differential clock with low jitter (as both
   -- edges are handled in the same way)
@@ -230,58 +238,68 @@ BEGIN
   -- dvi_reg/green/blue wires are used on the posedge of the pix_clk, then
   -- knowledge of this DDR format isn't necessary
   ODDR_dvi_d0 : ODDR
-    PORT MAP (DVI_D(0), pix_clk, '1', dvi_green(4), dvi_blue(0), NOT data_valid, '0');
+    PORT MAP (DVI_D(0), pix_clk, '1', dvi_green(4), dvi_blue(0), NOT data_valid_ext, '0');
   ODDR_dvi_d1 : ODDR
-    PORT MAP (DVI_D(1), pix_clk, '1', dvi_green(5), dvi_blue(1), NOT data_valid, '0');
+    PORT MAP (DVI_D(1), pix_clk, '1', dvi_green(5), dvi_blue(1), NOT data_valid_ext, '0');
   ODDR_dvi_d2 : ODDR
-    PORT MAP (DVI_D(2), pix_clk, '1', dvi_green(6), dvi_blue(2), NOT data_valid, '0');
+    PORT MAP (DVI_D(2), pix_clk, '1', dvi_green(6), dvi_blue(2), NOT data_valid_ext, '0');
   ODDR_dvi_d3 : ODDR
-    PORT MAP (DVI_D(3), pix_clk, '1', dvi_green(7), dvi_blue(3), NOT data_valid, '0');
+    PORT MAP (DVI_D(3), pix_clk, '1', dvi_green(7), dvi_blue(3), NOT data_valid_ext, '0');
   ODDR_dvi_d4 : ODDR
-    PORT MAP (DVI_D(4), pix_clk, '1', dvi_red(0), dvi_blue(4), NOT data_valid, '0');
+    PORT MAP (DVI_D(4), pix_clk, '1', dvi_red(0), dvi_blue(4), NOT data_valid_ext, '0');
   ODDR_dvi_d5 : ODDR
-    PORT MAP (DVI_D(5), pix_clk, '1', dvi_red(1), dvi_blue(5), NOT data_valid, '0');
+    PORT MAP (DVI_D(5), pix_clk, '1', dvi_red(1), dvi_blue(5), NOT data_valid_ext, '0');
   ODDR_dvi_d6 : ODDR
-    PORT MAP (DVI_D(6), pix_clk, '1', dvi_red(2), dvi_blue(6), NOT data_valid, '0');
+    PORT MAP (DVI_D(6), pix_clk, '1', dvi_red(2), dvi_blue(6), NOT data_valid_ext, '0');
   ODDR_dvi_d7 : ODDR
-    PORT MAP (DVI_D(7), pix_clk, '1', dvi_red(3), dvi_blue(7), NOT data_valid, '0');
+    PORT MAP (DVI_D(7), pix_clk, '1', dvi_red(3), dvi_blue(7), NOT data_valid_ext, '0');
   ODDR_dvi_d8 : ODDR
-    PORT MAP (DVI_D(8), pix_clk, '1', dvi_red(4), dvi_green(0), NOT data_valid, '0');
+    PORT MAP (DVI_D(8), pix_clk, '1', dvi_red(4), dvi_green(0), NOT data_valid_ext, '0');
   ODDR_dvi_d9 : ODDR
-    PORT MAP (DVI_D(9), pix_clk, '1', dvi_red(5), dvi_green(1), NOT data_valid, '0');
+    PORT MAP (DVI_D(9), pix_clk, '1', dvi_red(5), dvi_green(1), NOT data_valid_ext, '0');
   ODDR_dvi_d10 : ODDR
-    PORT MAP (DVI_D(10), pix_clk, '1', dvi_red(6), dvi_green(2), NOT data_valid, '0');
+    PORT MAP (DVI_D(10), pix_clk, '1', dvi_red(6), dvi_green(2), NOT data_valid_ext, '0');
   ODDR_dvi_d11 : ODDR
-    PORT MAP (DVI_D(11), pix_clk, '1', dvi_red(7), dvi_green(3), NOT data_valid, '0');
+    PORT MAP (DVI_D(11), pix_clk, '1', dvi_red(7), dvi_green(3), NOT data_valid_ext, '0');
 
   vga_timing_generator_i : vga_timing_generator
-    GENERIC MAP(H_ACTIVE      => std_logic_vector(to_unsigned(10#640#, 11)),
-                H_FRONT_PORCH => std_logic_vector(to_unsigned(10#16#, 11)),
-                H_SYNC        => std_logic_vector(to_unsigned(10#96#, 11)),
-                H_BACK_PORCH  => std_logic_vector(to_unsigned(10#48#, 11)),
+    GENERIC MAP(WIDTH  => 640,
+                H_FP   => 16,
+                H_SYNC => 96,
+                H_BP   => 48,
 
-                V_ACTIVE      => std_logic_vector(to_unsigned(10#480#, 11)),
-                V_FRONT_PORCH => std_logic_vector(to_unsigned(10#12#, 11)),
-                V_SYNC        => std_logic_vector(to_unsigned(10#2#, 11)),
-                V_BACK_PORCH  => std_logic_vector(to_unsigned(10#31#, 11)))
+                HEIGHT     => 480,
+                V_FP       => 12,
+                V_SYNC     => 2,
+                V_BP       => 31,
+                DATA_DELAY => 1)
 
     PORT MAP (
-      RESET       => '0',
-      CLKEN       => '1',
-      H_SYNC_Z    => DVI_H,
-      V_SYNC_Z    => DVI_V,
-      DATA_VALID  => data_valid,
-      PIXEL_COUNT => h_pixel_count,
-      PIXEL_CLOCK => pix_clk);
+      RST            => '0',
+      HSYNC          => dvi_h_wire,
+      VSYNC          => dvi_v_wire,
+      DATA_VALID     => data_valid,
+      DATA_VALID_EXT => data_valid_ext,
+      X_COORD        => dvi_x_coord_wire,
+      Y_COORD        => dvi_y_coord_wire,
+      PIXEL_COUNT    => dvi_pixel_count_wire,
+      CLK            => pix_clk);
+  DVI_DATA_VALID  <= data_valid;
+  DVI_H           <= NOT dvi_h_wire;
+  DVI_V           <= NOT dvi_v_wire;
+  h_pixel_count   <= ('0'&dvi_x_coord_wire);
+  DVI_X_COORD     <= dvi_x_coord_wire;
+  DVI_Y_COORD     <= dvi_y_coord_wire;
+  DVI_PIXEL_COUNT <= dvi_pixel_count_wire;
 
   -----------------------------------------------------------------------------
   -- VGA Input
 
   -- Hooks to chipscope outputs
-  Y          <= VGA_Y_GREEN;
-  HSYNC      <= VGA_HSYNC;
-  VSYNC      <= VGA_VSYNC;
-
+  Y      <= VGA_Y_GREEN;
+  HSYNC  <= VGA_HSYNC;
+  VSYNC  <= VGA_VSYNC;
+  SOGOUT <= VGA_SOGOUT;
   vga_timing_decode_i : vga_timing_decode
     PORT MAP (
       CLK         => VGA_PIXEL_CLK,

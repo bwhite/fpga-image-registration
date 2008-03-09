@@ -17,94 +17,120 @@
 -- Additional Comments: 
 --
 ----------------------------------------------------------------------------------
+-- TODO This needs to be changed to reference vcount/hcount like the decoder
+-- module does.
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
 USE IEEE.STD_LOGIC_ARITH.ALL;
 USE IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 ENTITY vga_timing_generator IS
-  GENERIC (H_ACTIVE      : std_logic_vector(10 DOWNTO 0) := "10000000000";  --  1024
-           H_FRONT_PORCH : std_logic_vector(10 DOWNTO 0) := "00000011000";  -- 24
-           H_SYNC        : std_logic_vector(10 DOWNTO 0) := "00010001000";  -- 136
-           H_BACK_PORCH  : std_logic_vector(10 DOWNTO 0) := "00010100000";  -- 160
-          
-           V_ACTIVE      : std_logic_vector(10 DOWNTO 0) := "01100000000";  -- 768
-           V_FRONT_PORCH : std_logic_vector(10 DOWNTO 0) := "00000000011";  -- 3
-           V_SYNC        : std_logic_vector(10 DOWNTO 0) := "00000000110";  -- 6
-           V_BACK_PORCH  : std_logic_vector(10 DOWNTO 0) := "00000011101"  -- 29
+  GENERIC (WIDTH       : integer := 1024;
+           H_FP        : integer := 24;
+           H_SYNC      : integer := 136;
+           H_BP        : integer := 160;
+           HEIGHT      : integer := 768;
+           V_FP        : integer := 3;
+           V_SYNC      : integer := 6;
+           V_BP        : integer := 29;
+           HEIGHT_BITS : integer := 10;
+           WIDTH_BITS  : integer := 10;
+           DATA_DELAY  : integer := 0
            );
-  PORT (PIXEL_CLOCK : IN  std_logic;
-        RESET       : IN  std_logic;
-        CLKEN       : IN  std_logic;
-        H_SYNC_Z    : OUT std_logic;
-        V_SYNC_Z    : OUT std_logic;
-        DATA_VALID  : OUT std_logic;
-        PIXEL_COUNT : OUT std_logic_vector(10 DOWNTO 0);
-        LINE_COUNT  : OUT std_logic_vector(10 DOWNTO 0);
-        TOTAL_PIXEL_COUNT : OUT std_logic_vector(21 DOWNTO 0));
+  PORT (CLK            : IN  std_logic;
+        RST            : IN  std_logic;
+        HSYNC          : OUT std_logic;
+        VSYNC          : OUT std_logic;
+        X_COORD        : OUT std_logic_vector(WIDTH_BITS-1 DOWNTO 0);
+        Y_COORD        : OUT std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);
+        PIXEL_COUNT    : OUT std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);
+        DATA_VALID     : OUT std_logic;
+        DATA_VALID_EXT : OUT std_logic);
 END vga_timing_generator;
 
 ARCHITECTURE Behavioral OF vga_timing_generator IS
-  SIGNAL pixel_count_reg      : std_logic_vector(10 DOWNTO 0) := (OTHERS => '0');
-  SIGNAL line_count_reg       : std_logic_vector(10 DOWNTO 0) := (OTHERS => '0');
-  SIGNAL vsync_reg, hsync_reg : std_logic                     := '0';  -- NOTE These are active high signals
-  SIGNAL total_pixel_count_reg : std_logic_vector(21 DOWNTO 0) := (OTHERS => '0');  -- This is used to keep track of the number of valid pixels that have been output this frame.  Used to allow pixel selection to be made based on 1D memory addresses.
+  CONSTANT H_TOTAL              : integer                                     := WIDTH+H_FP+H_SYNC+H_BP;
+  CONSTANT V_TOTAL              : integer                                     := HEIGHT+V_FP+V_SYNC+V_BP;
+  SIGNAL   hcount               : unsigned(WIDTH_BITS-1 DOWNTO 0)             := (OTHERS => '0');
+  SIGNAL   vcount               : unsigned(HEIGHT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
+  SIGNAL   vsync_reg, hsync_reg : std_logic                                   := '0';  -- NOTE These are active high signals
+  SIGNAL   pixel_count_reg      : unsigned(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0) := (OTHERS => '0');  -- This is used to keep track of the number of valid pixels that have been output this frame.  Used to allow pixel selection to be made based on 1D memory addresses.
+  SIGNAL   x_coord_reg          : unsigned(WIDTH_BITS-1 DOWNTO 0)             := (OTHERS => '0');
+  SIGNAL   y_coord_reg          : unsigned(HEIGHT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
+  SIGNAL   data_valid_reg       : std_logic                                   := '0';
 BEGIN
-  
-  PIXEL_COUNT <= pixel_count_reg;
-  LINE_COUNT  <= line_count_reg;
-  TOTAL_PIXEL_COUNT <= total_pixel_count_reg;
-  H_SYNC_Z    <= NOT hsync_reg;
-  V_SYNC_Z    <= NOT vsync_reg;
-  
-  PROCESS(PIXEL_CLOCK)
+  HSYNC       <= hsync_reg;
+  VSYNC       <= vsync_reg;
+  X_COORD     <= std_logic_vector(x_coord_reg);
+  Y_COORD     <= std_logic_vector(y_coord_reg);
+  PIXEL_COUNT <= std_logic_vector(pixel_count_reg);
+  DATA_VALID  <= data_valid_reg;
+  PROCESS(CLK)
   BEGIN
     -- Horizontal Pixel Count
-    IF (PIXEL_CLOCK'event AND PIXEL_CLOCK = '1') THEN
-      IF (RESET = '1') THEN
-        line_count_reg  <= (OTHERS => '0');
-        pixel_count_reg <= (OTHERS => '0');
+    IF (CLK'event AND CLK = '1') THEN
+      IF (RST = '1') THEN
+        vcount          <= (OTHERS => '0');
+        hcount          <= (OTHERS => '0');
         hsync_reg       <= '0';
         vsync_reg       <= '0';
-        total_pixel_count_reg <= (OTHERS => '0');
+        pixel_count_reg <= (OTHERS => '0');
+        x_coord_reg     <= (OTHERS => '0');
+        y_coord_reg     <= (OTHERS => '0');
       ELSE
         -- Data valid signal
-        IF (pixel_count_reg < H_ACTIVE AND line_count_reg < V_ACTIVE) THEN
-          DATA_VALID <= '1';
-          total_pixel_count_reg <= total_pixel_count_reg + 1;
-        ELSE
-          DATA_VALID <= '0';
-        END IF;
-        
-        IF CLKEN = '1' THEN
-          -- Horizontal Line Counter
-          IF (pixel_count_reg = (H_ACTIVE+H_FRONT_PORCH+H_SYNC+H_BACK_PORCH-1)) THEN
-            pixel_count_reg <= (OTHERS => '0');
-          ELSE
+        IF (H_BP-DATA_DELAY-1 <= hcount AND hcount < WIDTH+H_BP-DATA_DELAY-1 AND V_BP <= vcount AND vcount < HEIGHT+V_BP) THEN
+          data_valid_reg <= '1';
+          IF data_valid_reg = '1' THEN
+            x_coord_reg <= x_coord_reg + 1;
+          END IF;
+          IF (data_valid_reg = '1' AND vcount = V_BP) OR vcount > V_BP THEN
             pixel_count_reg <= pixel_count_reg + 1;
           END IF;
-
-          -- Vertical Line Counter
-          IF (pixel_count_reg = (H_ACTIVE+H_FRONT_PORCH+H_SYNC+H_BACK_PORCH - 1) AND (line_count_reg = (V_ACTIVE+V_FRONT_PORCH+V_SYNC+V_BACK_PORCH - 1))) THEN
-            line_count_reg <= (OTHERS => '0');
-            total_pixel_count_reg <= (OTHERS => '0');
-          ELSIF (pixel_count_reg = (H_ACTIVE+H_FRONT_PORCH+H_SYNC+H_BACK_PORCH - 1)) THEN
-            line_count_reg <= line_count_reg + 1;
-          END IF;
+        ELSE
+          x_coord_reg    <= (OTHERS => '0');
+          data_valid_reg <= '0';
         END IF;
 
-        -- Vertical Sync Pulse
-        IF (pixel_count_reg = (H_ACTIVE+H_FRONT_PORCH+H_SYNC+H_BACK_PORCH - 1) AND line_count_reg = (V_ACTIVE + V_FRONT_PORCH -1)) THEN
-          vsync_reg <= '1';
-        ELSIF (pixel_count_reg = (H_ACTIVE+H_FRONT_PORCH+H_SYNC+H_BACK_PORCH - 1) AND line_count_reg = (V_ACTIVE+V_FRONT_PORCH+V_SYNC-1)) THEN
-          vsync_reg <= '0';
+        -- Data valid external signal (to be in line with HSYNC/VSYNC)
+        IF (H_BP-1 <= hcount AND hcount < WIDTH+H_BP-1 AND V_BP <= vcount AND vcount < HEIGHT+V_BP) THEN
+          DATA_VALID_EXT <= '1';
+        ELSE
+          DATA_VALID_EXT <= '0';
+        END IF;
+
+        -- Horizontal Line Counter
+        IF hcount = (H_TOTAL-1) THEN    -- Reset hcount
+          hcount <= (OTHERS => '0');
+        ELSE
+          hcount <= hcount + 1;
+        END IF;
+
+        -- Vertical Line Counter
+        IF hcount = (H_TOTAL - 1) AND (vcount = (V_TOTAL - 1)) THEN  -- Reset
+                                                                     -- vcount
+          vcount          <= (OTHERS => '0');
+          pixel_count_reg <= (OTHERS => '0');
+          y_coord_reg     <= (OTHERS => '0');
+        ELSIF hcount = (H_TOTAL - 1) THEN
+          vcount  <= vcount + 1;
+          IF V_BP <= vcount AND vcount < HEIGHT+V_BP-1 THEN
+            y_coord_reg <= y_coord_reg + 1;
+          END IF;
         END IF;
 
         -- Horizontal Sync Pulse
-        IF (pixel_count_reg = (H_ACTIVE + H_FRONT_PORCH - 1)) THEN
+        IF hcount = (WIDTH+H_FP+H_BP-1) THEN
           hsync_reg <= '1';
-        ELSIF (pixel_count_reg = (H_ACTIVE+H_FRONT_PORCH+H_SYNC - 1)) THEN
+        ELSIF hcount = (H_TOTAL-1) THEN
           hsync_reg <= '0';
+        END IF;
+
+        -- Vertical Sync Pulse
+        IF hcount = (H_TOTAL-1) AND vcount = (HEIGHT+V_FP+V_BP-1) THEN
+          vsync_reg <= '1';
+        ELSIF hcount = (H_TOTAL-1) AND vcount = (V_TOTAL-1) THEN
+          vsync_reg <= '0';
         END IF;
       END IF;
     END IF;

@@ -86,9 +86,9 @@ ARCHITECTURE Behavioral OF dvi_video_test IS
           RST            : IN  std_logic;
           HSYNC          : OUT std_logic;
           VSYNC          : OUT std_logic;
-          X_COORD        : OUT std_logic_vector(WIDTH_BITS-1 DOWNTO 0);
-          Y_COORD        : OUT std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);
-          PIXEL_COUNT    : OUT std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);
+          X_COORD        : OUT unsigned(WIDTH_BITS-1 DOWNTO 0);
+          Y_COORD        : OUT unsigned(HEIGHT_BITS-1 DOWNTO 0);
+          PIXEL_COUNT    : OUT unsigned(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);
           DATA_VALID     : OUT std_logic;
           DATA_VALID_EXT : OUT std_logic);
   END COMPONENT;
@@ -107,9 +107,9 @@ ARCHITECTURE Behavioral OF dvi_video_test IS
           RST         : IN  std_logic;
           VSYNC       : IN  std_logic;
           HSYNC       : IN  std_logic;
-          X_COORD     : OUT std_logic_vector (WIDTH_BITS-1 DOWNTO 0);
-          Y_COORD     : OUT std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);
-          PIXEL_COUNT : OUT std_logic_vector(HEIGHT_BITS+WIDTH_BITS-1 DOWNTO 0);
+          X_COORD     : OUT unsigned(WIDTH_BITS-1 DOWNTO 0);
+          Y_COORD     : OUT unsigned(HEIGHT_BITS-1 DOWNTO 0);
+          PIXEL_COUNT : OUT unsigned(HEIGHT_BITS+WIDTH_BITS-1 DOWNTO 0);
           DATA_VALID  : OUT std_logic);
   END COMPONENT;
 
@@ -122,11 +122,12 @@ ARCHITECTURE Behavioral OF dvi_video_test IS
 
   SIGNAL pix_clk                                     : std_logic;  -- This is the pixel clock for the DVI output and sync generator
   SIGNAL clk_fb, data_valid, data_valid_ext, clk_buf : std_logic;
-  SIGNAL h_pixel_count                               : std_logic_vector(10 DOWNTO 0);
-  SIGNAL dvi_red, dvi_green, dvi_blue                : std_logic_vector(7 DOWNTO 0);  -- These hold the values for the packed RGB DVI output data
+  SIGNAL dvi_red, dvi_green, dvi_blue,dvi_gray                : std_logic_vector(7 DOWNTO 0);  -- These hold the values for the packed RGB DVI output data
   SIGNAL dvi_h_wire, dvi_v_wire                      : std_logic;
-  SIGNAL dvi_x_coord_wire, dvi_y_coord_wire          : std_logic_vector(9 DOWNTO 0);
-  SIGNAL dvi_pixel_count_wire                        : std_logic_vector(19 DOWNTO 0);
+  SIGNAL dvi_x_coord_wire, dvi_y_coord_wire          : unsigned(9 DOWNTO 0);
+  SIGNAL dvi_pixel_count_wire                        : unsigned(19 DOWNTO 0);
+  SIGNAL vga_x_coord_wire, vga_y_coord_wire          : unsigned(9 DOWNTO 0);
+  SIGNAL vga_pixel_count_wire                        : unsigned(19 DOWNTO 0);
 BEGIN
 
   -----------------------------------------------------------------------------
@@ -214,25 +215,138 @@ BEGIN
       );
 
   DVI_RESET_B <= '1';
-  PROCESS (h_pixel_count) IS
+  PROCESS (dvi_x_coord_wire) IS
   BEGIN  -- PROCESS
-    IF h_pixel_count < "00000000100" THEN
-      dvi_red   <= "00000000";
-      dvi_green <= "00000000";
-      dvi_blue  <= "11111111";
-    ELSIF h_pixel_count < "00000001000" THEN
-      dvi_red   <= "00000000";
-      dvi_green <= "11111111";
-      dvi_blue  <= "00000000";
-    ELSIF h_pixel_count > "01001111000" THEN
-      dvi_red   <= "11111111";
-      dvi_green <= "00000000";
-      dvi_blue  <= "00000000";
+    IF dvi_y_coord_wire(0)='1' THEN
+      CASE to_integer(dvi_x_coord_wire) IS
+        WHEN 1 =>
+          dvi_gray <= "11111111";
+        WHEN 2 =>
+          dvi_gray <= "00000000";
+        WHEN 5 =>
+          dvi_gray <= "11111111";
+        WHEN 6 =>
+          dvi_gray <= "11111111";
+        WHEN 7 =>
+          dvi_gray <= "00000000";
+        WHEN 8 =>
+          dvi_gray <= "00000000";
+        WHEN 12 =>
+          dvi_gray <= "11111111";
+        WHEN 13 =>
+          dvi_gray <= "11111111";
+        WHEN 14 =>
+          dvi_gray <= "11111111";
+        WHEN 15 =>
+          dvi_gray <= "00000000";
+        WHEN 16 =>
+          dvi_gray <= "00000000";
+        WHEN 17 =>
+          dvi_gray <= "00000000";
+          
+        WHEN 639-1 =>
+          dvi_gray <= "11111111";
+        WHEN 639-2 =>
+          dvi_gray <= "00000000";
+        WHEN 639-5 =>
+          dvi_gray <= "11111111";
+        WHEN 639-6 =>
+          dvi_gray <= "11111111";
+        WHEN 639-7 =>
+          dvi_gray <= "00000000";
+        WHEN 639-8 =>
+          dvi_gray <= "00000000";
+        WHEN 639-12 =>
+          dvi_gray <= "11111111";
+        WHEN 639-13 =>
+          dvi_gray <= "11111111";
+        WHEN 639-14 =>
+          dvi_gray <= "11111111";
+        WHEN 639-15 =>
+          dvi_gray <= "00000000";
+        WHEN 639-16 =>
+          dvi_gray <= "00000000";
+        WHEN 639-17 =>
+          dvi_gray <= "00000000";
+        WHEN OTHERS =>
+          dvi_gray <= "01111111";
+      END CASE;
     ELSE
-      dvi_red   <= "00000000";
-      dvi_green <= "00000000";
-      dvi_blue  <= "11111111";
+      CASE to_integer(dvi_x_coord_wire) IS
+        WHEN 1 =>
+          dvi_gray <= "00000000";
+        WHEN 2 =>
+          dvi_gray <= "11111111";
+        WHEN 5 =>
+          dvi_gray <= "00000000";
+        WHEN 6 =>
+          dvi_gray <= "00000000";
+        WHEN 7 =>
+          dvi_gray <= "11111111";
+        WHEN 8 =>
+          dvi_gray <= "11111111";
+        WHEN 12 =>
+          dvi_gray <= "00000000";
+        WHEN 13 =>
+          dvi_gray <= "00000000";
+        WHEN 14 =>
+          dvi_gray <= "00000000";
+        WHEN 15 =>
+          dvi_gray <= "11111111";
+        WHEN 16 =>
+          dvi_gray <= "11111111";
+        WHEN 17 =>
+          dvi_gray <= "11111111";
+
+        WHEN 639-1 =>
+          dvi_gray <= "00000000";
+        WHEN 639-2 =>
+          dvi_gray <= "11111111";
+        WHEN 639-5 =>
+          dvi_gray <= "00000000";
+        WHEN 639-6 =>
+          dvi_gray <= "00000000";
+        WHEN 639-7 =>
+          dvi_gray <= "11111111";
+        WHEN 639-8 =>
+          dvi_gray <= "11111111";
+        WHEN 639-12 =>
+          dvi_gray <= "00000000";
+        WHEN 639-13 =>
+          dvi_gray <= "00000000";
+        WHEN 639-14 =>
+          dvi_gray <= "00000000";
+        WHEN 639-15 =>
+          dvi_gray <= "11111111";
+        WHEN 639-16 =>
+          dvi_gray <= "11111111";
+        WHEN 639-17 =>
+          dvi_gray <= "11111111";
+        WHEN OTHERS =>
+          dvi_gray <= "01111111";
+      END CASE;
     END IF;
+    
+    dvi_red <= dvi_gray;
+    dvi_blue <= dvi_gray;
+    dvi_green <= dvi_gray;
+--    IF h_pixel_count < "00000000100" THEN
+--      dvi_red   <= "00000000";
+--      dvi_green <= "00000000";
+--      dvi_blue  <= "11111111";
+--    ELSIF h_pixel_count < "00000001000" THEN
+--      dvi_red   <= "00000000";
+--      dvi_green <= "11111111";
+--      dvi_blue  <= "00000000";
+--    ELSIF h_pixel_count > "01001111000" THEN
+--      dvi_red   <= "11111111";
+--      dvi_green <= "00000000";
+--      dvi_blue  <= "00000000";
+--    ELSE
+--      dvi_red   <= "00000000";
+--      dvi_green <= "00000000";
+--      dvi_blue  <= "11111111";
+--    END IF;
   END PROCESS;
   -- This outputs the color values in the DVI chips DDR mode, if the
   -- dvi_reg/green/blue wires are used on the posedge of the pix_clk, then
@@ -272,7 +386,7 @@ BEGIN
                 V_FP       => 12,
                 V_SYNC     => 2,
                 V_BP       => 31,
-                DATA_DELAY => 1)
+                DATA_DELAY => 0)
 
     PORT MAP (
       RST            => '0',
@@ -287,10 +401,9 @@ BEGIN
   DVI_DATA_VALID  <= data_valid;
   DVI_H           <= NOT dvi_h_wire;
   DVI_V           <= NOT dvi_v_wire;
-  h_pixel_count   <= ('0'&dvi_x_coord_wire);
-  DVI_X_COORD     <= dvi_x_coord_wire;
-  DVI_Y_COORD     <= dvi_y_coord_wire;
-  DVI_PIXEL_COUNT <= dvi_pixel_count_wire;
+  DVI_X_COORD     <= std_logic_vector(dvi_x_coord_wire);
+  DVI_Y_COORD     <= std_logic_vector(dvi_y_coord_wire);
+  DVI_PIXEL_COUNT <= std_logic_vector(dvi_pixel_count_wire);
 
   -----------------------------------------------------------------------------
   -- VGA Input
@@ -307,7 +420,10 @@ BEGIN
       VSYNC       => VGA_VSYNC,
       HSYNC       => VGA_HSYNC,
       DATA_VALID  => VGA_DATA_VALID,
-      X_COORD     => PIXEL_X_COORD,
-      Y_COORD     => PIXEL_Y_COORD,
-      PIXEL_COUNT => TOTAL_PIXEL_COUNT);
+      X_COORD     => vga_x_coord_wire,
+      Y_COORD     => vga_y_coord_wire,
+      PIXEL_COUNT => vga_pixel_count_wire);
+  PIXEL_X_COORD <= std_logic_vector(vga_x_coord_wire);
+  PIXEL_Y_COORD <= std_logic_vector(vga_y_coord_wire);
+  TOTAL_PIXEL_COUNT <= std_logic_vector(vga_pixel_count_wire);
 END Behavioral;

@@ -35,9 +35,9 @@ ENTITY vga_timing_decode IS
         RST         : IN  std_logic;
         HSYNC       : IN  std_logic;
         VSYNC       : IN  std_logic;
-        X_COORD     : OUT std_logic_vector (WIDTH_BITS-1 DOWNTO 0);
-        Y_COORD     : OUT std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);
-        PIXEL_COUNT : OUT std_logic_vector(HEIGHT_BITS+WIDTH_BITS-1 DOWNTO 0);
+        X_COORD     : OUT unsigned(WIDTH_BITS-1 DOWNTO 0);
+        Y_COORD     : OUT unsigned(HEIGHT_BITS-1 DOWNTO 0);
+        PIXEL_COUNT : OUT unsigned(HEIGHT_BITS+WIDTH_BITS-1 DOWNTO 0);
         DATA_VALID  : OUT std_logic);
 END vga_timing_decode;
 
@@ -50,9 +50,9 @@ ARCHITECTURE Behavioral OF vga_timing_decode IS
   SIGNAL prev_hsync      : std_logic                                   := '0';
   SIGNAL data_valid_reg  : std_logic                                   := '0';
 BEGIN
-  X_COORD     <= std_logic_vector(x_coord_reg);
-  Y_COORD     <= std_logic_vector(y_coord_reg);
-  PIXEL_COUNT <= std_logic_vector(pixel_count_reg);
+  X_COORD     <= x_coord_reg;
+  Y_COORD     <= y_coord_reg;
+  PIXEL_COUNT <= pixel_count_reg;
   DATA_VALID  <= data_valid_reg;
 
   PROCESS (CLK) IS

@@ -41,9 +41,9 @@ ENTITY vga_timing_generator IS
         RST            : IN  std_logic;
         HSYNC          : OUT std_logic;
         VSYNC          : OUT std_logic;
-        X_COORD        : OUT std_logic_vector(WIDTH_BITS-1 DOWNTO 0);
-        Y_COORD        : OUT std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);
-        PIXEL_COUNT    : OUT std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);
+        X_COORD        : OUT unsigned(WIDTH_BITS-1 DOWNTO 0);
+        Y_COORD        : OUT unsigned(HEIGHT_BITS-1 DOWNTO 0);
+        PIXEL_COUNT    : OUT unsigned(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);
         DATA_VALID     : OUT std_logic;
         DATA_VALID_EXT : OUT std_logic);
 END vga_timing_generator;
@@ -61,9 +61,9 @@ ARCHITECTURE Behavioral OF vga_timing_generator IS
 BEGIN
   HSYNC       <= hsync_reg;
   VSYNC       <= vsync_reg;
-  X_COORD     <= std_logic_vector(x_coord_reg);
-  Y_COORD     <= std_logic_vector(y_coord_reg);
-  PIXEL_COUNT <= std_logic_vector(pixel_count_reg);
+  X_COORD     <= x_coord_reg;
+  Y_COORD     <= y_coord_reg;
+  PIXEL_COUNT <= pixel_count_reg;
   DATA_VALID  <= data_valid_reg;
   PROCESS(CLK)
   BEGIN

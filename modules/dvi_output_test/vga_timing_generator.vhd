@@ -1,41 +1,43 @@
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date:    20:23:27 09/19/2007 
--- Design Name: 
--- Module Name:    vga_timing_generator - Behavioral 
--- Project Name: 
--- Target Devices: 
--- Tool versions: 
--- Description: 
---
--- Dependencies: 
---
--- Revision: 
--- Revision 0.01 - File Created
--- Additional Comments: 
---
-----------------------------------------------------------------------------------
--- TODO This needs to be changed to reference vcount/hcount like the decoder
--- module does.
+-- Module Name:  vga_timing_generator.vhd
+-- File Description:  Generates VGA timing signals.
+-- Project:  FPGA Image Registration
+-- Target Device:  XC5VSX50T (Xilinx Virtex5 SXT)
+-- Target Board:  ML506
+-- Synthesis Tool:  Xilinx ISE 9.2
+-- Copyright (C) 2008 Brandyn Allen White
+-- Contact:  bwhite(at)cs.ucf.edu
+-- Project Website:  http://code.google.com/p/fpga-image-registration/
+
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+-- GNU General Public License for more details.
+
+-- You should have received a copy of the GNU General Public License
+-- along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
 USE IEEE.STD_LOGIC_ARITH.ALL;
 USE IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 ENTITY vga_timing_generator IS
-  GENERIC (WIDTH       : integer := 1024;
-           H_FP        : integer := 24;
-           H_SYNC      : integer := 136;
-           H_BP        : integer := 160;
-           HEIGHT      : integer := 768;
-           V_FP        : integer := 3;
-           V_SYNC      : integer := 6;
-           V_BP        : integer := 29;
-           HEIGHT_BITS : integer := 10;
-           WIDTH_BITS  : integer := 10;
-           DATA_DELAY  : integer := 0
+  GENERIC (WIDTH       :     integer := 1024;
+           H_FP        :     integer := 24;
+           H_SYNC      :     integer := 136;
+           H_BP        :     integer := 160;
+           HEIGHT      :     integer := 768;
+           V_FP        :     integer := 3;
+           V_SYNC      :     integer := 6;
+           V_BP        :     integer := 29;
+           HEIGHT_BITS :     integer := 10;
+           WIDTH_BITS  :     integer := 10;
+           DATA_DELAY  :     integer := 0
            );
   PORT (CLK            : IN  std_logic;
         RST            : IN  std_logic;
@@ -59,41 +61,41 @@ ARCHITECTURE Behavioral OF vga_timing_generator IS
   SIGNAL   y_coord_reg          : unsigned(HEIGHT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
   SIGNAL   data_valid_reg       : std_logic                                   := '0';
 BEGIN
-  HSYNC       <= hsync_reg;
-  VSYNC       <= vsync_reg;
-  X_COORD     <= x_coord_reg;
-  Y_COORD     <= y_coord_reg;
-  PIXEL_COUNT <= pixel_count_reg;
-  DATA_VALID  <= data_valid_reg;
+  HSYNC                       <= hsync_reg;
+  VSYNC                       <= vsync_reg;
+  X_COORD                     <= x_coord_reg;
+  Y_COORD                     <= y_coord_reg;
+  PIXEL_COUNT                 <= pixel_count_reg;
+  DATA_VALID                  <= data_valid_reg;
   PROCESS(CLK)
   BEGIN
     -- Horizontal Pixel Count
     IF (CLK'event AND CLK = '1') THEN
       IF (RST = '1') THEN
-        vcount          <= (OTHERS => '0');
-        hcount          <= (OTHERS => '0');
-        hsync_reg       <= '0';
-        vsync_reg       <= '0';
-        pixel_count_reg <= (OTHERS => '0');
-        x_coord_reg     <= (OTHERS => '0');
-        y_coord_reg     <= (OTHERS => '0');
+        vcount                <= (OTHERS                                                 => '0');
+        hcount                <= (OTHERS                                                 => '0');
+        hsync_reg             <= '0';
+        vsync_reg             <= '0';
+        pixel_count_reg       <= (OTHERS                                                 => '0');
+        x_coord_reg           <= (OTHERS                                                 => '0');
+        y_coord_reg           <= (OTHERS                                                 => '0');
       ELSE
         -- Data valid signal
         IF (H_BP-DATA_DELAY-1 <= hcount AND hcount < WIDTH+H_BP-DATA_DELAY-1 AND V_BP <= vcount AND vcount < HEIGHT+V_BP) THEN
-          data_valid_reg <= '1';
+          data_valid_reg      <= '1';
           IF data_valid_reg = '1' THEN
-            x_coord_reg <= x_coord_reg + 1;
+            x_coord_reg       <= x_coord_reg + 1;
           END IF;
           IF (data_valid_reg = '1' AND vcount = V_BP) OR vcount > V_BP THEN
-            pixel_count_reg <= pixel_count_reg + 1;
+            pixel_count_reg   <= pixel_count_reg + 1;
           END IF;
         ELSE
-          x_coord_reg    <= (OTHERS => '0');
-          data_valid_reg <= '0';
+          x_coord_reg         <= (OTHERS                                                 => '0');
+          data_valid_reg      <= '0';
         END IF;
 
         -- Data valid external signal (to be in line with HSYNC/VSYNC)
-        IF (H_BP-1 <= hcount AND hcount < WIDTH+H_BP-1 AND V_BP <= vcount AND vcount < HEIGHT+V_BP) THEN
+        IF (H_BP-1       <= hcount AND hcount < WIDTH+H_BP-1 AND V_BP <= vcount AND vcount < HEIGHT+V_BP) THEN
           DATA_VALID_EXT <= '1';
         ELSE
           DATA_VALID_EXT <= '0';
@@ -113,9 +115,9 @@ BEGIN
           pixel_count_reg <= (OTHERS => '0');
           y_coord_reg     <= (OTHERS => '0');
         ELSIF hcount = (H_TOTAL - 1) THEN
-          vcount  <= vcount + 1;
-          IF V_BP <= vcount AND vcount < HEIGHT+V_BP-1 THEN
-            y_coord_reg <= y_coord_reg + 1;
+          vcount          <= vcount + 1;
+          IF V_BP         <= vcount AND vcount < HEIGHT+V_BP-1 THEN
+            y_coord_reg   <= y_coord_reg + 1;
           END IF;
         END IF;
 

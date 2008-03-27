@@ -1,22 +1,26 @@
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date:    20:13:25 03/22/2008 
--- Design Name: 
--- Module Name:    affine_coord_transform - Behavioral 
--- Project Name: 
--- Target Devices: 
--- Tool versions: 
--- Description: 
---
--- Dependencies: 
---
--- Revision: 
--- Revision 0.01 - File Created
--- Additional Comments: 
---
-----------------------------------------------------------------------------------
+-- Module Name:  affine_coord_transform.vhd
+-- File Description:  Performs affine transformation on an x,y coordinate pair.
+-- Project:  FPGA Image Registration
+-- Target Device:  XC5VSX50T (Xilinx Virtex5 SXT)
+-- Target Board:  ML506
+-- Synthesis Tool:  Xilinx ISE 9.2
+-- Copyright (C) 2008 Brandyn Allen White
+-- Contact:  bwhite(at)cs.ucf.edu
+-- Project Website:  http://code.google.com/p/fpga-image-registration/
+
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+-- GNU General Public License for more details.
+
+-- You should have received a copy of the GNU General Public License
+-- along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
 USE ieee.numeric_std.ALL;

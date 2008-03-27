@@ -1,24 +1,29 @@
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date:    20:22:35 09/02/2007 
--- Design Name: 
--- Module Name:    i2c_core - Behavioral 
--- Project Name: 
--- Target Devices: 
--- Tool versions: 
--- Description: 
---
--- Dependencies: 
---
--- Revision: 
--- Revision 0.01 - File Created
--- Additional Comments: 
---
+-- Module Name:  i2c_core.vhd
+-- File Description:  Generic i2c module with write capability only.
+-- Project:  FPGA Image Registration
+-- Target Device:  XC5VSX50T (Xilinx Virtex5 SXT)
+-- Target Board:  ML506
+-- Synthesis Tool:  Xilinx ISE 9.2
+-- Copyright (C) 2008 Brandyn Allen White
+-- Contact:  bwhite(at)cs.ucf.edu
+-- Project Website:  http://code.google.com/p/fpga-image-registration/
+
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+-- GNU General Public License for more details.
+
+-- You should have received a copy of the GNU General Public License
+-- along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 -- NOTE The data is in little endian byte ordering, data is sent lowest byte
 -- first, highest bit first (I2C convention).
-----------------------------------------------------------------------------------
+
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
 USE IEEE.STD_LOGIC_ARITH.ALL;
@@ -26,13 +31,13 @@ USE IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 
 ENTITY i2c_core IS
-  PORT (clk            : IN  std_logic;
-         data          : IN  std_logic_vector (23 DOWNTO 0);
-         new_data      : IN  std_logic;
-         reset         : IN  std_logic;
-         i2c_sda       : OUT std_logic;
-         i2c_scl       : OUT std_logic;
-         received_data : OUT std_logic);
+  PORT (clk           : IN  std_logic;
+        data          : IN  std_logic_vector (23 DOWNTO 0);
+        new_data      : IN  std_logic;
+        reset         : IN  std_logic;
+        i2c_sda       : OUT std_logic;
+        i2c_scl       : OUT std_logic;
+        received_data : OUT std_logic);
 END i2c_core;
 
 ARCHITECTURE Behavioral OF i2c_core IS
@@ -74,26 +79,26 @@ BEGIN
         i2c_clock_5x_posedge <= '1';
       ELSE
         -- If we are supposed to start; however, no data is ready, then reset the clock logic to hold it high
-        IF (i2c_state = "000" AND new_data='0') THEN
-          i2c_sda_reg       <= '1';
-          received_data_reg <= '0';
+        IF (i2c_state = "000" AND new_data = '0') THEN
+          i2c_sda_reg        <= '1';
+          received_data_reg  <= '0';
 
                                         -- I2C Clock Variables
-          i2c_clock_counter    <= (OTHERS => '0');
-          i2c_edge_count       <= (OTHERS => '0');
-          i2c_clock            <= '1';
-          i2c_clock_5x         <= '1';
-          i2c_clock_5x_posedge <= '1';
+          i2c_clock_counter        <= (OTHERS => '0');
+          i2c_edge_count           <= (OTHERS => '0');
+          i2c_clock                <= '1';
+          i2c_clock_5x             <= '1';
+          i2c_clock_5x_posedge     <= '1';
         ELSE
                                         -- I2C Clock generation - Reduces clock rate by 100 for internal use and 500 for external use.
           IF (i2c_clock_counter = 99 OR i2c_clock_counter = 199 OR i2c_clock_counter = 299 OR i2c_clock_counter = 399 OR i2c_clock_counter = 499) THEN
-            i2c_clock_5x <= NOT i2c_clock_5x;
+            i2c_clock_5x           <= NOT i2c_clock_5x;
             IF (i2c_clock_5x = '0') THEN
               i2c_clock_5x_posedge <= '1';
               IF (i2c_edge_count < 4) THEN
-                i2c_edge_count <= i2c_edge_count + 1;
+                i2c_edge_count     <= i2c_edge_count + 1;
               ELSE
-                i2c_edge_count <= (OTHERS => '0');
+                i2c_edge_count     <= (OTHERS => '0');
               END IF;
             END IF;
           END IF;
@@ -109,15 +114,15 @@ BEGIN
 
         -- Main I2C Logic
         IF (i2c_clock_5x_posedge = '1') THEN
-          i2c_clock_5x_posedge <= '0';
-          CASE i2c_edge_count IS  -- Edge selection -> individual state selection
+          i2c_clock_5x_posedge      <= '0';
+          CASE i2c_edge_count IS        -- Edge selection -> individual state selection
             WHEN "001" =>
-              IF (i2c_state = "011") THEN      -- STATE: stop
-                i2c_sda_reg <= '1';
-                i2c_state   <= "000";   -- 'start'
+              IF (i2c_state = "011") THEN  -- STATE: stop
+                i2c_sda_reg         <= '1';
+                i2c_state           <= "000";  -- 'start'
               END IF;
             WHEN "010" =>
-              IF (i2c_state = "000") THEN      -- STATE: start
+              IF (i2c_state = "000") THEN  -- STATE: start
                 IF (new_data = '1' AND received_data_reg = '0') THEN
                   i2c_sda_reg       <= '0';
                   cur_data          <= data;
@@ -126,52 +131,52 @@ BEGIN
                 END IF;
               END IF;
 
-            WHEN "100" =>
+            WHEN "100"                             =>
               CASE i2c_state IS
-                WHEN "001" =>           -- STATE: data
+                WHEN "001"                         =>  -- STATE: data
                   CASE bit_position IS  -- Select bit position and output it (NOTE:  MSB is output first!), TODO investigate other bit selection methods
-                    WHEN "000" =>
-                      i2c_sda_reg <= cur_data(7);
-                    WHEN "001" =>
-                      i2c_sda_reg <= cur_data(6);
-                    WHEN "010" =>
-                      i2c_sda_reg <= cur_data(5);
-                    WHEN "011" =>
-                      i2c_sda_reg <= cur_data(4);
-                    WHEN "100" =>
-                      i2c_sda_reg <= cur_data(3);
-                    WHEN "101" =>
-                      i2c_sda_reg <= cur_data(2);
-                    WHEN "110" =>
-                      i2c_sda_reg <= cur_data(1);
-                    WHEN "111" =>
-                      i2c_sda_reg <= cur_data(0);
-                    WHEN OTHERS =>
-                      i2c_sda_reg <= 'X';
+                    WHEN "000"                     =>
+                      i2c_sda_reg       <= cur_data(7);
+                    WHEN "001"                     =>
+                      i2c_sda_reg       <= cur_data(6);
+                    WHEN "010"                     =>
+                      i2c_sda_reg       <= cur_data(5);
+                    WHEN "011"                     =>
+                      i2c_sda_reg       <= cur_data(4);
+                    WHEN "100"                     =>
+                      i2c_sda_reg       <= cur_data(3);
+                    WHEN "101"                     =>
+                      i2c_sda_reg       <= cur_data(2);
+                    WHEN "110"                     =>
+                      i2c_sda_reg       <= cur_data(1);
+                    WHEN "111"                     =>
+                      i2c_sda_reg       <= cur_data(0);
+                    WHEN OTHERS                    =>
+                      i2c_sda_reg       <= 'X';
                   END CASE;
-                      bit_position <= bit_position + 1;
+                      bit_position      <= bit_position + 1;
                       IF (bit_position = "111") THEN
-                        i2c_state <= "010";  -- 'post_data'
+                        i2c_state       <= "010";  -- 'post_data'
                       ELSE
-                        i2c_state <= "001";  -- 'data'
+                        i2c_state       <= "001";  -- 'data'
                       END IF;
-                WHEN "010" =>           -- STATE: post_data
+                WHEN "010"                         =>  -- STATE: post_data
                   cur_data(15 DOWNTO 0) <= cur_data(23 DOWNTO 8);  -- Shift right by 8, TODO investigate other shifting methods
                   i2c_sda_reg           <= '1';
                   IF (byte_position = 2) THEN
-                    byte_position <= (OTHERS => '0');
-                    i2c_state     <= "100";
+                    byte_position       <= (OTHERS => '0');
+                    i2c_state           <= "100";
                   ELSE
-                    byte_position <= byte_position + 1;
-                    i2c_state     <= "001";
+                    byte_position       <= byte_position + 1;
+                    i2c_state           <= "001";
                   END IF;
-                WHEN "100" =>           -- STATE: stop_wait
-                  i2c_sda_reg <= '0';
-                  i2c_state   <= "011";      -- 'stop'
-                WHEN OTHERS =>
+                WHEN "100"                         =>  -- STATE: stop_wait
+                  i2c_sda_reg           <= '0';
+                  i2c_state             <= "011";  -- 'stop'
+                WHEN OTHERS                        =>
                   NULL;
               END CASE;
-            WHEN OTHERS =>
+            WHEN OTHERS                            =>
               NULL;
           END CASE;
         END IF;

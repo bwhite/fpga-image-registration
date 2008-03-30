@@ -287,7 +287,7 @@ BEGIN
   PROCESS (clk_intbuf) IS
   BEGIN  -- PROCESS
     IF clk_intbuf'event AND clk_intbuf = '1' THEN  -- rising clock edge
-      IF read_addr /= 307199 THEN                  -- Last pixel for 640x480
+      IF read_addr /= 262143 THEN          
         read_addr <= read_addr + 1;
       ELSE
         read_addr <= (OTHERS => '0');
@@ -305,7 +305,9 @@ BEGIN
         write_stream_started <= '1';
         we_b                 <= '0';
         addr                 <= std_logic_vector(pixel_addr_wire(17 DOWNTO 0));
-      ELSIF pixel_addr_wire = 307199 AND vga_data_valid_wire='1' AND write_stream_started='1' THEN          -- Last pixel for 640x480
+      ELSIF pixel_addr_wire >= 262143 AND write_stream_started='1' THEN-- Last pixel
+                                                                                                  -- for
+                                                                                                  -- 640x480 307199
         write_stream_started <= '0';
         we_b                 <= '0';
         addr                 <= std_logic_vector(pixel_addr_wire(17 DOWNTO 0));

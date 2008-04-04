@@ -67,123 +67,119 @@ ARCHITECTURE Behavioral OF conv_3x3_derivatives IS
                                                               ((OTHERS => '0'), (OTHERS => '0')),
                                                               ((OTHERS => '0'), (OTHERS => '0')));
 
-  SIGNAL img0_psumx, img0_sumx, img0_psumy, img0_sumy : unsigned33_2x1vec    := ((OTHERS         => '0'), (OTHERS => '0'));
-  SIGNAL img0_xs3, img0_ys3                           : unsigned33_2x1vec    := ((OTHERS         => '0'), (OTHERS => '0'));
-  SIGNAL ix_reg, iy_reg                               : signed(33 DOWNTO 0)  := (OTHERS          => '0');
-  SIGNAL img1_1_1_reg                                 : unsigned(8 DOWNTO 0) := (OTHERS          => '0');
+  SIGNAL img0_psumx, img0_sumx, img0_psumy, img0_sumy : unsigned33_2x1vec            := ((OTHERS => '0'), (OTHERS => '0'));
+  SIGNAL img0_xs3, img0_ys3                           : unsigned33_2x1vec            := ((OTHERS => '0'), (OTHERS => '0'));
+  SIGNAL ix_reg, iy_reg                               : signed(33 DOWNTO 0)          := (OTHERS  => '0');
+  SIGNAL img1_1_1_reg                                 : unsigned(8 DOWNTO 0)         := (OTHERS  => '0');
   SIGNAL it_reg                                       : signed10_6x1;
-  SIGNAL input_valid_reg                              : std_logic_vector(6 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL input_valid_reg                              : std_logic_vector(6 DOWNTO 0) := (OTHERS  => '0');
 BEGIN
-  PROCESS (CLK) IS
-  BEGIN  -- PROCESS
     IX         <= std_logic_vector(ix_reg);
     IY         <= std_logic_vector(iy_reg);
     IT         <= std_logic_vector(it_reg(5));
     DATA_VALID <= input_valid_reg(6);
+  PROCESS (CLK) IS
+  BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      IF RST = '1' THEN                 -- synchronous reset (active high)
 
-      ELSE
-        -----------------------------------------------------------------------
-        -- Pass the InputValid signal through 7 registers, with the last
-        -- connected to DATA_VALID
-        input_valid_reg(0)   <= INPUT_VALID;
-        FOR i IN 6 DOWNTO 1 LOOP
-          input_valid_reg(i) <= input_valid_reg(i-1);
-        END LOOP;  -- i
+      -----------------------------------------------------------------------
+      -- Pass the InputValid signal through 7 registers, with the last
+      -- connected to DATA_VALID
+      input_valid_reg(0)   <= INPUT_VALID;
+      FOR i IN 6 DOWNTO 1 LOOP
+        input_valid_reg(i) <= input_valid_reg(i-1);
+      END LOOP;  -- i
 
-        -----------------------------------------------------------------------
-        -- Register input data
-        img0_reg(0, 0) <= unsigned(IMG0_0_0);
-        img0_reg(0, 1) <= unsigned(IMG0_0_1);
-        img0_reg(0, 2) <= unsigned(IMG0_0_2);
-        img0_reg(1, 0) <= unsigned(IMG0_1_0);
-        img0_reg(1, 1) <= unsigned(IMG0_1_1);
-        img0_reg(1, 2) <= unsigned(IMG0_1_2);
-        img0_reg(2, 0) <= unsigned(IMG0_2_0);
-        img0_reg(2, 1) <= unsigned(IMG0_2_1);
-        img0_reg(2, 2) <= unsigned(IMG0_2_2);
-        img1_1_1_reg   <= unsigned(IMG1_1_1);
-        -----------------------------------------------------------------------
-        -- Compute IT, pass through pipeline registers to be output with the
-        -- other data.  New middle pixel - old middle pixel = IT
-        it_reg(0)      <= signed('0'&img1_1_1_reg) - signed('0'&img0_reg(1, 1));
-        FOR i IN 5 DOWNTO 1 LOOP
-          it_reg(i)    <= it_reg(i-1);
-        END LOOP;  -- i
+      -----------------------------------------------------------------------
+      -- Register input data
+      img0_reg(0, 0) <= unsigned(IMG0_0_0);
+      img0_reg(0, 1) <= unsigned(IMG0_0_1);
+      img0_reg(0, 2) <= unsigned(IMG0_0_2);
+      img0_reg(1, 0) <= unsigned(IMG0_1_0);
+      img0_reg(1, 1) <= unsigned(IMG0_1_1);
+      img0_reg(1, 2) <= unsigned(IMG0_1_2);
+      img0_reg(2, 0) <= unsigned(IMG0_2_0);
+      img0_reg(2, 1) <= unsigned(IMG0_2_1);
+      img0_reg(2, 2) <= unsigned(IMG0_2_2);
+      img1_1_1_reg   <= unsigned(IMG1_1_1);
+      -----------------------------------------------------------------------
+      -- Compute IT, pass through pipeline registers to be output with the
+      -- other data.  New middle pixel - old middle pixel = IT
+      it_reg(0)      <= signed('0'&img1_1_1_reg) - signed('0'&img0_reg(1, 1));
+      FOR i IN 5 DOWNTO 1 LOOP
+        it_reg(i)    <= it_reg(i-1);
+      END LOOP;  -- i
 
-        -----------------------------------------------------------------------
-        -- Multiply by gaussian coefficients (both in the X and the Y direction)
-        -- This is 6 multiplies each
-        -- XSmooth
-        FOR i IN 2 DOWNTO 0 LOOP
-          FOR j IN 2 DOWNTO 0 LOOP
-            IF i/=1 THEN                -- Ignore middle row
-              IF j = 1 THEN
-                img0_xs0(i/2, j) <= img0_reg(i, j)*GAUSS_3x1_1;
-              ELSE
-                img0_xs0(i/2, j) <= img0_reg(i, j)*GAUSS_3x1_0;
-              END IF;
+      -----------------------------------------------------------------------
+      -- Multiply by gaussian coefficients (both in the X and the Y direction)
+      -- This is 6 multiplies each
+      -- XSmooth
+      FOR i IN 2 DOWNTO 0 LOOP
+        FOR j IN 2 DOWNTO 0 LOOP
+          IF i/=1 THEN                  -- Ignore middle row
+            IF j = 1 THEN
+              img0_xs0(i/2, j) <= img0_reg(i, j)*GAUSS_3x1_1;
+            ELSE
+              img0_xs0(i/2, j) <= img0_reg(i, j)*GAUSS_3x1_0;
             END IF;
-          END LOOP;  -- j
-        END LOOP;  -- i
+          END IF;
+        END LOOP;  -- j
+      END LOOP;  -- i
 
-        -- YSmooth
-        FOR i IN 2 DOWNTO 0 LOOP
-          FOR j IN 2 DOWNTO 0 LOOP
-            IF j/=1 THEN                -- Ignore middle column
-              IF i = 1 THEN
-                img0_ys0(i, j/2) <= img0_reg(i, j)*GAUSS_3x1_1;
-              ELSE
-                img0_ys0(i, j/2) <= img0_reg(i, j)*GAUSS_3x1_0;
-              END IF;
+      -- YSmooth
+      FOR i IN 2 DOWNTO 0 LOOP
+        FOR j IN 2 DOWNTO 0 LOOP
+          IF j/=1 THEN                  -- Ignore middle column
+            IF i = 1 THEN
+              img0_ys0(i, j/2) <= img0_reg(i, j)*GAUSS_3x1_1;
+            ELSE
+              img0_ys0(i, j/2) <= img0_reg(i, j)*GAUSS_3x1_0;
             END IF;
-          END LOOP;  -- j
-        END LOOP;  -- i
+          END IF;
+        END LOOP;  -- j
+      END LOOP;  -- i
 
-        -- Add a pipeline for the multipliers
-        img0_xs1 <= img0_xs0;
-        img0_xs2 <= img0_xs1;
-        img0_ys1 <= img0_ys0;
-        img0_ys2 <= img0_ys1;
+      -- Add a pipeline for the multipliers
+      img0_xs1 <= img0_xs0;
+      img0_xs2 <= img0_xs1;
+      img0_ys1 <= img0_ys0;
+      img0_ys2 <= img0_ys1;
 
-        -----------------------------------------------------------------------
-        -- Sum each set of 3 of the above multiples to produce 2 3 vectors, one
-        -- XSmooth Sum (Sum along the X direction A(:,0)+A(:,1)+A(:,2))
-        FOR i IN 1 DOWNTO 0 LOOP
-          img0_psumx(i) <= img0_xs2(i, 0)+img0_xs2(i, 1);
-        END LOOP;  -- i
+      -----------------------------------------------------------------------
+      -- Sum each set of 3 of the above multiples to produce 2 3 vectors, one
+      -- XSmooth Sum (Sum along the X direction A(:,0)+A(:,1)+A(:,2))
+      FOR i IN 1 DOWNTO 0 LOOP
+        img0_psumx(i) <= img0_xs2(i, 0)+img0_xs2(i, 1);
+      END LOOP;  -- i
 
-        -- Save for next CT
-        FOR i IN 1 DOWNTO 0 LOOP
-          img0_xs3(i) <= img0_xs2(i, 2);
-        END LOOP;  -- i
+      -- Save for next CT
+      FOR i IN 1 DOWNTO 0 LOOP
+        img0_xs3(i) <= img0_xs2(i, 2);
+      END LOOP;  -- i
 
-        FOR i IN 1 DOWNTO 0 LOOP
-          img0_sumx(i) <= img0_psumx(i)+img0_xs3(i);
-        END LOOP;  -- i
+      FOR i IN 1 DOWNTO 0 LOOP
+        img0_sumx(i) <= img0_psumx(i)+img0_xs3(i);
+      END LOOP;  -- i
 
-        -----------------------------------------------------------------------
-        -- YSmooth Sum (Sum along the Y direction A(0,:)+A(1,:)+A(2,:))
-        FOR i IN 1 DOWNTO 0 LOOP
-          img0_psumy(i) <= img0_ys2(0, i)+img0_ys2(1, i);
-        END LOOP;  -- i
+      -----------------------------------------------------------------------
+      -- YSmooth Sum (Sum along the Y direction A(0,:)+A(1,:)+A(2,:))
+      FOR i IN 1 DOWNTO 0 LOOP
+        img0_psumy(i) <= img0_ys2(0, i)+img0_ys2(1, i);
+      END LOOP;  -- i
 
-        -- Save for next CT
-        FOR i IN 1 DOWNTO 0 LOOP
-          img0_ys3(i) <= img0_ys2(2, i);
-        END LOOP;  -- i
+      -- Save for next CT
+      FOR i IN 1 DOWNTO 0 LOOP
+        img0_ys3(i) <= img0_ys2(2, i);
+      END LOOP;  -- i
 
-        FOR i IN 1 DOWNTO 0 LOOP
-          img0_sumy(i) <= img0_psumy(i)+img0_ys3(i);
-        END LOOP;  -- i
+      FOR i IN 1 DOWNTO 0 LOOP
+        img0_sumy(i) <= img0_psumy(i)+img0_ys3(i);
+      END LOOP;  -- i
 
-        -- Subtract sum(2)-sum(0) for the spatial derivatives
-        ix_reg <= signed('0'&img0_sumx(1))-signed('0'&img0_sumx(0));
-        iy_reg <= signed('0'&img0_sumy(1))-signed('0'&img0_sumy(0));
+      -- Subtract sum(2)-sum(0) for the spatial derivatives
+      ix_reg <= signed('0'&img0_sumx(1))-signed('0'&img0_sumx(0));
+      iy_reg <= signed('0'&img0_sumy(1))-signed('0'&img0_sumy(0));
 
-        -- Compute temporal derivative
-      END IF;
     END IF;
   END PROCESS;
 

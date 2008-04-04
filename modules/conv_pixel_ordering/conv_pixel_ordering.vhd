@@ -53,23 +53,23 @@ ARCHITECTURE Behavioral OF conv_pixel_ordering IS
   SIGNAL data_valid_reg : std_logic                                   := '1';
   SIGNAL done_reg       : std_logic                                   := '0';
 BEGIN
-  X_COORD                   <= std_logic_vector(x_coord_reg);
-  Y_COORD                   <= std_logic_vector(y_coord_reg);
-  MEM_ADDR                  <= std_logic_vector(mem_addr_reg);
-  DONE                      <= done_reg;
-  DATA_VALID                <= data_valid_reg;
+  X_COORD                        <= std_logic_vector(x_coord_reg);
+  Y_COORD                        <= std_logic_vector(y_coord_reg);
+  MEM_ADDR                       <= std_logic_vector(mem_addr_reg);
+  DONE                           <= done_reg;
+  DATA_VALID                     <= data_valid_reg;
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       IF RST = '1' THEN                 -- synchronous reset (active high)
-        x_coord_reg         <= (OTHERS                                           => '0');
-        y_coord_reg         <= (OTHERS                                           => '0');
-        y_coord_pos         <= (OTHERS                                           => '0');
-        conv_y_pos          <= (OTHERS                                           => '0');
-        mem_addr_reg        <= (OTHERS                                           => '0');
-        first_pixel         <= '0';
-        data_valid_reg      <= '0';
-        done_reg            <= '0';
+        x_coord_reg              <= (OTHERS                                      => '0');
+        y_coord_reg              <= (OTHERS                                      => '0');
+        y_coord_pos              <= (OTHERS                                      => '0');
+        conv_y_pos               <= (OTHERS                                      => '0');
+        mem_addr_reg             <= (OTHERS                                      => '0');
+        first_pixel              <= '0';
+        data_valid_reg           <= '0';
+        done_reg                 <= '0';
       ELSE
         IF CLKEN = '1' THEN
           IF y_coord_pos/=(HEIGHT-CONV_HEIGHT+1) THEN  -- End of entire stream
@@ -78,36 +78,36 @@ BEGIN
             IF conv_y_pos = CONV_HEIGHT-1 THEN  -- End of Y pattern
               -- This moves our overal vertical position when we meet our max width
               IF x_coord_reg = (WIDTH-1) THEN  -- End of row
-                x_coord_reg <= (OTHERS                                           => '0');
-                y_coord_reg <= y_coord_reg - (CONV_HEIGHT-1) + 1;
+                x_coord_reg      <= (OTHERS                                      => '0');
+                y_coord_reg      <= y_coord_reg - (CONV_HEIGHT-1) + 1;
                 IF y_coord_pos = (HEIGHT-CONV_HEIGHT) THEN  -- End of entire stream
-                  done_reg  <= '1';
-                  data_valid_reg  <= '0';
-                else
-                  data_valid_reg  <= '1';
+                  done_reg       <= '1';
+                  data_valid_reg <= '0';
+                ELSE
+                  data_valid_reg <= '1';
                 END IF;
-                y_coord_pos <= y_coord_pos + 1;
+                y_coord_pos      <= y_coord_pos + 1;
               ELSE
-                data_valid_reg  <= '1';
-                y_coord_reg <= y_coord_reg - (CONV_HEIGHT-1);
-                x_coord_reg <= x_coord_reg + 1;
+                data_valid_reg   <= '1';
+                y_coord_reg      <= y_coord_reg - (CONV_HEIGHT-1);
+                x_coord_reg      <= x_coord_reg + 1;
               END IF;
-              conv_y_pos     <= (OTHERS => '0');
-              mem_addr_reg   <= mem_addr_reg - (CONV_HEIGHT-1)*WIDTH + 1;
+              conv_y_pos         <= (OTHERS                                      => '0');
+              mem_addr_reg       <= mem_addr_reg - (CONV_HEIGHT-1)*WIDTH + 1;
             ELSE
               IF first_pixel = '1' THEN
-                y_coord_reg  <= y_coord_reg + 1;
-                mem_addr_reg <= mem_addr_reg + WIDTH;
-                conv_y_pos   <= conv_y_pos + 1;
+                y_coord_reg      <= y_coord_reg + 1;
+                mem_addr_reg     <= mem_addr_reg + WIDTH;
+                conv_y_pos       <= conv_y_pos + 1;
               END IF;
-              data_valid_reg  <= '1';
-              first_pixel    <= '1';
+              data_valid_reg     <= '1';
+              first_pixel        <= '1';
             END IF;
           ELSE
-            data_valid_reg   <= '0';
+            data_valid_reg       <= '0';
           END IF;
         ELSE
-          data_valid_reg     <= '0';
+          data_valid_reg         <= '0';
         END IF;
       END IF;
     END IF;

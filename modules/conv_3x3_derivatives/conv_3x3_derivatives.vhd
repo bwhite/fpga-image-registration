@@ -29,7 +29,8 @@ USE IEEE.NUMERIC_STD.ALL;
 
 ENTITY conv_3x3_derivatives IS
   GENERIC (
-    GAUSS_3x1_0      :     unsigned(23 DOWNTO 0) := (X"46295C");
+    -- Gaussian kernel with unit radius
+    GAUSS_3x1_0      :     unsigned(23 DOWNTO 0) := (X"46295C"); 
     GAUSS_3x1_1      :     unsigned(23 DOWNTO 0) := (X"73AD47"));
   PORT ( CLK         : IN  std_logic;
          RST         : IN  std_logic;
@@ -112,7 +113,8 @@ BEGIN
 
       -----------------------------------------------------------------------
       -- Multiply by gaussian coefficients (both in the X and the Y direction)
-      -- This is 6 multiplies each
+      -- There are 6 multiplies each; however, the 4 corners are redundant and
+      -- are removed during synthesis in XST, resulting with 8 total multiplies.
       -- XSmooth
       FOR i IN 2 DOWNTO 0 LOOP
         FOR j IN 2 DOWNTO 0 LOOP

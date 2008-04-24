@@ -30,58 +30,55 @@ USE IEEE.NUMERIC_STD.ALL;
 ENTITY conv_3x3_derivatives IS
   GENERIC (
     -- Gaussian kernel with unit radius
-    GAUSS_3x1_0 : signed(24 DOWNTO 0) := ('0' & X"46295C");  -- 1:0:24
-    GAUSS_3x1_1 : signed(24 DOWNTO 0) := ('0' & X"73AD47"));
-  PORT (CLK         : IN  std_logic;
-        RST         : IN  std_logic;
-        INPUT_VALID : IN  std_logic;
-        IMG0_0_0    : IN  std_logic_vector (8 DOWNTO 0);     -- IMG Range <0,1)
-        IMG0_0_1    : IN  std_logic_vector (8 DOWNTO 0);     -- 0:0:9
-        IMG0_0_2    : IN  std_logic_vector (8 DOWNTO 0);
-        IMG0_1_0    : IN  std_logic_vector (8 DOWNTO 0);
-        IMG0_1_1    : IN  std_logic_vector (8 DOWNTO 0);
-        IMG0_1_2    : IN  std_logic_vector (8 DOWNTO 0);
-        IMG0_2_0    : IN  std_logic_vector (8 DOWNTO 0);
-        IMG0_2_1    : IN  std_logic_vector (8 DOWNTO 0);
-        IMG0_2_2    : IN  std_logic_vector (8 DOWNTO 0);
-        IMG1_1_1    : IN  std_logic_vector (8 DOWNTO 0);
-        IX          : OUT std_logic_vector (37 DOWNTO 0);    -- 1:4:33
-        IY          : OUT std_logic_vector (37 DOWNTO 0);
-        IT          : OUT std_logic_vector (9 DOWNTO 0);     -- 1:0:9
-        DATA_VALID  : OUT std_logic
-        );
+    GAUSS_3x1_0      :     unsigned(23 DOWNTO 0) := (X"46295C"); 
+    GAUSS_3x1_1      :     unsigned(23 DOWNTO 0) := (X"73AD47"));
+  PORT ( CLK         : IN  std_logic;
+         RST         : IN  std_logic;
+         INPUT_VALID : IN  std_logic;
+         IMG0_0_0    : IN  std_logic_vector (8 DOWNTO 0);   -- IMG Range <0,1)
+         IMG0_0_1    : IN  std_logic_vector (8 DOWNTO 0);   -- 0:0:9
+         IMG0_0_2    : IN  std_logic_vector (8 DOWNTO 0);
+         IMG0_1_0    : IN  std_logic_vector (8 DOWNTO 0);
+         IMG0_1_1    : IN  std_logic_vector (8 DOWNTO 0);
+         IMG0_1_2    : IN  std_logic_vector (8 DOWNTO 0);
+         IMG0_2_0    : IN  std_logic_vector (8 DOWNTO 0);
+         IMG0_2_1    : IN  std_logic_vector (8 DOWNTO 0);
+         IMG0_2_2    : IN  std_logic_vector (8 DOWNTO 0);
+         IMG1_1_1    : IN  std_logic_vector (8 DOWNTO 0);
+         IX          : OUT std_logic_vector (33 DOWNTO 0);  -- 1:0:33
+         IY          : OUT std_logic_vector (33 DOWNTO 0);
+         IT          : OUT std_logic_vector (9 DOWNTO 0);   -- 1:0:9
+         DATA_VALID  : OUT std_logic
+         );
 END conv_3x3_derivatives;
 
 ARCHITECTURE Behavioral OF conv_3x3_derivatives IS
-  TYPE signed9_2x1vec IS ARRAY (1 DOWNTO 0) OF signed(8 DOWNTO 0);
+  TYPE unsigned9_3x3mat IS ARRAY (2 DOWNTO 0, 2 DOWNTO 0) OF unsigned(8 DOWNTO 0);
+  TYPE unsigned33_3x2mat IS ARRAY (2 DOWNTO 0, 1 DOWNTO 0) OF unsigned(32 DOWNTO 0);
+  TYPE unsigned33_2x3mat IS ARRAY (1 DOWNTO 0, 2 DOWNTO 0) OF unsigned(32 DOWNTO 0);
+  TYPE unsigned9_2x1vec IS ARRAY (1 DOWNTO 0) OF unsigned(8 DOWNTO 0);
+  TYPE unsigned33_2x1vec IS ARRAY (1 DOWNTO 0) OF unsigned(32 DOWNTO 0);
   TYPE signed10_6x1 IS ARRAY (5 DOWNTO 0) OF signed(9 DOWNTO 0);
-  TYPE signed10_3x3mat IS ARRAY (2 DOWNTO 0, 2 DOWNTO 0) OF signed(9 DOWNTO 0);
-  TYPE signed35_3x2mat IS ARRAY (2 DOWNTO 0, 1 DOWNTO 0) OF signed(34 DOWNTO 0);
-  TYPE signed35_2x3mat IS ARRAY (1 DOWNTO 0, 2 DOWNTO 0) OF signed(34 DOWNTO 0);
-  TYPE signed35_2x1vec IS ARRAY (1 DOWNTO 0) OF signed(34 DOWNTO 0);
-  TYPE signed36_2x1vec IS ARRAY (1 DOWNTO 0) OF signed(35 DOWNTO 0);
-  TYPE signed37_2x1vec IS ARRAY (1 DOWNTO 0) OF signed(36 DOWNTO 0);
 
-  SIGNAL img0_reg : signed10_3x3mat := (((OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0')), ((OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0')), ((OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0')));
-  SIGNAL img0_xs0, img0_xs1, img0_xs2 : signed35_2x3mat := (((OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0')),
-                                                            ((OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0')));
+  SIGNAL img0_reg                     : unsigned9_3x3mat  := (((OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0')), ((OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0')), ((OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0')));
+  SIGNAL img0_xs0, img0_xs1, img0_xs2 : unsigned33_2x3mat := (((OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0')),
+                                                              ((OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0')));
 
-  SIGNAL img0_ys0, img0_ys1, img0_ys2 : signed35_3x2mat := (((OTHERS => '0'), (OTHERS => '0')),
-                                                            ((OTHERS => '0'), (OTHERS => '0')),
-                                                            ((OTHERS => '0'), (OTHERS => '0')));
+  SIGNAL img0_ys0, img0_ys1, img0_ys2 : unsigned33_3x2mat := (((OTHERS => '0'), (OTHERS => '0')),
+                                                              ((OTHERS => '0'), (OTHERS => '0')),
+                                                              ((OTHERS => '0'), (OTHERS => '0')));
 
-  SIGNAL img0_xs3, img0_ys3     : signed35_2x1vec              := ((OTHERS => '0'), (OTHERS => '0'));
-  SIGNAL img0_psumx, img0_psumy : signed36_2x1vec              := ((OTHERS => '0'), (OTHERS => '0'));
-  SIGNAL img0_sumx, img0_sumy   : signed37_2x1vec              := ((OTHERS => '0'), (OTHERS => '0'));
-  SIGNAL ix_reg, iy_reg         : signed(37 DOWNTO 0)          := (OTHERS  => '0');
-  SIGNAL img1_1_1_reg           : signed(9 DOWNTO 0)         := (OTHERS  => '0');
-  SIGNAL it_reg                 : signed10_6x1;
-  SIGNAL input_valid_reg        : std_logic_vector(6 DOWNTO 0) := (OTHERS  => '0');
+  SIGNAL img0_psumx, img0_sumx, img0_psumy, img0_sumy : unsigned33_2x1vec            := ((OTHERS => '0'), (OTHERS => '0'));
+  SIGNAL img0_xs3, img0_ys3                           : unsigned33_2x1vec            := ((OTHERS => '0'), (OTHERS => '0'));
+  SIGNAL ix_reg, iy_reg                               : signed(33 DOWNTO 0)          := (OTHERS  => '0');
+  SIGNAL img1_1_1_reg                                 : unsigned(8 DOWNTO 0)         := (OTHERS  => '0');
+  SIGNAL it_reg                                       : signed10_6x1;
+  SIGNAL input_valid_reg                              : std_logic_vector(6 DOWNTO 0) := (OTHERS  => '0');
 BEGIN
-  IX         <= std_logic_vector(ix_reg);
-  IY         <= std_logic_vector(iy_reg);
-  IT         <= std_logic_vector(it_reg(5));
-  DATA_VALID <= input_valid_reg(6);
+    IX         <= std_logic_vector(ix_reg);
+    IY         <= std_logic_vector(iy_reg);
+    IT         <= std_logic_vector(it_reg(5));
+    DATA_VALID <= input_valid_reg(6);
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
@@ -89,56 +86,56 @@ BEGIN
       -----------------------------------------------------------------------
       -- Pass the InputValid signal through 7 registers, with the last
       -- connected to DATA_VALID
-      input_valid_reg(0) <= INPUT_VALID;
+      input_valid_reg(0)   <= INPUT_VALID;
       FOR i IN 6 DOWNTO 1 LOOP
         input_valid_reg(i) <= input_valid_reg(i-1);
       END LOOP;  -- i
 
       -----------------------------------------------------------------------
       -- Register input data
-      img0_reg(0, 0) <= signed('0'&IMG0_0_0);
-      img0_reg(0, 1) <= signed('0'&IMG0_0_1);
-      img0_reg(0, 2) <= signed('0'&IMG0_0_2);
-      img0_reg(1, 0) <= signed('0'&IMG0_1_0);
-      img0_reg(1, 1) <= signed('0'&IMG0_1_1);
-      img0_reg(1, 2) <= signed('0'&IMG0_1_2);
-      img0_reg(2, 0) <= signed('0'&IMG0_2_0);
-      img0_reg(2, 1) <= signed('0'&IMG0_2_1);
-      img0_reg(2, 2) <= signed('0'&IMG0_2_2);
-      img1_1_1_reg   <= signed('0'&IMG1_1_1);
+      img0_reg(0, 0) <= unsigned(IMG0_0_0);
+      img0_reg(0, 1) <= unsigned(IMG0_0_1);
+      img0_reg(0, 2) <= unsigned(IMG0_0_2);
+      img0_reg(1, 0) <= unsigned(IMG0_1_0);
+      img0_reg(1, 1) <= unsigned(IMG0_1_1);
+      img0_reg(1, 2) <= unsigned(IMG0_1_2);
+      img0_reg(2, 0) <= unsigned(IMG0_2_0);
+      img0_reg(2, 1) <= unsigned(IMG0_2_1);
+      img0_reg(2, 2) <= unsigned(IMG0_2_2);
+      img1_1_1_reg   <= unsigned(IMG1_1_1);
       -----------------------------------------------------------------------
       -- Compute IT, pass through pipeline registers to be output with the
       -- other data.  New middle pixel - old middle pixel = IT
-      it_reg(0)      <= img1_1_1_reg - img0_reg(1, 1);
+      it_reg(0)      <= signed('0'&img1_1_1_reg) - signed('0'&img0_reg(1, 1));
       FOR i IN 5 DOWNTO 1 LOOP
-        it_reg(i) <= it_reg(i-1);
+        it_reg(i)    <= it_reg(i-1);
       END LOOP;  -- i
 
       -----------------------------------------------------------------------
       -- Multiply by gaussian coefficients (both in the X and the Y direction)
       -- There are 6 multiplies each; however, the 4 corners are redundant and
       -- are removed during synthesis in XST, resulting with 8 total multiplies.
-      -- XSmooth 1:1:33 = 1:0:9 * 1:0:24
+      -- XSmooth
       FOR i IN 2 DOWNTO 0 LOOP
         FOR j IN 2 DOWNTO 0 LOOP
-          IF i /= 1 THEN                -- Ignore middle row
+          IF i/=1 THEN                  -- Ignore middle row
             IF j = 1 THEN
-              img0_xs0(i/2, j) <= img0_reg(i, j) * GAUSS_3x1_1;
+              img0_xs0(i/2, j) <= img0_reg(i, j)*GAUSS_3x1_1;
             ELSE
-              img0_xs0(i/2, j) <= img0_reg(i, j) * GAUSS_3x1_0;
+              img0_xs0(i/2, j) <= img0_reg(i, j)*GAUSS_3x1_0;
             END IF;
           END IF;
         END LOOP;  -- j
       END LOOP;  -- i
 
-      -- YSmooth 1:1:33 = 1:0:9 * 1:0:24
+      -- YSmooth
       FOR i IN 2 DOWNTO 0 LOOP
         FOR j IN 2 DOWNTO 0 LOOP
-          IF j /= 1 THEN                -- Ignore middle column
+          IF j/=1 THEN                  -- Ignore middle column
             IF i = 1 THEN
-              img0_ys0(i, j/2) <= img0_reg(i, j) * GAUSS_3x1_1;
+              img0_ys0(i, j/2) <= img0_reg(i, j)*GAUSS_3x1_1;
             ELSE
-              img0_ys0(i, j/2) <= img0_reg(i, j) * GAUSS_3x1_0;
+              img0_ys0(i, j/2) <= img0_reg(i, j)*GAUSS_3x1_0;
             END IF;
           END IF;
         END LOOP;  -- j
@@ -153,9 +150,8 @@ BEGIN
       -----------------------------------------------------------------------
       -- Sum each set of 3 of the above multiples to produce 2 3 vectors, one
       -- XSmooth Sum (Sum along the X direction A(:,0)+A(:,1)+A(:,2))
-      -- 1:2:33 = 1:1:33 + 1:1:33
       FOR i IN 1 DOWNTO 0 LOOP
-        img0_psumx(i) <= (img0_xs2(i, 0)(34)&img0_xs2(i, 0)) + (img0_xs2(i, 1)(34)&img0_xs2(i, 1));
+        img0_psumx(i) <= img0_xs2(i, 0)+img0_xs2(i, 1);
       END LOOP;  -- i
 
       -- Save for next CT
@@ -163,16 +159,14 @@ BEGIN
         img0_xs3(i) <= img0_xs2(i, 2);
       END LOOP;  -- i
 
-      -- 1:3:33 = 1:2:33 + 1:1:33
       FOR i IN 1 DOWNTO 0 LOOP
-        img0_sumx(i) <= (img0_psumx(i)(35)&img0_psumx(i))+(img0_xs3(i)(34)&img0_xs3(i));
+        img0_sumx(i) <= img0_psumx(i)+img0_xs3(i);
       END LOOP;  -- i
 
       -----------------------------------------------------------------------
       -- YSmooth Sum (Sum along the Y direction A(0,:)+A(1,:)+A(2,:))
-      -- 1:2:33 = 1:1:33 + 1:1:33
       FOR i IN 1 DOWNTO 0 LOOP
-        img0_psumy(i) <= (img0_ys2(0, i)(34)&img0_ys2(0, i))+(img0_ys2(1, i)(34)&img0_ys2(1, i));
+        img0_psumy(i) <= img0_ys2(0, i)+img0_ys2(1, i);
       END LOOP;  -- i
 
       -- Save for next CT
@@ -180,15 +174,13 @@ BEGIN
         img0_ys3(i) <= img0_ys2(2, i);
       END LOOP;  -- i
 
-      -- 1:3:33 = 1:2:33 + 1:1:33
       FOR i IN 1 DOWNTO 0 LOOP
-        img0_sumy(i) <= (img0_psumy(i)(35)&img0_psumy(i))+(img0_ys3(i)(34)&img0_ys3(i));
+        img0_sumy(i) <= img0_psumy(i)+img0_ys3(i);
       END LOOP;  -- i
 
-      -- 1:4:33 = 1:3:33 - 1:3:33
       -- Subtract sum(2)-sum(0) for the spatial derivatives
-      ix_reg <= (img0_sumx(1)(36)&img0_sumx(1)) - (img0_sumx(0)(36)&img0_sumx(0));
-      iy_reg <= (img0_sumy(1)(36)&img0_sumy(1)) - (img0_sumy(0)(36)&img0_sumy(0));
+      ix_reg <= signed('0'&img0_sumx(1))-signed('0'&img0_sumx(0));
+      iy_reg <= signed('0'&img0_sumy(1))-signed('0'&img0_sumy(0));
 
     END IF;
   END PROCESS;

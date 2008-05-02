@@ -1,10 +1,13 @@
-function mosaic=makeMosaic(saved_file)
+function tmos=makeMosaic(saved_file,verbose)
+if ~exist('verbose')
+    verbose=0;
+end
 load(saved_file)
-%[ssd_error, overlap_pct, homographies,dir_list,directory]
+% Loaded variables [ssd_error, overlap_pct, homographies,dir_list,directory]
 mosaic=[];
 H_prev=eye(3);
 first_im=1;
-
+orig_img=[];
 min_x=1;
 max_x=inf;
 min_y=1;
@@ -15,9 +18,11 @@ temp_yd=zeros(length(dir_list)-1,2);
 % Pass 1, find out the final mosaic size
 for i=1:length(dir_list)-1
     im0=imread(strcat(directory,dir_list(i).name));
-    if max_x==inf
+    if first_im
+        first_im=0;
         max_x=size(im0,2);
         max_y=size(im0,1);
+        orig_img=im0;
     end
     im1=imread(strcat(directory,dir_list(i+1).name));
     H_prev=H_prev*homographies(i*3-2:i*3,:);
@@ -37,10 +42,16 @@ H_prev=eye(3);
 first_img=1;
 pixel_count=zeros(ceil(max_y-min_y+1),ceil(max_x-min_x+1));
 mosaic=zeros(ceil(max_y-min_y+1),ceil(max_x-min_x+1),3);
-%imshow(zeros(ceil(max_y-min_y),ceil(max_x-min_x)))
 
-%hold on
 % Pass 2, put images on mosaic
+
+% Place orig image
+orig_size=size(orig_img);
+xd=[1 orig_size(2)];
+yd=[1 orig_size(1)];
+mosaic(yd(1):yd(2),xd(1):xd(2),:)=mosaic(yd(1):yd(2),xd(1):xd(2),:)+double(orig_img);
+pixel_count(yd(1):yd(2),xd(1):xd(2))=pixel_count(yd(1):yd(2),xd(1):xd(2))+double(1);
+
 for i=1:length(dir_list)-1
     im0=imread(strcat(directory,dir_list(i).name));
     im1=imread(strcat(directory,dir_list(i+1).name));
@@ -50,7 +61,6 @@ for i=1:length(dir_list)-1
     image1_warped=temp_imgs{i};
     t_nan=uint8(~isnan(image1_warped));
     image1_warped=uint8(image1_warped);
-    t_img=image1_warped.*t_nan;
     xd=round(temp_xd(i,:)-min_x+1); % NOTE :  This rounding makes the mosaic off by up to half a pixel in either direction
     yd=round(temp_yd(i,:)-min_y+1);
     xd(2)=xd(1)+size(image1_warped,2)-1;
@@ -58,10 +68,18 @@ for i=1:length(dir_list)-1
     
     mosaic(yd(1):yd(2),xd(1):xd(2),:)=mosaic(yd(1):yd(2),xd(1):xd(2),:)+double(image1_warped);
     pixel_count(yd(1):yd(2),xd(1):xd(2))=pixel_count(yd(1):yd(2),xd(1):xd(2))+double(t_nan(:,:,1));
+    if verbose==1
+        tmos=mosaic;
+        tmos(:,:,1)=tmos(:,:,1)./pixel_count;
+        tmos(:,:,2)=tmos(:,:,2)./pixel_count;
+        tmos(:,:,3)=tmos(:,:,3)./pixel_count;
+        imshow(uint8(tmos))
+        pause
+    end
+end
+if verbose==0
     tmos=mosaic;
     tmos(:,:,1)=tmos(:,:,1)./pixel_count;
     tmos(:,:,2)=tmos(:,:,2)./pixel_count;
     tmos(:,:,3)=tmos(:,:,3)./pixel_count;
-    imshow(uint8(tmos))
-    pause
 end

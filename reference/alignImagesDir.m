@@ -1,11 +1,13 @@
 function [ssd_error, overlap_pct, homographies,dir_list,directory]=alignImagesDir(directory)
 directory=strcat(directory,'/'); % Shouldn't hurt to tack this on again, as multiple doesn't change anything
+mkdir('reg_res')
 ssd_error=[];
 overlap_pct=[];
 homographies=[]; % 3Nx3 where N is the number of pairs run
 %% Initialize parameters
-iterations = [75 30 5 2];
+iterations = [50 30 5 2];
 levels=length(iterations);
+verbose=0;
 
 %% Query directory, remove non-images
 dir_list=dir(directory);
@@ -76,7 +78,7 @@ for i=1:(length(dir_list)-1)
         Minitial(1:2,3)=Minitial(1:2,3).*[new_x/prev_x;new_y/prev_y];
     end
 
-    [H_im0_to_im1 imout2] = alignImages(im0, im1, iterations, 'a', 1,1);
+    [H_im0_to_im1 imout2] = alignImages(im0, im1, iterations, 'a', 1,verbose);
     H_im1_to_im0=inv(H_im0_to_im1);
     
 %% Show images
@@ -93,6 +95,7 @@ for i=1:(length(dir_list)-1)
     image_blended(1:size(im0,1),1:size(im0,2),1)=normalize_image(im0)*255;
     image_blended(1:size(image1_warped,1),1:size(image1_warped,2),2)=normalize_image(image1_warped)*255;
     image_blended=uint8(image_blended);
+    imwrite(image_blended,sprintf('reg_res/%s-%s.jpg',dir_list(i).name,dir_list(i+1).name));
     imshow(image_blended);
     [diff pct_overlap_pixels]=imcompare(im0,image1_warped);
     disp(sprintf('Diff:%d Overlap:%d',diff,pct_overlap_pixels))

@@ -2,10 +2,16 @@ function M = estAffineIter2(im1,im2,numIters,M,verbose,level,method)
 
 % Each iteration warps the images according to the previous
 % estimate, and estimates the residual motion.
-
+blur_rad=1;
 % Incrementally estimate the correct transform
+if method==1
+    im1=conv2(im1,fspecial('gaussian',[3,3],blur_rad),'same'); % Smooth first
+end
 for iter=1:numIters
    imWarp2=warpProjective2(im2,M);
+%   if method==1
+        %imWarp2=conv2(imWarp2,fspecial('gaussian',[3,3],blur_rad),'same');
+%   end
    % Show output on a figure window
    if verbose>=1
         figure(532);imagesc(imWarp2);colormap('gray')

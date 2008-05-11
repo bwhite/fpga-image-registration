@@ -41,18 +41,20 @@ END fetch_stage;
 ARCHITECTURE Behavioral OF fetch_stage IS
   COMPONENT conv_pixel_ordering IS
                                   GENERIC (
-                                    WIDTH            :     integer := 4;
-                                    HEIGHT           :     integer := 4;
                                     CONV_HEIGHT      :     integer := 3;
                                     WIDTH_BITS       :     integer := 10;
                                     HEIGHT_BITS      :     integer := 10;
-                                    CONV_HEIGHT_BITS :     integer := 3);
+                                    CONV_HEIGHT_BITS :     integer := 2);
                                 PORT ( CLK           : IN  std_logic;
                                        CLKEN         : IN  std_logic;
                                        RST           : IN  std_logic;
+                                       HEIGHT        : IN  std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);
+                                       WIDTH         : IN  std_logic_vector(WIDTH_BITS-1 DOWNTO 0);
+                                       WIDTH_OFFSET  : IN  std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);  -- (CONV_HEIGHT-1)*WIDTH-1
                                        MEM_ADDR      : OUT std_logic_vector (WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);
                                        X_COORD       : OUT std_logic_vector (WIDTH_BITS-1 DOWNTO 0);
                                        Y_COORD       : OUT std_logic_vector (HEIGHT_BITS-1 DOWNTO 0);
+                                       CONV_Y_POS    : OUT std_logic_vector (CONV_HEIGHT_BITS-1 DOWNTO 0);
                                        DATA_VALID    : OUT std_logic;
                                        DONE          : OUT std_logic);
   END COMPONENT;
@@ -97,45 +99,62 @@ BEGIN
 -- coordinate generation). This only loads the new value on RST.
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
-    IF CLK'event AND CLK = '1' THEN      -- rising clock edge
-      IF RST = '1' THEN                  -- synchronous reset (active high)
+    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
+      IF RST = '1' THEN                 -- synchronous reset (active high)
         CASE LEVEL IS
-          WHEN 0                     =>  -- 720x480
-            x_coord_trans <=;            -- TODO Compute translation values
-            y_coord_trans <=;
-            img0_offset   <=;
-            img1_offset   <=;
-            triple_width  <=;
-          WHEN 1                     =>  -- 360x240
-            x_coord_trans <=;
-            y_coord_trans <=;
-            img0_offset   <=;
-            img1_offset   <=;
-            triple_width  <=;
-          WHEN 2                     =>  -- 180x120
-            x_coord_trans <=;
-            y_coord_trans <=;
-            img0_offset   <=;
-            img1_offset   <=;
-            triple_width  <=;
-          WHEN 3                     =>  -- 90x60
-            x_coord_trans <=;
-            y_coord_trans <=;
-            img0_offset   <=;
-            img1_offset   <=;
-            triple_width  <=;
-          WHEN 4                     =>  -- 45x30
-            x_coord_trans <=;
-            y_coord_trans <=;
-            img0_offset   <=;
-            img1_offset   <=;
-            triple_width  <=;
-          WHEN OTHERS                =>
-            x_coord_trans <= (OTHERS => '0');
-            y_coord_trans <= (OTHERS => '0');
-            img0_offset   <= (OTHERS => '0');
-            img1_offset   <= (OTHERS => '0');
-            triple_width  <= (OTHERS => '0');
+          WHEN 0 =>                     -- 720x480
+            x_coord_trans    <=;        -- TODO Compute translation values
+            y_coord_trans    <=;
+            img0_offset      <=;
+            img1_offset      <=;
+            img_height       <=;
+            img_width        <=;
+            img_width_offset <=;
+
+          WHEN 1 =>                     -- 360x240
+            x_coord_trans    <=;
+            y_coord_trans    <=;
+            img0_offset      <=;
+            img1_offset      <=;
+            img_height       <=;
+            img_width        <=;
+            img_width_offset <=;
+
+          WHEN 2 =>                     -- 180x120
+            x_coord_trans    <=;
+            y_coord_trans    <=;
+            img0_offset      <=;
+            img1_offset      <=;
+            img_height       <=;
+            img_width        <=;
+            img_width_offset <=;
+
+          WHEN 3 =>                     -- 90x60
+            x_coord_trans    <=;
+            y_coord_trans    <=;
+            img0_offset      <=;
+            img1_offset      <=;
+            img_height       <=;
+            img_width        <=;
+            img_width_offset <=;
+
+          WHEN 4 =>                     -- 45x30
+            x_coord_trans    <=;
+            y_coord_trans    <=;
+            img0_offset      <=;
+            img1_offset      <=;
+            img_height       <=;
+            img_width        <=;
+            img_width_offset <=;
+
+          WHEN OTHERS                   =>
+            x_coord_trans    <= (OTHERS => '0');
+            y_coord_trans    <= (OTHERS => '0');
+            img0_offset      <= (OTHERS => '0');
+            img1_offset      <= (OTHERS => '0');
+            img_height       <= (OTHERS => '0');
+            img_width        <= (OTHERS => '0');
+            img_width_offset <= (OTHERS => '0');
         END CASE;
       END IF;
     END IF;
@@ -147,7 +166,7 @@ BEGIN
                CLKEN      => pixgen_clken,  -- TODO Hookup to memory selector
                RST        => RST,
                MEM_ADDR   => coord_gen_mem_addr,
-               PIX_STATE  => coord_gen_state,  -- TODO Implement, 0=above cur pixel, 1=
+               CONV_Y_POS => coord_gen_state,  -- TODO Implement, 0=above cur pixel, 1=
                                         -- current pixel, 2=below cur pixel for
                                         -- 3x3
                X_COORD    => x_coord,
@@ -162,28 +181,32 @@ BEGIN
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       IF RST = '1' THEN                 -- synchronous reset (active high)
-        coord_buff_x      <= (OTHERS => '0');
-        coord_buff_y      <= (OTHERS => '0');
+        coord_buff_x        <= (OTHERS => '0');
+        coord_buff_y        <= (OTHERS => '0');
       ELSE
-        IF coord_gen_state = "01" THEN
-          coord_buff_x(1) <= x_coord;
-          coord_buff_y(1) <= y_coord;
-          coord_buff_x(0) <= coord_buff_x(1);
-          coord_buff_y(0) <= coord_buff_y(1);
+        IF coord_valid = '1' THEN
+          IF coord_gen_state = "01" THEN
+            coord_buff_x(1) <= x_coord;
+            coord_buff_y(1) <= y_coord;
+            coord_buff_x(0) <= coord_buff_x(1);
+            coord_buff_y(0) <= coord_buff_y(1);
+          END IF;
         END IF;
       END IF;
     END IF;
   END PROCESS;
 
 -- Affine Transform: Warp current pixel coordinate using H.
+-- TODO Reduce the number of CT's, include rounding in the process
   affine_coord_transform_i : affine_coord_transform
-    PORT MAP ( CLK         => CLK,
-               RST         => RST,
-               INPUT_VALID => coord_valid,
-               X_COORD     => coord_buff_x(0),
-               Y_COORD     => coord_buff_y(0),
-               IMG_HEIGHT  => img_height,  -- TODO Hook these up to ROM
-               IMG_WIDTH   => img_width,
+    PORT MAP ( CLK          => CLK,
+               RST          => RST,
+               INPUT_VALID  => coord_valid,
+               X_COORD      => coord_buff_x(0),
+               Y_COORD      => coord_buff_y(0),
+               HEIGHT       => img_height,
+               WIDTH        => img_width,
+               WIDTH_OFFSET => img_width_offset,
 
                H_0_0 => h_0_0_reg,      -- TODO Correct the precisions for
                                         -- these internally
@@ -196,7 +219,7 @@ BEGIN
 
                XP_COORD     => xp_coord,
                YP_COORD     => yp_coord,
-               OUTPUT_VALID => warp_coord_valid);
+               OUTPUT_VALID => warp_coord_valid);  -- TODO Implement OOB
 
 -- Round Transformed Coords: Round to the nearest whole coordinate.
   PROCESS (CLK) IS

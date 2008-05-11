@@ -30,8 +30,10 @@ ENTITY conv_pixel_ordering IS
     CONV_HEIGHT       :    integer := 3;
     WIDTH_BITS        :    integer := 10;
     HEIGHT_BITS       :    integer := 10;
-    CONV_HEIGHT_BITS  :    integer := 3);
+    CONV_HEIGHT_BITS  :    integer := 2);
   PORT ( CLK          : IN std_logic;
+         CLKEN        : IN std_logic;
+         RST          : IN std_logic;
          -- HEIGHT/WIDTH/WIDTH_OFFSET entered externally
          -- NOTE:  HEIGHT/WIDTH/WIDTH_OFFSET MUST BE CONSTANT AFTER RST FOR
          -- CORRECT RESULTS!
@@ -39,8 +41,6 @@ ENTITY conv_pixel_ordering IS
          WIDTH        : IN std_logic_vector(WIDTH_BITS-1 DOWNTO 0);
          WIDTH_OFFSET : IN std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);  -- (CONV_HEIGHT-1)*WIDTH-1
 
-         CLKEN      : IN  std_logic;
-         RST        : IN  std_logic;
          MEM_ADDR   : OUT std_logic_vector (WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);
          X_COORD    : OUT std_logic_vector (WIDTH_BITS-1 DOWNTO 0);
          Y_COORD    : OUT std_logic_vector (HEIGHT_BITS-1 DOWNTO 0);
@@ -58,7 +58,7 @@ ARCHITECTURE Behavioral OF conv_pixel_ordering IS
   SIGNAL first_pixel                  : std_logic                                   := '1';
   SIGNAL data_valid_reg               : std_logic                                   := '1';
   SIGNAL done_reg                     : std_logic                                   := '0';
-  SIGNAL cache_set : std_logic := '0';  -- If this is 0, then we act as if the
+  SIGNAL cache_set                    : std_logic                                   := '0';  -- If this is 0, then we act as if the
                                         -- first CT a RST is asserted
 BEGIN
   X_COORD                        <= std_logic_vector(x_coord_reg);
@@ -70,7 +70,7 @@ BEGIN
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      IF RST = '1' OR (CLKEN='1' AND cache_set='0') THEN                 -- synchronous reset (active high)
+      IF RST = '1' OR (CLKEN = '1' AND cache_set = '0') THEN  -- synchronous reset (active high)
         x_coord_reg              <= (OTHERS                                                    => '0');
         y_coord_reg              <= (OTHERS                                                    => '0');
         y_coord_pos              <= (OTHERS                                                    => '0');
@@ -83,7 +83,7 @@ BEGIN
         max_y_val                <= unsigned(HEIGHT)-CONV_HEIGHT+1;
         height_conv_diff         <= unsigned(HEIGHT)-CONV_HEIGHT;
         width_minus_one          <= unsigned(WIDTH)-1;
-        cache_set <= '1';
+        cache_set                <= '1';
       ELSE
         IF CLKEN = '1' THEN
           IF y_coord_pos/=max_y_val THEN  -- End of entire stream

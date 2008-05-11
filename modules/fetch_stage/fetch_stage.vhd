@@ -163,12 +163,12 @@ BEGIN
 -- Convolution Pixel Stream: Stream pixel coordinates in a convolution pattern.
   conv_pixel_ordering_i : conv_pixel_ordering
     PORT MAP ( CLK        => CLK,
-               CLKEN      => pixgen_clken,  -- TODO Hookup to memory selector
+               CLKEN      => pixgen_clken,
                RST        => RST,
                MEM_ADDR   => coord_gen_mem_addr,
-               CONV_Y_POS => coord_gen_state,  -- TODO Implement, 0=above cur pixel, 1=
-                                        -- current pixel, 2=below cur pixel for
-                                        -- 3x3
+               CONV_Y_POS => coord_gen_state,  -- 0=above cur pixel, 1=
+                                               -- current pixel, 2=below cur pixel for
+                                               -- 3x3
                X_COORD    => x_coord,
                Y_COORD    => y_coord,
                DATA_VALID => coord_valid,
@@ -177,33 +177,24 @@ BEGIN
 -- Current Pixel Coord Buffer: Store current pixel coordinates (the center of
 -- the convolution).
 -- NOTE: This assumes that the pixel generator will never be halted (CLKEN='0') on the center pixel value.
-  PROCESS (CLK) IS
+  PROCESS (coord_valid, coord_gen_state) IS
   BEGIN  -- PROCESS
-    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      IF RST = '1' THEN                 -- synchronous reset (active high)
-        coord_buff_x        <= (OTHERS => '0');
-        coord_buff_y        <= (OTHERS => '0');
-      ELSE
-        IF coord_valid = '1' THEN
-          IF coord_gen_state = "01" THEN
-            coord_buff_x(1) <= x_coord;
-            coord_buff_y(1) <= y_coord;
-            coord_buff_x(0) <= coord_buff_x(1);
-            coord_buff_y(0) <= coord_buff_y(1);
-          END IF;
-        END IF;
-      END IF;
+    IF coord_valid = '1' AND coord_gen_state = "01" THEN
+      center_pixel_active <= '1';
+    ELSE
+      center_pixel_active <= '0';
     END IF;
   END PROCESS;
 
 -- Affine Transform: Warp current pixel coordinate using H.
 -- TODO Reduce the number of CT's, include rounding in the process
+
   affine_coord_transform_i : affine_coord_transform
     PORT MAP ( CLK          => CLK,
                RST          => RST,
-               INPUT_VALID  => coord_valid,
-               X_COORD      => coord_buff_x(0),
-               Y_COORD      => coord_buff_y(0),
+               INPUT_VALID  => center_pixel_active,
+               X_COORD      => x_coord,
+               Y_COORD      => y_coord,
                HEIGHT       => img_height,
                WIDTH        => img_width,
                WIDTH_OFFSET => img_width_offset,
@@ -254,6 +245,9 @@ BEGIN
         warped_mem_addr     <= (OTHERS => '0');
       ELSE
         warped_width_offset <= img_width*yp_coord_round;
+        -- TODO Check to see if there is a way to remove this multiply, and if
+        -- not test to see the minimum amount of pipelining required to make it
+        -- fit to 200Mhz
         warped_mem_addr     <= warped_width_offset + xp_coord_round;
       END IF;
     END IF;
@@ -267,9 +261,12 @@ BEGIN
         x_coord_trans <= (OTHERS => '0');
         y_coord_trans <= (OTHERS => '0');
       ELSE
-        x_coord_trans <= coord_buff_x(0)+x_coord_trans;  -- TODO: Properly
-                                        -- account for FP
-        y_coord_trans <= coord_buff_y(0)+y_coord_trans;
+        IF center_pixel_active='1' THEN
+          -- TODO Depending on the timing, we may need to pipeline this output
+          x_coord_trans <= x_coord+x_coord_trans;  -- TODO: Properly
+                                                           -- account for FP
+          y_coord_trans <= y_coord+y_coord_trans;
+        END IF;
       END IF;
     END IF;
   END PROCESS;
@@ -277,6 +274,8 @@ BEGIN
 -- Memory Address Selector: Read 3 pixels from IMG0 using the coord generator'
 -- s memory address, pause the coord generator, read 1 pixel from IMG1 using
 -- the warped coord address
+  
+-- TODO Test behavior with pixel generator
   mem_addr_selector_i : mem_addr_selector
     PORT MAP ( CLK          <= CLK,
                RST          <= RST,
@@ -292,7 +291,7 @@ BEGIN
 -- pixel values. Note that since there is a delay between when the read
 -- command is asserted and when the valid data is available, the cur pixel
 -- state will be pipelined to align the valid data with the pixel state.
---
+
 -- TODO Create 3, 3 row shift registers to act as the local neighborhood of the
 -- image.
   PROCESS (CLK) IS

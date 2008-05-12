@@ -60,14 +60,14 @@ ARCHITECTURE Behavioral OF affine_coord_transform IS
   SIGNAL h_1_1_y_0, h_1_1_y_1               : signed(28 DOWNTO 0);
   SIGNAL xsum_h_0_0_h_0_1, ysum_h_1_0_h_1_1 : signed(29 DOWNTO 0);
   SIGNAL xp_coord_reg, yp_coord_reg         : signed(30 DOWNTO 0);
-  SIGNAL valid_buf                          : std_logic_vector(5 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL valid_buf                          : std_logic_vector(3 DOWNTO 0) := (OTHERS => '0');
 BEGIN
   XP_COORD     <= std_logic_vector(xp_coord_reg(20 DOWNTO 11));
   YP_COORD     <= std_logic_vector(yp_coord_reg(20 DOWNTO 11));
-  OUTPUT_VALID <= valid_buf(5);
+  OUTPUT_VALID <= valid_buf(3);
   PROCESS (xp_coord_reg, yp_coord_reg) IS
   BEGIN  -- PROCESS
-    IF (xp_coord_reg(30 DOWNTO 20) = (10 DOWNTO 0                                     => '0') OR xp_coord_reg(30 DOWNTO 20) = (10 DOWNTO 0 => '0')) AND (yp_coord_reg(30 DOWNTO 20) = (10 DOWNTO 0 => '0') OR yp_coord_reg(30 DOWNTO 20) = (10 DOWNTO 0 => '0')) THEN
+    IF xp_coord_reg(30 DOWNTO 21) = (9 DOWNTO 0 => '0') AND yp_coord_reg(30 DOWNTO 21) = (9 DOWNTO 0 => '0') THEN
       OVERFLOW <= '0';
     ELSE
       OVERFLOW <= '1';
@@ -80,7 +80,7 @@ BEGIN
       IF RST = '1' THEN
         valid_buf        <= (OTHERS => '0');
       ELSE
-        FOR i IN 4 DOWNTO 0 LOOP
+        FOR i IN 2 DOWNTO 0 LOOP
           valid_buf(i+1) <= valid_buf(i);
         END LOOP;  -- i
         valid_buf(0)     <= INPUT_VALID;

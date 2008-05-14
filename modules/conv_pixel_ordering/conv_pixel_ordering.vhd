@@ -56,10 +56,8 @@ ARCHITECTURE Behavioral OF conv_pixel_ordering IS
   SIGNAL conv_y_pos_reg               : unsigned(CONV_HEIGHT_BITS-1 DOWNTO 0)       := (OTHERS => '0');
   SIGNAL mem_addr_reg                 : unsigned(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0) := (OTHERS => '0');
   SIGNAL first_pixel                  : std_logic                                   := '1';
-  SIGNAL data_valid_reg               : std_logic                                   := '1';
+  SIGNAL data_valid_reg               : std_logic                                   := '0';
   SIGNAL done_reg                     : std_logic                                   := '0';
-  SIGNAL cache_set                    : std_logic                                   := '0';  -- If this is 0, then we act as if the
-                                        -- first CT a RST is asserted
 BEGIN
   X_COORD                        <= std_logic_vector(x_coord_reg);
   Y_COORD                        <= std_logic_vector(y_coord_reg);
@@ -70,7 +68,13 @@ BEGIN
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      IF RST = '1' OR (CLKEN = '1' AND cache_set = '0') THEN  -- synchronous reset (active high)
+      -- NOTE: These must be constant throughout the operation, after changing
+      -- them assert RST before using any output from this module.  They must be
+      -- valid upon the first posedge of the CLK.
+      max_y_val                  <= unsigned(HEIGHT)-CONV_HEIGHT+1;
+      height_conv_diff           <= unsigned(HEIGHT)-CONV_HEIGHT;
+      width_minus_one            <= unsigned(WIDTH)-1;
+      IF RST = '1' THEN                 -- synchronous reset (active high)
         x_coord_reg              <= (OTHERS                                                    => '0');
         y_coord_reg              <= (OTHERS                                                    => '0');
         y_coord_pos              <= (OTHERS                                                    => '0');
@@ -79,13 +83,8 @@ BEGIN
         first_pixel              <= '1';
         data_valid_reg           <= '0';
         done_reg                 <= '0';
-        -- Cache WIDTH/HEIGHT derived values on RST or on first initialization
-        max_y_val                <= unsigned(HEIGHT)-CONV_HEIGHT+1;
-        height_conv_diff         <= unsigned(HEIGHT)-CONV_HEIGHT;
-        width_minus_one          <= unsigned(WIDTH)-1;
-        cache_set                <= '1';
       ELSE
-        IF CLKEN = '1' THEN
+        IF CLKEN = '1' THEN             -- NOTE: DATA_VALID signal stays the same
           IF y_coord_pos/=max_y_val THEN  -- End of entire stream
             -- This controls the innermost loop (the one that creates the vertical
             -- pixel motion the size of the CONV_HEIGHT)
@@ -118,10 +117,9 @@ BEGIN
               first_pixel        <= '0';
             END IF;
           ELSE
+            done_reg             <= '0';
             data_valid_reg       <= '0';
           END IF;
-        ELSE
-          data_valid_reg         <= '0';
         END IF;
       END IF;
     END IF;

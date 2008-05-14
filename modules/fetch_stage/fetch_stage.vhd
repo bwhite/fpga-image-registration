@@ -3,37 +3,47 @@ USE IEEE.STD_LOGIC_1164.ALL;
 USE ieee.numeric_std.ALL;
 
 ENTITY fetch_stage IS
-  PORT ( CLK       : IN std_logic;      -- NOTE: The clock should not be gated
+  GENERIC (
+    CONV_HEIGHT      :    integer := 3;
+    IMGSIZE_BITS     :    integer := 10;
+    PIXEL_BITS       :    integer := 9;
+    CONV_HEIGHT_BITS :    integer := 2);
+  PORT ( CLK         : IN std_logic;    -- NOTE: The clock should not be gated
                                         -- as the timing in this module depends
                                         -- on the timing of an external RAM
-         RST       : IN std_logic;
-         LEVEL     : IN std_logic;
-         MEM_VALUE : IN std_logic;
-         MEM_VALID : IN std_logic;
+         RST         : IN std_logic;
+         LEVEL       : IN std_logic_vector(2 DOWNTO 0);
+         -- 0:0:PIXEL_BITS Format
+         MEM_VALUE   : IN std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+         MEM_VALID   : IN std_logic;
          -- Affine Homography elements IMG2_VEC=H*IMG1_VEC
          -- Rotation and Non-Isotropic Scale
-         H_0_0     : IN signed(0 DOWNTO 0);
-         H_0_1     : IN signed(0 DOWNTO 0);
-         H_1_0     : IN signed(0 DOWNTO 0);
-         H_1_1     : IN signed(0 DOWNTO 0);
+         -- 1:6:11 Format
+         H_0_0       : IN std_logic_vector(17 DOWNTO 0);
+         H_0_1       : IN std_logic_vector(17 DOWNTO 0);
+         H_1_0       : IN std_logic_vector(17 DOWNTO 0);
+         H_1_1       : IN std_logic_vector(17 DOWNTO 0);
          -- Translation
-         H_0_2     : IN signed(0 DOWNTO 0);
-         H_1_2     : IN signed(0 DOWNTO 0);
+         -- 1:10:11 Format 
+         H_0_2       : IN std_logic_vector(21 DOWNTO 0);
+         H_1_2       : IN std_logic_vector(21 DOWNTO 0);
 
-         MEM_ADDR      : OUT std_logic;
+         MEM_ADDR      : OUT std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
          -- IMG0 Neighborhood for spatial derivative computation (only output
          -- the union of the middle row pixels and the middle column pixels)
-         IMG0_0_1      : OUT std_logic;
-         IMG0_1_0      : OUT std_logic;
-         IMG0_1_1      : OUT std_logic;
-         IMG0_1_2      : OUT std_logic;
-         IMG0_2_1      : OUT std_logic;
+         -- 0:0:PIXEL_BITS Format
+         IMG0_0_1      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+         IMG0_1_0      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+         IMG0_1_1      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+         IMG0_1_2      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+         IMG0_2_1      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
          -- IMG1 Center pixel value for temporal derivative computation
-         IMG1_1_1      : OUT std_logic;
+         IMG1_1_1      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
          -- Offset pixel coordinates for A/b matrix computation (offset to
          -- increase numerical accuracy, corrected later in the pipeline)
-         TRANS_X_COORD : OUT std_logic;
-         TRANS_Y_COORD : OUT std_logic;
+         -- 1:IMGSIZE_BITS:1 Format
+         TRANS_X_COORD : OUT std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+         TRANS_Y_COORD : OUT std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
 
          FSCS_VALID : OUT std_logic);
 END fetch_stage;
@@ -60,56 +70,78 @@ ARCHITECTURE Behavioral OF fetch_stage IS
   END COMPONENT;
 
   COMPONENT affine_coord_transform IS
-                                     PORT ( CLK      : IN  std_logic;
-                                            RST      : IN  std_logic;
-                                        -- 1:10:14
-                                            X_COORD  : IN  std_logic_vector (24 DOWNTO 0);
-                                            Y_COORD  : IN  std_logic_vector (24 DOWNTO 0);
-                                        -- 1:5:12 Format
-                                            H_0_0    : IN  std_logic_vector (17 DOWNTO 0);
-                                            H_1_0    : IN  std_logic_vector (17 DOWNTO 0);
-                                            H_0_1    : IN  std_logic_vector (17 DOWNTO 0);
-                                            H_1_1    : IN  std_logic_vector (17 DOWNTO 0);
-                                        -- 1:10:14 Format 
-                                            H_0_2    : IN  std_logic_vector (24 DOWNTO 0);
-                                            H_1_2    : IN  std_logic_vector (24 DOWNTO 0);
-                                        -- 1:16:8 Format
-                                            XP_COORD : OUT std_logic_vector (32 DOWNTO 0);
-                                            YP_COORD : OUT std_logic_vector (32 DOWNTO 0);
+                                     GENERIC (
+                                       IMGSIZE_BITS    :     integer             := 10;
+                                       POSHALF         :     signed(21 DOWNTO 0) := "0000000000010000000000";
+                                       NEGHALF         :     signed(21 DOWNTO 0) := "1111111111110000000000");
+                                   PORT ( CLK          : IN  std_logic;
+                                          RST          : IN  std_logic;
+                                          INPUT_VALID  : IN  std_logic;
+                                        -- 0:10:0
+                                          X_COORD      : IN  std_logic_vector (9 DOWNTO 0);
+                                          Y_COORD      : IN  std_logic_vector (9 DOWNTO 0);
+                                        -- 1:6:11 Format
+                                          H_0_0        : IN  std_logic_vector (17 DOWNTO 0);
+                                          H_1_0        : IN  std_logic_vector (17 DOWNTO 0);
+                                          H_0_1        : IN  std_logic_vector (17 DOWNTO 0);
+                                          H_1_1        : IN  std_logic_vector (17 DOWNTO 0);
+                                        -- 1:10:11 Format 
+                                          H_0_2        : IN  std_logic_vector (21 DOWNTO 0);
+                                          H_1_2        : IN  std_logic_vector (21 DOWNTO 0);
+                                        -- 0:10:0 Format
+                                          XP_COORD     : OUT std_logic_vector (9 DOWNTO 0);
+                                          YP_COORD     : OUT std_logic_vector (9 DOWNTO 0);
+                                          OVERFLOW_X   : OUT std_logic;
+                                          OVERFLOW_Y   : OUT std_logic;
+                                          OUTPUT_VALID : OUT std_logic);
+  END COMPONENT;
 
-                                            OUTPUT_VALID : OUT std_logic;
-                                            INPUT_VALID  : IN  std_logic);
+  COMPONENT convert_2d_to_1d_coord IS
+                                     PORT ( CLK                                : IN  std_logic;
+                                            RST                                : IN  std_logic;
+                                            INPUT_VALID                        : IN  std_logic
+                                        -- 0:10:0
+                                            WIDTH                              : IN  std_logic_vector (9 DOWNTO 0);
+                                        -- 0:10:0
+                                            X_COORD                            : IN  std_logic_vector (9 DOWNTO 0);
+                                        -- 0:10:0
+                                            Y_COORD                            : IN  std_logic_vector (9 DOWNTO 0);
+                                        -- 0:20:0
+                                            MEM_ADDR                           : OUT std_logic_vector (19 DOWNTO 0);
+                                            OUTPUT_VALID                       : OUT std_logic);
   END COMPONENT;
   COMPONENT mem_addr_selector IS
-                                PORT ( CLK               : IN  std_logic;
-                                       RST               : IN  std_logic;
-                                       PIXEL_STATE       : IN  std_logic_vector(0 DOWNTO 0);
-                                       MEM_ADDR0         : IN  std_logic_vector(0 DOWNTO 0);
-                                       MEM_ADDR1         : IN  std_logic_vector(0 DOWNTO 0);
-                                       MEM_ADDROFF0      : IN  std_logic_vector(0 DOWNTO 0);
-                                       MEM_ADDROFF1      : IN  std_logic_vector(0 DOWNTO 0);
-                                       MEM_ADDR          : OUT std_logic_vector(0 DOWNTO 0);
-                                       PIXGEN_CLKEN      : OUT std_logic);
+                                PORT ( CLK                                     : IN  std_logic;
+                                       RST                                     : IN  std_logic;
+                                       PIXEL_STATE                             : IN  std_logic_vector(0 DOWNTO 0);
+                                       MEM_ADDR0                               : IN  std_logic_vector(0 DOWNTO 0);
+                                       MEM_ADDR1                               : IN  std_logic_vector(0 DOWNTO 0);
+                                       MEM_ADDROFF0                            : IN  std_logic_vector(0 DOWNTO 0);
+                                       MEM_ADDROFF1                            : IN  std_logic_vector(0 DOWNTO 0);
+                                       MEM_ADDR                                : OUT std_logic_vector(0 DOWNTO 0);
+                                       PIXGEN_CLKEN                            : OUT std_logic);
   END COMPONENT;
-
+  SIGNAL x_coord_trans, y_coord_trans, img_height, img_width, img_width_offset :     std_logic_vector(9 DOWNTO 0);
+  SIGNAL img0_offset, img1_offset                                              :     std_logic_vector(19 DOWNTO 0);
 BEGIN
 -- Parameter ROM: Holds parameters that vary depending on the pyramid level.
 -- (Maximum X/Y image coordinates, X/Y Offset Values (to produce a zero mean of
--- pixel coordinates)), level/img offsets, and width*3 values(for conv.
+-- pixel coordinates)), level/img offsets, and width offset values(for conv.
 -- coordinate generation). This only loads the new value on RST.
+-- NOTE: Care must be taken in selecting these values to prevent (over/under)flow
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       IF RST = '1' THEN                 -- synchronous reset (active high)
         CASE LEVEL IS
           WHEN 0 =>                     -- 720x480
-            x_coord_trans    <=;        -- TODO Compute translation values
+            x_coord_trans    <=;        -- TODO Compute ROM values
             y_coord_trans    <=;
             img0_offset      <=;
-            img1_offset      <=;
-            img_height       <=;
+            img1_offset      <=;        -- 
+            img_height       <=;        -- TODO Make these unsigned
             img_width        <=;
-            img_width_offset <=;
+            img_width_offset <=;        -- TODO Make this unsigned
 
           WHEN 1 =>                     -- 360x240
             x_coord_trans    <=;
@@ -162,19 +194,22 @@ BEGIN
 
 -- Convolution Pixel Stream: Stream pixel coordinates in a convolution pattern.
   conv_pixel_ordering_i : conv_pixel_ordering
-    PORT MAP ( CLK        => CLK,
-               CLKEN      => pixgen_clken,
-               RST        => RST,
-               MEM_ADDR   => coord_gen_mem_addr,
-               CONV_Y_POS => coord_gen_state,  -- 0=above cur pixel, 1=
-                                               -- current pixel, 2=below cur pixel for
-                                               -- 3x3
-               X_COORD    => x_coord,
-               Y_COORD    => y_coord,
-               DATA_VALID => coord_valid,
-               DONE       => coord_gen_done);
+    PORT MAP ( CLK          => CLK,
+               CLKEN        => pixgen_clken,
+               RST          => RST,
+               HEIGHT       => img_height,
+               WIDTH        => img_width,
+               WIDTH_OFFSET => img_width_offset,
+               MEM_ADDR     => coord_gen_mem_addr,
+               CONV_Y_POS   => coord_gen_state,  -- 0=above cur pixel, 1=
+                                                 -- current pixel, 2=below cur pixel for
+                                                 -- 3x3
+               X_COORD      => x_coord,
+               Y_COORD      => y_coord,
+               DATA_VALID   => coord_valid,
+               DONE         => coord_gen_done);
 
--- Current Pixel Coord Buffer: Store current pixel coordinates (the center of
+-- Current Pixel Coord Check: Store current pixel coordinates (the center of
 -- the convolution).
 -- NOTE: This assumes that the pixel generator will never be halted (CLKEN='0') on the center pixel value.
   PROCESS (coord_valid, coord_gen_state) IS
@@ -187,20 +222,26 @@ BEGIN
   END PROCESS;
 
 -- Affine Transform: Warp current pixel coordinate using H.
--- TODO Reduce the number of CT's, include rounding in the process
+-- NOTE: 'Current' refers to the center pixel in the pattern (for 3x3 it is
+-- pixel (1,1).) All others will still be processed to allow for a uniform
+-- pipeline; however, their results are not intended to be used.
+  PROCESS (center_pixel_active, coord_valid) IS
+  BEGIN  -- PROCESS
+    IF center_pixel_active = '1' AND coord_valid = '1' THEN
+      affine_input_valid <= '1';
+    ELSE
+      affine_input_valid <= '0';
+    END IF;
+  END PROCESS;
 
   affine_coord_transform_i : affine_coord_transform
-    PORT MAP ( CLK          => CLK,
-               RST          => RST,
-               INPUT_VALID  => center_pixel_active,
-               X_COORD      => x_coord,
-               Y_COORD      => y_coord,
-               HEIGHT       => img_height,
-               WIDTH        => img_width,
-               WIDTH_OFFSET => img_width_offset,
+    PORT MAP ( CLK         => CLK,
+               RST         => RST,
+               INPUT_VALID => affine_input_valid,
+               X_COORD     => x_coord,
+               Y_COORD     => y_coord,
 
-               H_0_0 => h_0_0_reg,      -- TODO Correct the precisions for
-                                        -- these internally
+               H_0_0 => h_0_0_reg,
                H_1_0 => h_1_0_reg,
                H_0_1 => h_0_1_reg,
                H_1_1 => h_1_1_reg,
@@ -210,26 +251,29 @@ BEGIN
 
                XP_COORD     => xp_coord,
                YP_COORD     => yp_coord,
-               OUTPUT_VALID => warp_coord_valid);  -- TODO Implement OOB
+               OVERFLOW_X   => affine_overflow_x,
+               OVERFLOW_Y   => affine_overflow_y,
+               OUTPUT_VALID => warp_coord_valid);
 
--- Round Transformed Coords: Round to the nearest whole coordinate.
+-- Bounds check: Test the rounded X/Y Coordinate bounds to ensure they are
+-- inside the image area. Valid ranges are 0<=X<img_width and 0<=Y<IMG_HEIGHT
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       IF RST = '1' THEN                 -- synchronous reset (active high)
-        xp_coord_round   <= (OTHERS => '0');
-        yp_coord_round   <= (OTHERS => '0');
+        affine_oob_x   <= '0';
+        affine_oob_y   <= '0';
       ELSE
-        IF xp_coord(0) = '0' THEN
-          xp_coord_round <= xp_coord(top-1 DOWNTO 1);  -- TODO Replace top with
-                                        -- correct value
+        IF unsigned(xp_coord) < img_width THEN
+          affine_oob_x <= '0';
         ELSE
-          xp_coord_round <= xp_coord(top-1 DOWNTO 1) + 1;
+          affine_oob_x <= '1';
         END IF;
-        IF yp_coord(0) = '0' THEN
-          yp_coord_round <= yp_coord(top-1 DOWNTO 1);
+
+        IF unsigned(yp_coord) < img_height THEN
+          affine_oob_y <= '0';
         ELSE
-          yp_coord_round <= yp_coord(top-1 DOWNTO 1) + 1;
+          affine_oob_y <= '1';
         END IF;
       END IF;
     END IF;
@@ -237,35 +281,28 @@ BEGIN
 
 -- 2D to 1D Coord Conversion: Convert warped 2D coords to 1D memory locations
 -- (Y*WIDTH+X)
-  PROCESS (CLK) IS
-  BEGIN  -- PROCESS
-    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      IF RST = '1' THEN                 -- synchronous reset (active high)
-        warped_width_offset <= (OTHERS => '0');
-        warped_mem_addr     <= (OTHERS => '0');
-      ELSE
-        warped_width_offset <= img_width*yp_coord_round;
-        -- TODO Check to see if there is a way to remove this multiply, and if
-        -- not test to see the minimum amount of pipelining required to make it
-        -- fit to 200Mhz
-        warped_mem_addr     <= warped_width_offset + xp_coord_round;
-      END IF;
-    END IF;
-  END PROCESS;
+  convert_2d_to_1d_coord_i : convert_2d_to_1d_coord
+    PORT MAP (
+      CLK          => CLK,
+      RST          => RST,
+      INPUT_VALID  => warp_coord_valid,
+      WIDTH        => img_width,
+      X_COORD      => xp_coord,
+      Y_COORD      => yp_coord,
+      MEM_ADDR     => warped_mem_addr,
+      OUTPUT_VALID => coord_conv_valid);
 
 -- Translate Coords: Translate the image coordinates to reduce the
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       IF RST = '1' THEN                 -- synchronous reset (active high)
-        x_coord_trans <= (OTHERS => '0');
-        y_coord_trans <= (OTHERS => '0');
+        x_coord_trans   <= (OTHERS => '0');
+        y_coord_trans   <= (OTHERS => '0');
       ELSE
-        IF center_pixel_active='1' THEN
-          -- TODO Depending on the timing, we may need to pipeline this output
-          x_coord_trans <= x_coord+x_coord_trans;  -- TODO: Properly
-                                                           -- account for FP
-          y_coord_trans <= y_coord+y_coord_trans;
+        IF center_pixel_active = '1' THEN
+          x_coord_trans <= unsigned(x_coord)-unsigned(x_coord_trans);
+          y_coord_trans <= unsigned(y_coord)-unsigned(y_coord_trans);
         END IF;
       END IF;
     END IF;
@@ -274,7 +311,7 @@ BEGIN
 -- Memory Address Selector: Read 3 pixels from IMG0 using the coord generator'
 -- s memory address, pause the coord generator, read 1 pixel from IMG1 using
 -- the warped coord address
-  
+
 -- TODO Test behavior with pixel generator
   mem_addr_selector_i : mem_addr_selector
     PORT MAP ( CLK          <= CLK,
@@ -294,6 +331,12 @@ BEGIN
 
 -- TODO Create 3, 3 row shift registers to act as the local neighborhood of the
 -- image.
+
+
+  
+-- Signal Pipeline:  Passes previously computed values through the pipeline to
+-- allow the signals to be output simultaneously.  Signals:  coord_stage,translated_
+-- coords, bounds checking OOB, affine transform OOB,  coord_valid
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge

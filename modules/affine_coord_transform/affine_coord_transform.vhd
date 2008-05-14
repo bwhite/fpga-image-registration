@@ -28,14 +28,15 @@ USE ieee.numeric_std.ALL;
 
 ENTITY affine_coord_transform IS
   GENERIC (
+    IMGSIZE_BITS      :     integer             := 10;
     POSHALF           :     signed(21 DOWNTO 0) := "0000000000010000000000";
     NEGHALF           :     signed(21 DOWNTO 0) := "1111111111110000000000");
   PORT ( CLK          : IN  std_logic;
          RST          : IN  std_logic;
          INPUT_VALID  : IN  std_logic;
-         -- 0:10:0
-         X_COORD      : IN  std_logic_vector (9 DOWNTO 0);
-         Y_COORD      : IN  std_logic_vector (9 DOWNTO 0);
+         -- 0:IMGSIZE_BITS:0
+         X_COORD      : IN  std_logic_vector (IMGSIZE_BITS-1 DOWNTO 0);
+         Y_COORD      : IN  std_logic_vector (IMGSIZE_BITS-1 DOWNTO 0);
          -- 1:6:11 Format
          H_0_0        : IN  std_logic_vector (17 DOWNTO 0);
          H_1_0        : IN  std_logic_vector (17 DOWNTO 0);
@@ -44,36 +45,34 @@ ENTITY affine_coord_transform IS
          -- 1:10:11 Format 
          H_0_2        : IN  std_logic_vector (21 DOWNTO 0);
          H_1_2        : IN  std_logic_vector (21 DOWNTO 0);
-         -- 0:10:0 Format
-         XP_COORD     : OUT std_logic_vector (9 DOWNTO 0);
-         YP_COORD     : OUT std_logic_vector (9 DOWNTO 0);
+         -- 0:IMGSIZE_BITS:0 Format
+         XP_COORD     : OUT std_logic_vector (IMGSIZE_BITS-1 DOWNTO 0);
+         YP_COORD     : OUT std_logic_vector (IMGSIZE_BITS-1 DOWNTO 0);
          OVERFLOW_X   : OUT std_logic;
          OVERFLOW_Y   : OUT std_logic;
          OUTPUT_VALID : OUT std_logic);
 END affine_coord_transform;
 
 ARCHITECTURE Behavioral OF affine_coord_transform IS
-  SIGNAL h_0_2_x_0, h_0_2_x_1               : signed(21 DOWNTO 0);
-  SIGNAL h_1_2_y_0, h_1_2_y_1               : signed(21 DOWNTO 0);
-  SIGNAL h_0_0_x_0                          : signed(28 DOWNTO 0);
-  SIGNAL h_1_0_x_0                          : signed(28 DOWNTO 0);
-  SIGNAL h_0_1_y_0                          : signed(28 DOWNTO 0);
-  SIGNAL h_1_1_y_0                          : signed(28 DOWNTO 0);
-  SIGNAL xsum_h_0_0_h_0_1, ysum_h_1_0_h_1_1 : signed(29 DOWNTO 0);
-  SIGNAL xp_coord_reg, yp_coord_reg         : signed(30 DOWNTO 0);
-  SIGNAL valid_buf                          : std_logic_vector(2 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL h_0_0_x_0, h_1_0_x_0, h_0_1_y_0, h_1_1_y_0 : signed(18+IMGSIZE_BITS DOWNTO 0);
+  SIGNAL xsum_h_0_0_h_0_1, ysum_h_1_0_h_1_1         : signed(19+IMGSIZE_BITS DOWNTO 0);
+  SIGNAL xp_coord_reg, yp_coord_reg                 : signed(20+IMGSIZE_BITS DOWNTO 0);
+  SIGNAL h_0_2_x_0, h_0_2_x_1                       : signed(21 DOWNTO 0);
+  SIGNAL h_1_2_y_0, h_1_2_y_1                       : signed(21 DOWNTO 0);
+  SIGNAL valid_buf                                  : std_logic_vector(2 DOWNTO 0) := (OTHERS => '0');
 BEGIN
-  XP_COORD       <= std_logic_vector(xp_coord_reg(20 DOWNTO 11));
-  YP_COORD       <= std_logic_vector(yp_coord_reg(20 DOWNTO 11));
+  -- 0:IMGSIZE_BITS:0
+  XP_COORD       <= std_logic_vector(xp_coord_reg(10+IMGSIZE_BITS DOWNTO 11));
+  YP_COORD       <= std_logic_vector(yp_coord_reg(10+IMGSIZE_BITS DOWNTO 11));
   OUTPUT_VALID   <= valid_buf(2);
   PROCESS (xp_coord_reg, yp_coord_reg) IS
   BEGIN  -- PROCESS
-    IF xp_coord_reg(30 DOWNTO 21) = (9 DOWNTO 0                                       => '0') THEN
-      OVERFLOW_X   <= '0';
+    IF xp_coord_reg(20+IMGSIZE_BITS DOWNTO 11+IMGSIZE_BITS) = (9 DOWNTO 0                                               => '0') THEN
+      OVERFLOW_X <= '0';
     ELSE
-      OVERFLOW_X   <= '1';
+      OVERFLOW_X <= '1';
     END IF;
-    IF yp_coord_reg(30 DOWNTO 21) = (9 DOWNTO 0                                       => '0') THEN
+    IF yp_coord_reg(20+IMGSIZE_BITS DOWNTO 11+IMGSIZE_BITS) = (9 DOWNTO 0                                               => '0') THEN
       OVERFLOW_Y <= '0';
     ELSE
       OVERFLOW_Y <= '1';
@@ -110,24 +109,24 @@ BEGIN
       END IF;
       h_1_2_y_1   <= h_1_2_y_0;
 
-      -- H_0_0*X 1:17:11
+      -- H_0_0*X 1:7+IMGSIZE_BITS:11
       h_0_0_x_0 <= signed(H_0_0)*signed('0'&X_COORD);
 
-      -- H_1_0*X 1:17:11
+      -- H_1_0*X 1:7+IMGSIZE_BITS:11
       h_1_0_x_0 <= signed(H_1_0)*signed('0'&X_COORD);
 
-      -- H_0_1*Y 1:17:11
+      -- H_0_1*Y 1:7+IMGSIZE_BITS:11
       h_0_1_y_0 <= signed(H_0_1)*signed('0'&Y_COORD);
 
-      -- H_1_1*Y 1:17:11
+      -- H_1_1*Y 1:7+IMGSIZE_BITS:11
       h_1_1_y_0 <= signed(H_1_1)*signed('0'&Y_COORD);
 
-      -- 1:18:11
-      xsum_h_0_0_h_0_1 <= (h_0_0_x_0(28)&h_0_0_x_0) + (h_0_1_y_0(28)&h_0_1_y_0);
-      ysum_h_1_0_h_1_1 <= (h_1_0_x_0(28)&h_1_0_x_0) + (h_1_1_y_0(28)&h_1_1_y_0);
-      -- 1:19:11
-      xp_coord_reg     <= (xsum_h_0_0_h_0_1(29)&xsum_h_0_0_h_0_1)+h_0_2_x_1;
-      yp_coord_reg     <= (ysum_h_1_0_h_1_1(29)&ysum_h_1_0_h_1_1)+h_1_2_y_1;
+      -- 1:8+IMGSIZE_BITS:11
+      xsum_h_0_0_h_0_1 <= (h_0_0_x_0(18+IMGSIZE_BITS)&h_0_0_x_0) + (h_0_1_y_0(18+IMGSIZE_BITS)&h_0_1_y_0);
+      ysum_h_1_0_h_1_1 <= (h_1_0_x_0(18+IMGSIZE_BITS)&h_1_0_x_0) + (h_1_1_y_0(18+IMGSIZE_BITS)&h_1_1_y_0);
+      -- 1:9+IMGSIZE_BITS:11
+      xp_coord_reg     <= (xsum_h_0_0_h_0_1(19+IMGSIZE_BITS)&xsum_h_0_0_h_0_1)+h_0_2_x_1;
+      yp_coord_reg     <= (ysum_h_1_0_h_1_1(19+IMGSIZE_BITS)&ysum_h_1_0_h_1_1)+h_1_2_y_1;
     END IF;
   END PROCESS;
 END Behavioral;

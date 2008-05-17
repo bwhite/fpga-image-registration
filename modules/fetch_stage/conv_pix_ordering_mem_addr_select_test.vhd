@@ -22,15 +22,17 @@ USE IEEE.STD_LOGIC_1164.ALL;
 USE IEEE.STD_LOGIC_ARITH.ALL;
 USE IEEE.STD_LOGIC_UNSIGNED.ALL;
 
----- Uncomment the following library declaration if instantiating
----- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
-
 ENTITY conv_pix_ordering_mem_addr_select_test IS
   PORT ( CLK          : IN  std_logic;
          RST          : IN  std_logic;
+         MEM_VALUE    : IN  std_logic_vector(8 DOWNTO 0);
          MEM_ADDR     : OUT std_logic_vector(19 DOWNTO 0);
+         IMG0_0_1     : OUT std_logic_vector(8 DOWNTO 0);
+         IMG0_1_0     : OUT std_logic_vector(8 DOWNTO 0);
+         IMG0_1_1     : OUT std_logic_vector(8 DOWNTO 0);
+         IMG0_1_2     : OUT std_logic_vector(8 DOWNTO 0);
+         IMG0_2_1     : OUT std_logic_vector(8 DOWNTO 0);
+         IMG1_1_1     : OUT std_logic_vector(8 DOWNTO 0);
          OUTPUT_VALID : OUT std_logic);
 END conv_pix_ordering_mem_addr_select_test;
 
@@ -61,25 +63,52 @@ ARCHITECTURE Behavioral OF conv_pix_ordering_mem_addr_select_test IS
 
   COMPONENT mem_addr_selector IS
                                 GENERIC (
-                                  MEMADDR_BITS    :     integer := 20;
-                                  PIXSTATE_BITS   :     integer := 2);
-                              PORT ( CLK          : IN  std_logic;
-                                     RST          : IN  std_logic;
-                                     INPUT_VALID0 : IN  std_logic;
-                                     INPUT_VALID1 : IN  std_logic;
-                                     PIXEL_STATE  : IN  std_logic_vector(PIXSTATE_BITS-1 DOWNTO 0);
-                                     MEM_ADDR0    : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-                                     MEM_ADDR1    : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-                                     MEM_ADDROFF0 : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-                                     MEM_ADDROFF1 : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-                                     MEM_ADDR     : OUT std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-                                     OUTPUT_VALID : OUT std_logic;
-                                     PIXGEN_CLKEN : OUT std_logic);
+                                  MEMADDR_BITS  : integer := 20;
+                                  PIXSTATE_BITS : integer := 2);
+
+                              PORT ( CLK                  : IN  std_logic;
+                                     RST                  : IN  std_logic;
+                                     INPUT_VALID0         : IN  std_logic;
+                                     INPUT_VALID1         : IN  std_logic;
+                                     PIXEL_STATE          : IN  std_logic_vector(PIXSTATE_BITS-1 DOWNTO 0);
+                                     MEM_ADDR0            : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
+                                     MEM_ADDR1            : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
+                                     MEM_ADDROFF0         : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
+                                     MEM_ADDROFF1         : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
+                                     PATTERN_STATE        : OUT std_logic_vector (PIXSTATE_BITS DOWNTO 0);
+                                     MEM_ADDR             : OUT std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
+                                     OUTPUT_VALID         : OUT std_logic;
+                                     PIXGEN_CLKEN         : OUT std_logic);
   END COMPONENT;
-  SIGNAL coord_gen_state                          :     std_logic_vector(1 DOWNTO 0);
-  SIGNAL coord_gen_mem_addr                       :     std_logic_vector(19 DOWNTO 0);
-  SIGNAL pixgen_clken, coord_valid                :     std_logic;
+  COMPONENT pixel_conv_buffer IS
+                                GENERIC (
+                                  PIXEL_BITS              : IN  integer := 9);
+                              PORT ( CLK                  : IN  std_logic;
+                                     RST                  : IN  std_logic;
+                                     MEM_VALUE            : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+                                     INPUT_VALID          : IN  std_logic;
+                                     PATTERN_STATE        : IN  std_logic_vector(2 DOWNTO 0);
+                                     OUTPUT_VALID         : OUT std_logic;
+                                     IMG0_0_1             : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+                                     IMG0_1_0             : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+                                     IMG0_1_1             : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+                                     IMG0_1_2             : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+                                     IMG0_2_1             : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+                                     IMG1_1_1             : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0));
+  END COMPONENT;
+  SIGNAL coord_gen_state                                  :     std_logic_vector(1 DOWNTO 0);
+  SIGNAL coord_gen_mem_addr                               :     std_logic_vector(19 DOWNTO 0);
+  SIGNAL pixgen_clken, coord_valid, mem_addr_output_valid :     std_logic;
+  SIGNAL pattern_state_wire                               :     std_logic_vector(2 DOWNTO 0);
+  SIGNAL mem_value_buf : std_logic_vector(8 DOWNTO 0) := (OTHERS => '0');
 BEGIN
+PROCESS (CLK) IS
+BEGIN  -- PROCESS
+  IF CLK'event AND CLK = '1' THEN       -- rising clock edge
+    mem_value_buf <= MEM_VALUE;
+  END IF;
+END PROCESS;
+  
 -- Conv pixel ordering should output 3 pixels corresponding to one vertical 3
 -- pixel segment, it should be paused (i.e., should not output another pixel)
 -- while the warped memory address is taken, it should then be unpaused and the
@@ -98,23 +127,34 @@ BEGIN
                CONV_Y_POS   => coord_gen_state);  -- 0=above cur pixel, 1=
                                                   -- current pixel, 2=below cur pixel for
                                                   -- 3x3
---               X_COORD      => x_coord,
---               Y_COORD      => y_coord,
---               DONE         => coord_gen_done);
-
 
   mem_addr_selector_i : mem_addr_selector
-    PORT MAP ( CLK          => CLK,
-               RST          => RST,
+    PORT MAP ( CLK           => CLK,
+               RST           => RST,
                INPUT_VALID0  => coord_valid,
                INPUT_VALID1  => '1',
-               PIXEL_STATE  => coord_gen_state,
-               MEM_ADDR0    => coord_gen_mem_addr,
-               MEM_ADDR1    => "10101010101010101010",  -- NOTE: Sentinal value
-               MEM_ADDROFF0 => "00000000000000000000",
-               MEM_ADDROFF1 => "00000000000000000000",
-               MEM_ADDR     => MEM_ADDR,
-               OUTPUT_VALID => OUTPUT_VALID,
-               PIXGEN_CLKEN => pixgen_clken);
-END Behavioral;
+               PIXEL_STATE   => coord_gen_state,
+               MEM_ADDR0     => coord_gen_mem_addr,
+               MEM_ADDR1     => "10101010101010101010",  -- NOTE: Sentinal value
+               MEM_ADDROFF0  => "00000000000000000000",
+               MEM_ADDROFF1  => "00000000000000000000",
+               PATTERN_STATE => pattern_state_wire,
+               MEM_ADDR      => MEM_ADDR,
+               OUTPUT_VALID  => mem_addr_output_valid,
+               PIXGEN_CLKEN  => pixgen_clken);
 
+  pixel_conv_buffer_i : pixel_conv_buffer
+    PORT MAP (
+      CLK           => CLK,
+      RST           => RST,
+      MEM_VALUE     => mem_value_buf,
+      INPUT_VALID   => mem_addr_output_valid,
+      PATTERN_STATE => pattern_state_wire,
+      OUTPUT_VALID  => OUTPUT_VALID,
+      IMG0_0_1      => IMG0_0_1,
+      IMG0_1_0      => IMG0_1_0,
+      IMG0_1_1      => IMG0_1_1,
+      IMG0_1_2      => IMG0_1_2,
+      IMG0_2_1      => IMG0_2_1,
+      IMG1_1_1      => IMG1_1_1);
+END Behavioral;

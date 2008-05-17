@@ -129,59 +129,60 @@ BEGIN
 -- pixel coordinates)), level/img offsets, and width offset values(for conv.
 -- coordinate generation). This only loads the new value on RST.
 -- NOTE: Care must be taken in selecting these values to prevent (over/under)flow
+  -- 0CT Delay
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       IF RST = '1' THEN                 -- synchronous reset (active high)
         CASE LEVEL IS
           WHEN 0 =>                     -- 720x480
-            x_coord_trans    <=;        -- TODO Compute ROM values
-            y_coord_trans    <=;
-            img0_offset      <=;
-            img1_offset      <=;        -- 
-            img_height       <=;        -- TODO Make these unsigned
-            img_width        <=;
-            img_width_offset <=;        -- TODO Make this unsigned
+            y_coord_trans    <= "";     -- 240
+            x_coord_trans    <= "";     -- 360
+            img0_offset      <=;        -- 0
+            img1_offset      <=;        -- 345,600
+            img_height       <=;        -- 480
+            img_width        <=;        -- 720
+            img_width_offset <=;        -- 1439 (CONV_HEIGHT-1)*WIDTH-1
 
           WHEN 1 =>                     -- 360x240
-            x_coord_trans    <=;
-            y_coord_trans    <=;
-            img0_offset      <=;
-            img1_offset      <=;
-            img_height       <=;
-            img_width        <=;
-            img_width_offset <=;
+            y_coord_trans    <=;        -- 120
+            x_coord_trans    <=;        -- 180
+            img0_offset      <=;        -- 691,200
+            img1_offset      <=;        -- 777,600
+            img_height       <=;        -- 240
+            img_width        <=;        -- 360
+            img_width_offset <=;        -- 719
 
           WHEN 2 =>                     -- 180x120
-            x_coord_trans    <=;
-            y_coord_trans    <=;
-            img0_offset      <=;
-            img1_offset      <=;
-            img_height       <=;
-            img_width        <=;
-            img_width_offset <=;
+            y_coord_trans    <=;        -- 60
+            x_coord_trans    <=;        -- 90
+            img0_offset      <=;        -- 864,000
+            img1_offset      <=;        -- 885,600
+            img_height       <=;        -- 120
+            img_width        <=;        -- 180
+            img_width_offset <=;        -- 359
 
           WHEN 3 =>                     -- 90x60
-            x_coord_trans    <=;
-            y_coord_trans    <=;
-            img0_offset      <=;
-            img1_offset      <=;
-            img_height       <=;
-            img_width        <=;
-            img_width_offset <=;
+            y_coord_trans    <=;        -- 30
+            x_coord_trans    <=;        -- 45
+            img0_offset      <=;        -- 907,200
+            img1_offset      <=;        -- 912,600
+            img_height       <=;        -- 60
+            img_width        <=;        -- 90
+            img_width_offset <=;        -- 179
 
           WHEN 4 =>                     -- 45x30
-            x_coord_trans    <=;
-            y_coord_trans    <=;
-            img0_offset      <=;
-            img1_offset      <=;
-            img_height       <=;
-            img_width        <=;
-            img_width_offset <=;
+            y_coord_trans    <=;        -- 15
+            x_coord_trans    <=;        -- 22.5
+            img0_offset      <=;        -- 918,000
+            img1_offset      <=;        -- 919,350
+            img_height       <=;        -- 30
+            img_width        <=;        -- 45
+            img_width_offset <=;        -- 89
 
-          WHEN OTHERS                   =>
-            x_coord_trans    <= (OTHERS => '0');
+          WHEN OTHERS =>
             y_coord_trans    <= (OTHERS => '0');
+            x_coord_trans    <= (OTHERS => '0');
             img0_offset      <= (OTHERS => '0');
             img1_offset      <= (OTHERS => '0');
             img_height       <= (OTHERS => '0');
@@ -193,6 +194,7 @@ BEGIN
   END PROCESS;
 
 -- Convolution Pixel Stream: Stream pixel coordinates in a convolution pattern.
+-- 1CT Delay
   conv_pixel_ordering_i : conv_pixel_ordering
     PORT MAP ( CLK          => CLK,
                CLKEN        => pixgen_clken,
@@ -212,6 +214,7 @@ BEGIN
 -- Current Pixel Coord Check: Store current pixel coordinates (the center of
 -- the convolution).
 -- NOTE: This assumes that the pixel generator will never be halted (CLKEN='0') on the center pixel value.
+  -- 0CT Delay
   PROCESS (coord_valid, coord_gen_state) IS
   BEGIN  -- PROCESS
     IF coord_valid = '1' AND coord_gen_state = "01" THEN
@@ -224,7 +227,9 @@ BEGIN
 -- Affine Transform: Warp current pixel coordinate using H.
 -- NOTE: 'Current' refers to the center pixel in the pattern (for 3x3 it is
 -- pixel (1,1).) All others will still be processed to allow for a uniform
--- pipeline; however, their results are not intended to be used.
+-- pipeline; however, their results are not intended to be used in the current
+-- system;however, they would be if bilinear interpolation was used.
+  -- 0CT Delay
   PROCESS (center_pixel_active, coord_valid) IS
   BEGIN  -- PROCESS
     IF center_pixel_active = '1' AND coord_valid = '1' THEN
@@ -234,21 +239,19 @@ BEGIN
     END IF;
   END PROCESS;
 
+  -- 3CT Delay
   affine_coord_transform_i : affine_coord_transform
-    PORT MAP ( CLK         => CLK,
-               RST         => RST,
-               INPUT_VALID => affine_input_valid,
-               X_COORD     => x_coord,
-               Y_COORD     => y_coord,
-
-               H_0_0 => h_0_0_reg,
-               H_1_0 => h_1_0_reg,
-               H_0_1 => h_0_1_reg,
-               H_1_1 => h_1_1_reg,
-
-               H_0_2 => h_0_2_reg,
-               H_1_2 => h_1_2_reg,
-
+    PORT MAP ( CLK          => CLK,
+               RST          => RST,
+               INPUT_VALID  => affine_input_valid,
+               X_COORD      => x_coord,
+               Y_COORD      => y_coord,
+               H_0_0        => h_0_0_reg,
+               H_1_0        => h_1_0_reg,
+               H_0_1        => h_0_1_reg,
+               H_1_1        => h_1_1_reg,
+               H_0_2        => h_0_2_reg,
+               H_1_2        => h_1_2_reg,
                XP_COORD     => xp_coord,
                YP_COORD     => yp_coord,
                OVERFLOW_X   => affine_overflow_x,
@@ -257,6 +260,7 @@ BEGIN
 
 -- Bounds check: Test the rounded X/Y Coordinate bounds to ensure they are
 -- inside the image area. Valid ranges are 0<=X<img_width and 0<=Y<IMG_HEIGHT
+  -- 1CT Delay
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
@@ -281,6 +285,7 @@ BEGIN
 
 -- 2D to 1D Coord Conversion: Convert warped 2D coords to 1D memory locations
 -- (Y*WIDTH+X)
+  -- 2CT Delay
   convert_2d_to_1d_coord_i : convert_2d_to_1d_coord
     PORT MAP (
       CLK          => CLK,
@@ -293,6 +298,7 @@ BEGIN
       OUTPUT_VALID => coord_conv_valid);
 
 -- Translate Coords: Translate the image coordinates to reduce the
+  -- 1CT Delay
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
@@ -311,8 +317,7 @@ BEGIN
 -- Memory Address Selector: Read 3 pixels from IMG0 using the coord generator'
 -- s memory address, pause the coord generator, read 1 pixel from IMG1 using
 -- the warped coord address
-
--- TODO Test behavior with pixel generator
+-- 1CT Delay
   mem_addr_selector_i : mem_addr_selector
     PORT MAP ( CLK          <= CLK,
                RST          <= RST,
@@ -332,11 +337,13 @@ BEGIN
 -- TODO Create 3, 3 row shift registers to act as the local neighborhood of the
 -- image.
 
+-- INPUT: CLK,RST,MEM_VALUE,INPUT_VALID,PIXEL_STATE (pipelined),PIXGEN_CLKEN
+-- OUTPUT: OUTPUT_VALID,IMG0_0_1,IMG0_1_0,IMG0_1_1,IMG0_1_2,IMG0_2_1,IMG1_1_1
 
   
--- Signal Pipeline:  Passes previously computed values through the pipeline to
--- allow the signals to be output simultaneously.  Signals:  coord_stage,translated_
--- coords, bounds checking OOB, affine transform OOB,  coord_valid
+-- Signal Pipeline: Passes previously computed values through the pipeline to
+-- allow the signals to be output simultaneously. Signals: coord_stage,translated_
+-- coords, bounds checking OOB, affine transform OOB, coord_valid
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge

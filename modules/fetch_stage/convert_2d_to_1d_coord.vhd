@@ -43,11 +43,12 @@ ENTITY convert_2d_to_1d_coord IS
 END convert_2d_to_1d_coord;
 
 ARCHITECTURE Behavioral OF convert_2d_to_1d_coord IS
-  SIGNAL mem_addr_reg : unsigned(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL valid_buf    : std_logic := '0';
+  SIGNAL mem_addr_reg,width_times_y : unsigned(2*IMGSIZE_BITS-1 DOWNTO 0);
+  SIGNAL valid_buf    : std_logic_vector(1 DOWNTO 0) := (OTHERS => '0');
+  signal x_coord_reg : std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0) := (OTHERS => '0');
 BEGIN
   MEM_ADDR           <= std_logic_vector(mem_addr_reg);
-  OUTPUT_VALID       <= valid_buf;
+  OUTPUT_VALID       <= valid_buf(1);
 -- 2D to 1D Coord Conversion: Convert warped 2D coords to 1D memory locations
 -- (Y*WIDTH+X)
   PROCESS (CLK) IS
@@ -55,11 +56,17 @@ BEGIN
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       IF RST = '1' THEN                 -- synchronous reset (active high)
         mem_addr_reg <= (OTHERS => '0');
-        valid_buf    <= '0';
+        valid_buf    <= (OTHERS => '0');
+        width_times_y <= (OTHERS => '0');
+        x_coord_reg <= (OTHERS => '0');
       ELSE
-        valid_buf    <= INPUT_VALID;
+        valid_buf(0)    <= INPUT_VALID;
+        valid_buf(1) <= valid_buf(0);
+        x_coord_reg <= X_COORD;
         -- 0:2*IMGSIZE_BITS:0
-        mem_addr_reg <= unsigned(WIDTH)*unsigned(Y_COORD) + unsigned(X_COORD);
+        width_times_y <= unsigned(WIDTH)*unsigned(Y_COORD);
+        -- 0:2*IMGSIZE_BITS:0
+        mem_addr_reg <= width_times_y + unsigned(x_coord_reg);
       END IF;
     END IF;
   END PROCESS;

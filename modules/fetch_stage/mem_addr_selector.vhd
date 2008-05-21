@@ -34,7 +34,7 @@ BEGIN
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN        -- rising clock edge
       IF RST = '1' THEN                    -- synchronous reset (active high)
-        addr_select_img0   <= '0';
+        addr_select_img0   <= '1';
         MEM_ADDR           <= (OTHERS                                            => '0');
         output_valid_reg   <= '0';
         pattern_state_reg <= (OTHERS => '0');

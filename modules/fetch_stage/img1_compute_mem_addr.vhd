@@ -97,20 +97,20 @@ ARCHITECTURE Behavioral OF img1_compute_mem_addr IS
                                           OUTPUT_VALID : OUT std_logic);
   END COMPONENT;
 
-  SIGNAL oob_x_reg, oob_y_reg                                     : std_logic := '0';
+  SIGNAL oob_x_reg, oob_y_reg                                     : std_logic_vector(1 DOWNTO 0) := (OTHERS => '0');
   SIGNAL affine_overflow_x, affine_overflow_y, affine_coord_valid : std_logic;
   SIGNAL xp_coord, yp_coord                                       : std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0);
 
 BEGIN
-  OOB_X <= oob_x_reg;
-  OOB_Y <= oob_y_reg;
+  OOB_X <= oob_x_reg(1);
+  OOB_Y <= oob_y_reg(1);
 
 -- Affine Transform: Warp current pixel coordinate using H.
 -- NOTE: 'Current' refers to the center pixel in the pattern (for 3x3 it is
 -- pixel (1,1).) All others will still be processed to allow for a uniform
 -- pipeline; however, their results are not intended to be used in the current
 -- system;however, they would be if bilinear interpolation was used.
-  -- 3CT Delay
+  -- 4CT Delay
   affine_coord_transform_i : affine_coord_transform
     PORT MAP ( CLK          => CLK,
                RST          => RST,
@@ -131,36 +131,38 @@ BEGIN
 
 -- Bounds check: Test the rounded X/Y Coordinate bounds to ensure they are
 -- inside the image area and that they didn't overflow. Valid ranges are 0<=X<img_width and 0<=Y<IMG_HEIGHT
-  -- 1CT Delay
+  -- 2CT Delay
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       IF RST = '1' THEN                 -- synchronous reset (active high)
-        oob_x_reg     <= '0';
-        oob_y_reg     <= '0';
+        oob_x_reg        <= (OTHERS => '0');
+        oob_y_reg        <= (OTHERS => '0');
       ELSE
         IF affine_coord_valid = '1' THEN
           IF unsigned(xp_coord) < unsigned(IMG_WIDTH) AND affine_overflow_x = '0' THEN
-            oob_x_reg <= '0';
+            oob_x_reg(0) <= '0';
           ELSE
-            oob_x_reg <= '1';
+            oob_x_reg(0) <= '1';
           END IF;
           IF unsigned(yp_coord) < unsigned(IMG_HEIGHT) AND affine_overflow_y = '0' THEN
-            oob_y_reg <= '0';
+            oob_y_reg(0) <= '0';
           ELSE
-            oob_y_reg <= '1';
+            oob_y_reg(0) <= '1';
           END IF;
         ELSE
-          oob_x_reg   <= '0';
-          oob_y_reg   <= '0';
+          oob_x_reg(0)   <= '0';
+          oob_y_reg(0)   <= '0';
         END IF;
+        oob_x_reg(1)     <= oob_x_reg(0);
+        oob_y_reg(1)     <= oob_y_reg(0);
       END IF;
     END IF;
   END PROCESS;
 
 -- 2D to 1D Coord Conversion: Convert warped 2D coords to 1D memory locations
 -- (Y*WIDTH+X)
-  -- 1CT Delay
+  -- 2CT Delay
   convert_2d_to_1d_coord_i : convert_2d_to_1d_coord
     PORT MAP (
       CLK          => CLK,

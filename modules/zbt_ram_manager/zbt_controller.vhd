@@ -105,7 +105,6 @@ BEGIN
         cs_b_delay          <= '1';
         we_b_delay          <= '1';
         data_read_valid_reg <= '0';
-
       ELSE
         -- Signify whether the data on the DATA_READ lines is valid
         IF we_b_delay = '1' AND cs_b_delay = '0' THEN

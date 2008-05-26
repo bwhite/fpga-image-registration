@@ -29,50 +29,50 @@ USE ieee.numeric_std.ALL;
 
 ENTITY fetch_stage IS
   GENERIC (
-    CONV_HEIGHT           :     integer := 3;
-    IMGSIZE_BITS          :     integer := 10;
-    PIXEL_BITS            :     integer := 9;
-    CONV_HEIGHT_BITS      :     integer := 2);
-  PORT ( CLK              : IN  std_logic;  -- NOTE: The clock should not be gated
+    CONV_HEIGHT      : integer := 3;
+    IMGSIZE_BITS     : integer := 10;
+    PIXEL_BITS       : integer := 9;
+    CONV_HEIGHT_BITS : integer := 2);
+  PORT (CLK              : IN  std_logic;  -- NOTE: The clock should not be gated
                                         -- as the timing in this module depends
                                         -- on the timing of an external RAM
-         RST              : IN  std_logic;
-         LEVEL            : IN  std_logic_vector(2 DOWNTO 0);
-         -- Affine Homography elements IMG2_VEC=H*IMG1_VEC
-         -- Rotation and Non-Isotropic Scale
-         -- 1:6:11 Format
-         H_0_0            : IN  std_logic_vector(17 DOWNTO 0);
-         H_0_1            : IN  std_logic_vector(17 DOWNTO 0);
-         H_1_0            : IN  std_logic_vector(17 DOWNTO 0);
-         H_1_1            : IN  std_logic_vector(17 DOWNTO 0);
-         -- Translation
-         -- 1:10:11 Format 
-         H_0_2            : IN  std_logic_vector(21 DOWNTO 0);
-         H_1_2            : IN  std_logic_vector(21 DOWNTO 0);
-         -- External Memory Connections
-         -- 0:0:PIXEL_BITS Format
-         MEM_VALUE        : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-         MEM_INPUT_VALID  : IN  std_logic;
-         MEM_ADDR         : OUT std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-         MEM_OUTPUT_VALID : OUT std_logic;
-         -- IMG0 Neighborhood for spatial derivative computation (only output
-         -- the union of the middle row pixels and the middle column pixels)
-         -- 0:0:PIXEL_BITS Format
-         IMG0_0_1         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-         IMG0_1_0         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-         IMG0_1_1         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-         IMG0_1_2         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-         IMG0_2_1         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-         -- IMG1 Center pixel value for temporal derivative computation
-         IMG1_1_1         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-         -- Offset pixel coordinates for A/b matrix computation (offset to
-         -- increase numerical accuracy, corrected later in the pipeline)
-         -- 1:IMGSIZE_BITS:1 Format
-         TRANS_X_COORD    : OUT std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
-         TRANS_Y_COORD    : OUT std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+        RST              : IN  std_logic;
+        LEVEL            : IN  std_logic_vector(2 DOWNTO 0);
+        -- Affine Homography elements IMG2_VEC=H*IMG1_VEC
+        -- Rotation and Non-Isotropic Scale
+        -- 1:6:11 Format
+        H_0_0            : IN  std_logic_vector(17 DOWNTO 0);
+        H_0_1            : IN  std_logic_vector(17 DOWNTO 0);
+        H_1_0            : IN  std_logic_vector(17 DOWNTO 0);
+        H_1_1            : IN  std_logic_vector(17 DOWNTO 0);
+        -- Translation
+        -- 1:10:11 Format 
+        H_0_2            : IN  std_logic_vector(21 DOWNTO 0);
+        H_1_2            : IN  std_logic_vector(21 DOWNTO 0);
+        -- External Memory Connections
+        -- 0:0:PIXEL_BITS Format
+        MEM_VALUE        : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+        MEM_INPUT_VALID  : IN  std_logic;
+        MEM_ADDR         : OUT std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+        MEM_OUTPUT_VALID : OUT std_logic;
+        -- IMG0 Neighborhood for spatial derivative computation (only output
+        -- the union of the middle row pixels and the middle column pixels)
+        -- 0:0:PIXEL_BITS Format
+        IMG0_0_1         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+        IMG0_1_0         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+        IMG0_1_1         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+        IMG0_1_2         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+        IMG0_2_1         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+        -- IMG1 Center pixel value for temporal derivative computation
+        IMG1_1_1         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+        -- Offset pixel coordinates for A/b matrix computation (offset to
+        -- increase numerical accuracy, corrected later in the pipeline)
+        -- 1:IMGSIZE_BITS:1 Format
+        TRANS_X_COORD    : OUT std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+        TRANS_Y_COORD    : OUT std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
 
-         FSCS_VALID : OUT std_logic;
-         DONE       : OUT std_logic);
+        FSCS_VALID : OUT std_logic;
+        DONE       : OUT std_logic);
 END fetch_stage;
 
 ARCHITECTURE Behavioral OF fetch_stage IS
@@ -83,106 +83,109 @@ ARCHITECTURE Behavioral OF fetch_stage IS
   END FUNCTION int_to_stdlvec;
 
   COMPONENT conv_pixel_ordering IS
-                                  GENERIC (
-                                    CONV_HEIGHT      :     integer := 3;
-                                    WIDTH_BITS       :     integer := IMGSIZE_BITS;
-                                    HEIGHT_BITS      :     integer := IMGSIZE_BITS;
-                                    CONV_HEIGHT_BITS :     integer := 2);
-                                PORT ( CLK           : IN  std_logic;
-                                       CLKEN         : IN  std_logic;
-                                       RST           : IN  std_logic;
-                                       HEIGHT        : IN  std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);
-                                       WIDTH         : IN  std_logic_vector(WIDTH_BITS-1 DOWNTO 0);
-                                       WIDTH_OFFSET  : IN  std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);  -- (CONV_HEIGHT-1)*WIDTH-1
-                                       MEM_ADDR      : OUT std_logic_vector (WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);
-                                       X_COORD       : OUT std_logic_vector (WIDTH_BITS-1 DOWNTO 0);
-                                       Y_COORD       : OUT std_logic_vector (HEIGHT_BITS-1 DOWNTO 0);
-                                       CONV_Y_POS    : OUT std_logic_vector (CONV_HEIGHT_BITS-1 DOWNTO 0);
-                                       DATA_VALID    : OUT std_logic;
-                                       NEW_ROW       : OUT std_logic;
-                                       DONE          : OUT std_logic);
+    GENERIC (
+      CONV_HEIGHT      : integer := 3;
+      BORDER_SIZE      : integer := 1;
+      WIDTH_BITS       : integer := IMGSIZE_BITS;
+      HEIGHT_BITS      : integer := IMGSIZE_BITS;
+      CONV_HEIGHT_BITS : integer := 2);
+    PORT (CLK              : IN  std_logic;
+          CLKEN            : IN  std_logic;
+          RST              : IN  std_logic;
+          HEIGHT           : IN  std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);
+          WIDTH            : IN  std_logic_vector(WIDTH_BITS-1 DOWNTO 0);
+          WIDTH_OFFSET     : IN  std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);  -- (CONV_HEIGHT-1)*WIDTH-1
+          INITIAL_MEM_ADDR : IN  std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);
+          MEM_ADDR         : OUT std_logic_vector (WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);
+          X_COORD          : OUT std_logic_vector (WIDTH_BITS-1 DOWNTO 0);
+          Y_COORD          : OUT std_logic_vector (HEIGHT_BITS-1 DOWNTO 0);
+          CONV_Y_POS       : OUT std_logic_vector (CONV_HEIGHT_BITS-1 DOWNTO 0);
+          DATA_VALID       : OUT std_logic;
+          NEW_ROW          : OUT std_logic;
+          DONE             : OUT std_logic);
   END COMPONENT;
 
 
   COMPONENT img1_compute_mem_addr IS
-                                    GENERIC (
-                                      IMGSIZE_BITS   :    integer := IMGSIZE_BITS);
-                                  PORT ( CLK         : IN std_logic;
-                                         RST         : IN std_logic;
-                                         INPUT_VALID : IN std_logic;
-                                         X_COORD     : IN std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0);
-                                         Y_COORD     : IN std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0);
-                                         IMG_HEIGHT  : IN std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0);
-                                         IMG_WIDTH   : IN std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0);
+    GENERIC (
+      IMGSIZE_BITS : integer := IMGSIZE_BITS);
+    PORT (CLK         : IN std_logic;
+          RST         : IN std_logic;
+          INPUT_VALID : IN std_logic;
+          X_COORD     : IN std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0);
+          Y_COORD     : IN std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0);
+          IMG_HEIGHT  : IN std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0);
+          IMG_WIDTH   : IN std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0);
 
                                         -- 1:6:11 Format
-                                         H_0_0        : IN  std_logic_vector (17 DOWNTO 0);
-                                         H_1_0        : IN  std_logic_vector (17 DOWNTO 0);
-                                         H_0_1        : IN  std_logic_vector (17 DOWNTO 0);
-                                         H_1_1        : IN  std_logic_vector (17 DOWNTO 0);
+          H_0_0        : IN  std_logic_vector (17 DOWNTO 0);
+          H_1_0        : IN  std_logic_vector (17 DOWNTO 0);
+          H_0_1        : IN  std_logic_vector (17 DOWNTO 0);
+          H_1_1        : IN  std_logic_vector (17 DOWNTO 0);
                                         -- 1:10:11 Format 
-                                         H_0_2        : IN  std_logic_vector (21 DOWNTO 0);
-                                         H_1_2        : IN  std_logic_vector (21 DOWNTO 0);
-                                         MEM_ADDR     : OUT std_logic_vector (2*IMGSIZE_BITS-1 DOWNTO 0);
-                                         OUTPUT_VALID : OUT std_logic;
-                                         OOB_X        : OUT std_logic;
-                                         OOB_Y        : OUT std_logic);
+          H_0_2        : IN  std_logic_vector (21 DOWNTO 0);
+          H_1_2        : IN  std_logic_vector (21 DOWNTO 0);
+          MEM_ADDR     : OUT std_logic_vector (2*IMGSIZE_BITS-1 DOWNTO 0);
+          OUTPUT_VALID : OUT std_logic;
+          OOB_X        : OUT std_logic;
+          OOB_Y        : OUT std_logic);
   END COMPONENT;
 
 
 
   COMPONENT mem_addr_selector IS
-                                GENERIC (
-                                  MEMADDR_BITS  : integer := 2*IMGSIZE_BITS;
-                                  PIXSTATE_BITS : integer := 2);
+    GENERIC (
+      MEMADDR_BITS  : integer := 2*IMGSIZE_BITS;
+      PIXSTATE_BITS : integer := 2);
 
-                              PORT ( CLK           : IN  std_logic;
-                                     RST           : IN  std_logic;
-                                     INPUT_VALID0  : IN  std_logic;
-                                     INPUT_VALID1  : IN  std_logic;
-                                     PIXEL_STATE   : IN  std_logic_vector(PIXSTATE_BITS-1 DOWNTO 0);
-                                     MEM_ADDR0     : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-                                     MEM_ADDR1     : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-                                     MEM_ADDROFF0  : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-                                     MEM_ADDROFF1  : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-                                     PATTERN_STATE : OUT std_logic_vector (PIXSTATE_BITS DOWNTO 0);
-                                     MEM_ADDR      : OUT std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-                                     OUTPUT_VALID  : OUT std_logic;
-                                     PIXGEN_CLKEN  : OUT std_logic);
+    PORT (CLK           : IN  std_logic;
+          RST           : IN  std_logic;
+          INPUT_VALID0  : IN  std_logic;
+          INPUT_VALID1  : IN  std_logic;
+          PIXEL_STATE   : IN  std_logic_vector(PIXSTATE_BITS-1 DOWNTO 0);
+          MEM_ADDR0     : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
+          MEM_ADDR1     : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
+          MEM_ADDROFF0  : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
+          MEM_ADDROFF1  : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
+          PATTERN_STATE : OUT std_logic_vector (PIXSTATE_BITS DOWNTO 0);
+          MEM_ADDR      : OUT std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
+          OUTPUT_VALID  : OUT std_logic;
+          PIXGEN_CLKEN  : OUT std_logic);
   END COMPONENT;
 
   COMPONENT pixel_conv_buffer IS
-                                GENERIC (
-                                  PIXEL_BITS       : IN  integer := PIXEL_BITS);
-                              PORT ( CLK           : IN  std_logic;
-                                     RST           : IN  std_logic;
-                                     NEW_ROW       : IN  std_logic;
-                                     MEM_VALUE     : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-                                     INPUT_VALID   : IN  std_logic;
-                                     PATTERN_STATE : IN  std_logic_vector(2 DOWNTO 0);
-                                     OUTPUT_VALID  : OUT std_logic;
-                                     IMG0_0_1      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-                                     IMG0_1_0      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-                                     IMG0_1_1      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-                                     IMG0_1_2      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-                                     IMG0_2_1      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-                                     IMG1_1_1      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0));
+    GENERIC (
+      PIXEL_BITS : IN integer := PIXEL_BITS);
+    PORT (CLK           : IN  std_logic;
+          RST           : IN  std_logic;
+          NEW_ROW       : IN  std_logic;
+          MEM_VALUE     : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          INPUT_VALID   : IN  std_logic;
+          PATTERN_STATE : IN  std_logic_vector(2 DOWNTO 0);
+          OUTPUT_VALID  : OUT std_logic;
+          IMG0_0_1      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG0_1_0      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG0_1_1      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG0_1_2      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG0_2_1      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG1_1_1      : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0));
   END COMPONENT;
 
   -- 0:IMGSIZE_BITS:1 Format
-  SIGNAL x_coord_trans, y_coord_trans                                                                                     : std_logic_vector(IMGSIZE_BITS DOWNTO 0);
+  SIGNAL x_coord_trans, y_coord_trans             : std_logic_vector(IMGSIZE_BITS DOWNTO 0);
   -- 1:IMGSIZE_BITS:1 Format
-  TYPE shifted_coord IS ARRAY (9 DOWNTO 0) OF signed(IMGSIZE_BITS+1 DOWNTO 0);
-  SIGNAL x_coord_shifted_buf, y_coord_shifted_buf                                                                         : shifted_coord;
+  TYPE   shifted_coord IS ARRAY (9 DOWNTO 0) OF signed(IMGSIZE_BITS+1 DOWNTO 0);
+  SIGNAL x_coord_shifted_buf, y_coord_shifted_buf : shifted_coord;
   -- 0:IMGSIZE_BITS:0 Format
-  SIGNAL img_height, img_width, x_coord, y_coord                                                                          : std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL coord_gen_state                                                                                                  : std_logic_vector(CONV_HEIGHT_BITS-1 DOWNTO 0);
-  SIGNAL pattern_state_wire                                                                                               : std_logic_vector(CONV_HEIGHT_BITS DOWNTO 0);
-  SIGNAL pattern_state_buf0, pattern_state_buf1                                                                           : std_logic_vector(CONV_HEIGHT_BITS DOWNTO 0) := (OTHERS => '0');
-  SIGNAL new_row_buf                                                                                                      : std_logic_vector(2 DOWNTO 0)                := (OTHERS => '0');
-  SIGNAL done_buf                                                                                                         : std_logic_vector(4 DOWNTO 0)                := (OTHERS => '0');
+  SIGNAL img_height, img_width, x_coord, y_coord  : std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0);
+  SIGNAL coord_gen_state                          : std_logic_vector(CONV_HEIGHT_BITS-1 DOWNTO 0);
+  SIGNAL pattern_state_wire                       : std_logic_vector(CONV_HEIGHT_BITS DOWNTO 0);
+  SIGNAL pattern_state_buf0, pattern_state_buf1   : std_logic_vector(CONV_HEIGHT_BITS DOWNTO 0) := (OTHERS => '0');
+  SIGNAL new_row_buf                              : std_logic_vector(2 DOWNTO 0)                := (OTHERS => '0');
+  SIGNAL done_buf                                 : std_logic_vector(4 DOWNTO 0)                := (OTHERS => '0');
+
   -- 0:2*IMGSIZE_BITS:0 Format
-  SIGNAL img0_mem_addr, img1_mem_addr, img0_offset, img1_offset, img_width_offset, img1_mem_addr_buf0, img1_mem_addr_buf1 : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+  SIGNAL img0_mem_addr, img1_mem_addr, img0_offset, img1_offset, img_width_offset, img1_mem_addr_buf0, img1_mem_addr_buf1, initial_mem_addr : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
 
   SIGNAL img0_addr_valid, img1_addr_valid, img1_output_valid, oob_x, oob_y, pixgen_clken, coord_gen_done, center_pixel_active, conv_buf_output_valid, coord_gen_new_row, mem_output_valid_wire : std_logic;
   SIGNAL mem_input_valid_buf                                                                                                                                                                   : std_logic_vector(1 DOWNTO 0) := (OTHERS => '0');
@@ -214,6 +217,7 @@ BEGIN
             img_height       <= int_to_stdlvec(10#480#, IMGSIZE_BITS);  -- 480
             img_width        <= int_to_stdlvec(10#720#, IMGSIZE_BITS);  -- 720
             img_width_offset <= int_to_stdlvec(10#1439#, 2*IMGSIZE_BITS);  -- 1439 (CONV_HEIGHT-1)*WIDTH-1
+            initial_mem_addr <= int_to_stdlvec(10#721#, 2*IMGSIZE_BITS);  -- 721 WIDTH+1
 
           WHEN "001" =>                 -- 360x240
             y_coord_trans    <= int_to_stdlvec(10#240#, IMGSIZE_BITS+1);  -- 120
@@ -223,6 +227,7 @@ BEGIN
             img_height       <= int_to_stdlvec(10#240#, IMGSIZE_BITS);  -- 240
             img_width        <= int_to_stdlvec(10#360#, IMGSIZE_BITS);  -- 360
             img_width_offset <= int_to_stdlvec(10#719#, 2*IMGSIZE_BITS);  -- 719
+            initial_mem_addr <= int_to_stdlvec(10#361#, 2*IMGSIZE_BITS);  -- 361
 
           WHEN "010" =>                 -- 180x120
             y_coord_trans    <= int_to_stdlvec(10#120#, IMGSIZE_BITS+1);  -- 60
@@ -232,34 +237,48 @@ BEGIN
             img_height       <= int_to_stdlvec(10#120#, IMGSIZE_BITS);  -- 120
             img_width        <= int_to_stdlvec(10#180#, IMGSIZE_BITS);  -- 180
             img_width_offset <= int_to_stdlvec(10#359#, 2*IMGSIZE_BITS);  -- 359
-
+            initial_mem_addr <= int_to_stdlvec(10#181#, 2*IMGSIZE_BITS);  -- 181
+            
           WHEN "011" =>                 -- 90x60
-            y_coord_trans    <= int_to_stdlvec(10#60#, IMGSIZE_BITS+1);  -- 30
-            x_coord_trans    <= int_to_stdlvec(10#90#, IMGSIZE_BITS+1);  -- 45
+            y_coord_trans    <= int_to_stdlvec(10#60#, IMGSIZE_BITS+1);   -- 30
+            x_coord_trans    <= int_to_stdlvec(10#90#, IMGSIZE_BITS+1);   -- 45
             img0_offset      <= int_to_stdlvec(10#907200#, 2*IMGSIZE_BITS);  -- 907,200
             img1_offset      <= int_to_stdlvec(10#912600#, 2*IMGSIZE_BITS);  -- 912,600
-            img_height       <= int_to_stdlvec(10#60#, IMGSIZE_BITS);  -- 60
-            img_width        <= int_to_stdlvec(10#90#, IMGSIZE_BITS);  -- 90
+            img_height       <= int_to_stdlvec(10#60#, IMGSIZE_BITS);     -- 60
+            img_width        <= int_to_stdlvec(10#90#, IMGSIZE_BITS);     -- 90
             img_width_offset <= int_to_stdlvec(10#179#, 2*IMGSIZE_BITS);  -- 179
-
+            initial_mem_addr <= int_to_stdlvec(10#91#, 2*IMGSIZE_BITS);   -- 91
+            
           WHEN "100" =>                 -- 45x30
             y_coord_trans    <= int_to_stdlvec(10#30#, IMGSIZE_BITS+1);  -- 15
             x_coord_trans    <= int_to_stdlvec(10#45#, IMGSIZE_BITS+1);  -- 22.5
             img0_offset      <= int_to_stdlvec(10#918000#, 2*IMGSIZE_BITS);  -- 918,000
             img1_offset      <= int_to_stdlvec(10#919350#, 2*IMGSIZE_BITS);  -- 919,350
-            img_height       <= int_to_stdlvec(10#30#, IMGSIZE_BITS);  -- 30
-            img_width        <= int_to_stdlvec(10#45#, IMGSIZE_BITS);  -- 45
+            img_height       <= int_to_stdlvec(10#30#, IMGSIZE_BITS);    -- 30
+            img_width        <= int_to_stdlvec(10#45#, IMGSIZE_BITS);    -- 45
             img_width_offset <= int_to_stdlvec(10#89#, 2*IMGSIZE_BITS);  -- 89
+            initial_mem_addr <= int_to_stdlvec(10#46#, 2*IMGSIZE_BITS);  -- 46
+            
           WHEN "101" =>                 -- 5x5 TESTING ONLY!!!
             y_coord_trans    <= int_to_stdlvec(10#5#, IMGSIZE_BITS+1);  -- 2.5
             x_coord_trans    <= int_to_stdlvec(10#5#, IMGSIZE_BITS+1);  -- 2.5
             img0_offset      <= int_to_stdlvec(10#918000#, 2*IMGSIZE_BITS);  -- 920,700
             img1_offset      <= int_to_stdlvec(10#919350#, 2*IMGSIZE_BITS);  -- 920,725
-            img_height       <= int_to_stdlvec(10#5#, IMGSIZE_BITS);  -- 5
-            img_width        <= int_to_stdlvec(10#5#, IMGSIZE_BITS);  -- 5
+            img_height       <= int_to_stdlvec(10#5#, IMGSIZE_BITS);    -- 5
+            img_width        <= int_to_stdlvec(10#5#, IMGSIZE_BITS);    -- 5
             img_width_offset <= int_to_stdlvec(10#9#, 2*IMGSIZE_BITS);  -- 9
+            initial_mem_addr <= int_to_stdlvec(10#6#, 2*IMGSIZE_BITS);  -- 6
+          WHEN "110" =>                 -- 6x6 TESTING ONLY!!!
+            y_coord_trans    <= int_to_stdlvec(10#6#, IMGSIZE_BITS+1);  -- 3
+            x_coord_trans    <= int_to_stdlvec(10#6#, IMGSIZE_BITS+1);  -- 3
+            img0_offset      <= int_to_stdlvec(10#918000#, 2*IMGSIZE_BITS);  -- 920,700
+            img1_offset      <= int_to_stdlvec(10#919350#, 2*IMGSIZE_BITS);  -- 920,725
+            img_height       <= int_to_stdlvec(10#6#, IMGSIZE_BITS);    -- 6
+            img_width        <= int_to_stdlvec(10#6#, IMGSIZE_BITS);    -- 6
+            img_width_offset <= int_to_stdlvec(10#11#, 2*IMGSIZE_BITS);  -- 11
+            initial_mem_addr <= int_to_stdlvec(10#7#, 2*IMGSIZE_BITS);  -- 7
 
-          WHEN OTHERS                   =>
+          WHEN OTHERS =>
             y_coord_trans    <= (OTHERS => '0');
             x_coord_trans    <= (OTHERS => '0');
             img0_offset      <= (OTHERS => '0');
@@ -267,6 +286,7 @@ BEGIN
             img_height       <= (OTHERS => '0');
             img_width        <= (OTHERS => '0');
             img_width_offset <= (OTHERS => '0');
+            initial_mem_addr <= (OTHERS => '0');
         END CASE;
       END IF;
     END IF;
@@ -275,21 +295,22 @@ BEGIN
 -- Convolution Pixel Stream: Stream pixel coordinates in a convolution pattern.
 -- 1CT Delay
   conv_pixel_ordering_i : conv_pixel_ordering
-    PORT MAP ( CLK          => CLK,
-               CLKEN        => pixgen_clken,
-               RST          => RST,
-               HEIGHT       => img_height,
-               WIDTH        => img_width,
-               WIDTH_OFFSET => img_width_offset,
-               MEM_ADDR     => img0_mem_addr,
-               CONV_Y_POS   => coord_gen_state,  -- 0=above cur pixel, 1=
-                                                 -- current pixel, 2=below cur pixel for
-                                                 -- 3x3
-               X_COORD      => x_coord,
-               Y_COORD      => y_coord,
-               DATA_VALID   => img0_addr_valid,
-               NEW_ROW      => coord_gen_new_row,
-               DONE         => coord_gen_done);
+    PORT MAP (CLK              => CLK,
+              CLKEN            => pixgen_clken,
+              RST              => RST,
+              HEIGHT           => img_height,
+              WIDTH            => img_width,
+              WIDTH_OFFSET     => img_width_offset,
+              INITIAL_MEM_ADDR => initial_mem_addr,
+              MEM_ADDR         => img0_mem_addr,
+              CONV_Y_POS       => coord_gen_state,  -- 0=above cur pixel, 1=
+                                                    -- current pixel, 2=below cur pixel for
+                                                    -- 3x3
+              X_COORD          => x_coord,
+              Y_COORD          => y_coord,
+              DATA_VALID       => img0_addr_valid,
+              NEW_ROW          => coord_gen_new_row,
+              DONE             => coord_gen_done);
 
 -- New Row Buffer: Buffer the NEW_ROW signal from the conv_pixel_ordering
   -- ?CT Delay
@@ -297,29 +318,29 @@ BEGIN
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       IF RST = '1' THEN                 -- synchronous reset (active high)
-        new_row_buf        <= (OTHERS => '0');
+        new_row_buf <= (OTHERS => '0');
       ELSE
         FOR i IN 1 DOWNTO 0 LOOP
           new_row_buf(i+1) <= new_row_buf(i);
         END LOOP;  -- i
-        new_row_buf(0)     <= coord_gen_new_row;
+        new_row_buf(0) <= coord_gen_new_row;
       END IF;
     END IF;
   END PROCESS;
 
 -- Done Buffer: Buffer the DONE signal from the conv_pixel_ordering
-  DONE                  <= done_buf(4);
-  -- 5CT Delay
+  DONE <= done_buf(4);
+                                        -- 5CT Delay
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       IF RST = '1' THEN                 -- synchronous reset (active high)
-        done_buf        <= (OTHERS => '0');
+        done_buf <= (OTHERS => '0');
       ELSE
         FOR i IN 3 DOWNTO 0 LOOP
           done_buf(i+1) <= done_buf(i);
         END LOOP;  -- i
-        done_buf(0)     <= coord_gen_done;
+        done_buf(0) <= coord_gen_done;
       END IF;
     END IF;
   END PROCESS;
@@ -366,16 +387,16 @@ BEGIN
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      x_coord_shifted_buf(0)     <= signed('0'&x_coord&'0')-signed('0'&x_coord_trans);
-      y_coord_shifted_buf(0)     <= signed('0'&y_coord&'0')-signed('0'&y_coord_trans);
+      x_coord_shifted_buf(0) <= signed('0'&x_coord&'0')-signed('0'&x_coord_trans);
+      y_coord_shifted_buf(0) <= signed('0'&y_coord&'0')-signed('0'&y_coord_trans);
       FOR i IN 8 DOWNTO 0 LOOP
         x_coord_shifted_buf(i+1) <= x_coord_shifted_buf(i);
         y_coord_shifted_buf(i+1) <= y_coord_shifted_buf(i);
       END LOOP;  -- i
     END IF;
   END PROCESS;
-  TRANS_X_COORD                  <= std_logic_vector(x_coord_shifted_buf(9));
-  TRANS_Y_COORD                  <= std_logic_vector(y_coord_shifted_buf(9));
+  TRANS_X_COORD <= std_logic_vector(x_coord_shifted_buf(9));
+  TRANS_Y_COORD <= std_logic_vector(y_coord_shifted_buf(9));
 
 -- Memory Address Selector: Read 3 pixels from IMG0 using the coord generator'
 -- s memory address, pause the coord generator, read 1 pixel from IMG1 using
@@ -390,21 +411,21 @@ BEGIN
     END IF;
   END PROCESS;
 
-  -- 1CT Delay
+                                        -- 1CT Delay
   mem_addr_selector_i : mem_addr_selector
-    PORT MAP ( CLK           => CLK,
-               RST           => RST,
-               INPUT_VALID0  => img0_addr_valid,
-               INPUT_VALID1  => img1_addr_valid,
-               PIXEL_STATE   => coord_gen_state,
-               MEM_ADDR0     => img0_mem_addr,
-               MEM_ADDR1     => img1_mem_addr,
-               MEM_ADDROFF0  => img0_offset,
-               MEM_ADDROFF1  => img1_offset,
-               PATTERN_STATE => pattern_state_wire,
-               MEM_ADDR      => MEM_ADDR,
-               OUTPUT_VALID  => mem_output_valid_wire,
-               PIXGEN_CLKEN  => pixgen_clken);
+    PORT MAP (CLK           => CLK,
+              RST           => RST,
+              INPUT_VALID0  => img0_addr_valid,
+              INPUT_VALID1  => img1_addr_valid,
+              PIXEL_STATE   => coord_gen_state,
+              MEM_ADDR0     => img0_mem_addr,
+              MEM_ADDR1     => img1_mem_addr,
+              MEM_ADDROFF0  => img0_offset,
+              MEM_ADDROFF1  => img1_offset,
+              PATTERN_STATE => pattern_state_wire,
+              MEM_ADDR      => MEM_ADDR,
+              OUTPUT_VALID  => mem_output_valid_wire,
+              PIXGEN_CLKEN  => pixgen_clken);
   MEM_OUTPUT_VALID <= mem_output_valid_wire;
 
 -- Pattern State Buffer: Buffer the pattern_state_wire signal so that it
@@ -431,16 +452,16 @@ BEGIN
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       IF RST = '1' THEN                 -- synchronous reset (active high)
-        mem_input_valid_buf        <= (OTHERS => '0');
+        mem_input_valid_buf <= (OTHERS => '0');
       ELSE
         FOR i IN 0 DOWNTO 0 LOOP
           mem_input_valid_buf(i+1) <= mem_input_valid_buf(i);
         END LOOP;  -- i
-        mem_input_valid_buf(0)     <= mem_output_valid_wire;
+        mem_input_valid_buf(0) <= mem_output_valid_wire;
       END IF;
     END IF;
   END PROCESS;
-  
+
 -- Mem Value Register: Stores the incoming value into a register
 -- NOTE: THIS ABSOLUTELY MUST BE REMOVED WHEN USING A REAL MEMORY CONTROLLER AS
 -- IT WILL SKEW THE CTs BY 1. IT IS ONLY USED TO SIMPLIFY SIMULATION TIMING!!!
@@ -448,9 +469,9 @@ BEGIN
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       IF RST = '1' THEN                 -- synchronous reset (active high)
-        mem_value_buf              <= (OTHERS => '0');
+        mem_value_buf <= (OTHERS => '0');
       ELSE
-        mem_value_buf              <= MEM_VALUE;
+        mem_value_buf <= MEM_VALUE;
       END IF;
     END IF;
   END PROCESS;

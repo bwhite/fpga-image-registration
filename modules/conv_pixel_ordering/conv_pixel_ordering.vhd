@@ -29,6 +29,7 @@ ENTITY conv_pixel_ordering IS
   GENERIC (
     CONV_HEIGHT      : integer := 3;
     BORDER_SIZE      : integer := 0;
+    ROW_SKIP         : integer := 0;
     WIDTH_BITS       : integer := 10;
     HEIGHT_BITS      : integer := 10;
     CONV_HEIGHT_BITS : integer := 2);
@@ -41,6 +42,10 @@ ENTITY conv_pixel_ordering IS
         HEIGHT           : IN  std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);
         WIDTH            : IN  std_logic_vector(WIDTH_BITS-1 DOWNTO 0);
         WIDTH_OFFSET     : IN  std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);  -- (CONV_HEIGHT-1)*WIDTH-1
+        -- NOTE: The following 2 inputs are only used when ROW_SKIP /=0
+        --HEIGHT-CONV_HEIGHT-BORDER_SIZE-(HEIGHT-2*BORDER_SIZE-CONV_HEIGHT)%(1+ROW_SKIP)
+        LAST_VALID_Y_POS : IN  std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);                                                                          
+        NEW_ROW_OFFSET   : IN  std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0); -- WIDTH_OFFSET-2*BORDER_SIZE-ROW_SKIP*WIDTH
         -- Generally WIDTH*BORDER_SIZE+BORDER_SIZE+BASE_ADDR; however,
         -- BASE_ADDR may be added later on and thus =0 here
         INITIAL_MEM_ADDR : IN  std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);
@@ -76,9 +81,18 @@ BEGIN
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       -- valid upon the first posedge of the CLK.
-      height_conv_diff_minus_border <= unsigned(HEIGHT)-CONV_HEIGHT-BORDER_SIZE;
-      width_minus_one_minus_border  <= unsigned(WIDTH)-1-BORDER_SIZE;
-      width_offset_minus_border_reg <= unsigned(WIDTH_OFFSET)-2*BORDER_SIZE;
+      -- NOTE: This assumes that the result of this will be positive
+      -- TODO: Ensure that negative values will be handled properly
+      IF ROW_SKIP /= 0 THEN
+        height_conv_diff_minus_border <= unsigned(HEIGHT)-CONV_HEIGHT-BORDER_SIZE;
+        width_offset_minus_border_reg <= unsigned(WIDTH_OFFSET)-2*BORDER_SIZE;
+      ELSE
+        height_conv_diff_minus_border <= unsigned(LAST_VALID_Y_POS);
+        width_offset_minus_border_reg <= unsigned(NEW_ROW_OFFSET);
+      END IF;
+      width_minus_one_minus_border <= unsigned(WIDTH)-1-BORDER_SIZE;
+
+
       -- NOTE: These must be constant throughout the operation, after changing
       -- them assert RST before using any output from this module.  They must be
       IF RST = '1' THEN                 -- synchronous reset (active high)
@@ -106,8 +120,8 @@ BEGIN
                   new_row_reg    <= '0';
                 ELSE                    -- Not end of entire stream
                   x_coord_reg    <= to_unsigned(BORDER_SIZE, WIDTH_BITS);
-                  y_coord_reg    <= y_coord_reg - CONV_HEIGHT + 2;
-                  y_coord_pos    <= y_coord_pos + 1;
+                  y_coord_reg    <= y_coord_reg - CONV_HEIGHT + 2 + ROW_SKIP;
+                  y_coord_pos    <= y_coord_pos + 1 + ROW_SKIP;
                   data_valid_reg <= '1';
                   new_row_reg    <= '1';
                   mem_addr_reg   <= mem_addr_reg - width_offset_minus_border_reg;

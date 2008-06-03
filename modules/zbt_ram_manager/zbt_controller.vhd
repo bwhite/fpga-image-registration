@@ -87,7 +87,7 @@ BEGIN
       END IF;
 
       data_write_delay <= DATA_WRITE;
-      SRAM_OE_B <= we_b_delay;
+      SRAM_OE_B <= NOT we_b_delay;
       IF RST = '1' THEN                 -- synchronous reset (active high)
         cs_b_delay          <= '1';
         we_b_delay          <= '1';

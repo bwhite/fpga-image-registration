@@ -60,7 +60,8 @@ BEGIN
   X_COORD     <= x_coord_reg;
   Y_COORD     <= y_coord_reg;
   PIXEL_COUNT <= pixel_count_reg;
-  DATA_VALID  <= data_valid_reg WHEN vsync_asserted = '1' AND done_reg='0' ELSE '0';
+  -- Output data as valid only starting at the first full frame we receive
+  DATA_VALID  <= data_valid_reg WHEN vsync_asserted = '1' ELSE '0';
   DONE <= done_reg;
   PROCESS (CLK) IS
   BEGIN  -- PROCESS 
@@ -113,10 +114,14 @@ BEGIN
           vsync_asserted <= '1';
           -- We are done when we have been in the VSYNC='1' region previously,
           -- and the last CT we were in the VSYNC='0' region, which means we
-          -- have been through all of the coordinates
+          -- have been through all of the coordinates.  It will be high for one
+          -- CT, then reset to 0.
           -- NOTE: This assumes that the VSYNC level has no glitches
+          -- NOTE: Done will be high for one CT every full frame processed
           IF prev_vsync = '0' AND vsync_asserted='1' THEN
             done_reg <= '1';
+          ELSIF done_reg='1' THEN
+            done_reg <= '0';
           END IF;
         END IF;
 

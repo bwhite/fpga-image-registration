@@ -34,8 +34,8 @@ USE IEEE.STD_LOGIC_ARITH.ALL;
 USE IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 ENTITY zbt_controller IS
-  PORT (CLK    : IN std_logic;
-        RST    : IN std_logic;
+  PORT (CLK : IN std_logic;
+        RST : IN std_logic;
 
         -- Control signals
         ADV_LD_B        : IN  std_logic;
@@ -60,9 +60,12 @@ ENTITY zbt_controller IS
 END zbt_controller;
 
 ARCHITECTURE Behavioral OF zbt_controller IS
-  SIGNAL data_write_delay       : std_logic_vector(35 DOWNTO 0);
-  SIGNAL we_b_delay, cs_b_delay : std_logic := '0';
-  SIGNAL data_read_valid_reg    : std_logic := '0';
+  SIGNAL data_write_delay               : std_logic_vector(35 DOWNTO 0);
+  SIGNAL we_b_delay, cs_b_delay         : std_logic := '0';
+  SIGNAL data_read_valid_reg            : std_logic := '0';
+  ATTRIBUTE KEEP                        : string;
+  ATTRIBUTE KEEP OF data_write_delay    : SIGNAL IS "TRUE";
+  ATTRIBUTE KEEP OF data_read_valid_reg : SIGNAL IS "TRUE";
 BEGIN
   SRAM_ADV_LD_B   <= ADV_LD_B;
   SRAM_ADDR       <= ADDR;
@@ -86,7 +89,7 @@ BEGIN
       END IF;
 
       data_write_delay <= DATA_WRITE;
-      SRAM_OE_B <= NOT we_b_delay;
+      SRAM_OE_B        <= NOT we_b_delay;
       IF RST = '1' THEN                 -- synchronous reset (active high)
         cs_b_delay          <= '1';
         we_b_delay          <= '1';

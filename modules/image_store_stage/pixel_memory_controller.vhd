@@ -4,6 +4,7 @@ USE IEEE.NUMERIC_STD.ALL;
 
 ENTITY pixel_memory_controller IS
   PORT (CLK    : IN std_logic;
+        CLK_OE : IN std_logic;
         RST    : IN std_logic;
 
         -- Control signals
@@ -27,8 +28,8 @@ END pixel_memory_controller;
 
 ARCHITECTURE Behavioral OF pixel_memory_controller IS
   COMPONENT zbt_controller IS
-    PORT (CLK    : IN std_logic;
-          RST    : IN std_logic;
+    PORT (CLK : IN std_logic;
+          RST : IN std_logic;
 
           -- Control signals
           ADV_LD_B        : IN  std_logic;
@@ -62,18 +63,16 @@ ARCHITECTURE Behavioral OF pixel_memory_controller IS
           DIN   : IN  std_logic_vector(WIDTH-1 DOWNTO 0);
           DOUT  : OUT std_logic_vector(WIDTH-1 DOWNTO 0));
   END COMPONENT;
-  SIGNAL byte_buf                                  : std_logic_vector(1 DOWNTO 0);
-  SIGNAL data_read, data_read_buf, data_write      : std_logic_vector(35 DOWNTO 0);
-  SIGNAL bw_b                                      : std_logic_vector(3 DOWNTO 0);
-  SIGNAL pixel_read_valid_wire, cs_b_buf, we_b_buf : std_logic;
-  SIGNAL addr_buf                                  : std_logic_vector(17 DOWNTO 0);
+  SIGNAL byte_buf                             : std_logic_vector(1 DOWNTO 0);
+  SIGNAL data_read, data_write, data_read_buf : std_logic_vector(35 DOWNTO 0);
+  SIGNAL bw_b                                 : std_logic_vector(3 DOWNTO 0);
 BEGIN
 -- Byte Buffer: Buffers 2CTs the last 2 bits of the address which are used to
 -- select which 9bit segment we want from the incoming data
   byte_pipe : pipeline_buffer
     GENERIC MAP (
       WIDTH         => 2,
-      STAGES        => 4,
+      STAGES        => 3,
       DEFAULT_VALUE => 0)
     PORT MAP (
       CLK   => CLK,
@@ -84,31 +83,28 @@ BEGIN
 
   -- Pad the pixel data with zeros and set the byte write mask to only write to
   -- the correct pixel
-  -- PROCESS (ADDR(1 DOWNTO 0), PIXEL_WRITE) IS
-  PROCESS (CLK) IS
+  PROCESS (ADDR(1 DOWNTO 0), PIXEL_WRITE) IS
   BEGIN  -- PROCESS
-    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      CASE ADDR(1 DOWNTO 0) IS
-        WHEN "00" =>
-          bw_b       <= "1110";
-          data_write <= (26 DOWNTO 0 => '0') & PIXEL_WRITE;
-        WHEN "01" =>
-          bw_b       <= "1101";
-          data_write <= (17 DOWNTO 0 => '0') & PIXEL_WRITE & (8 DOWNTO 0 => '0');
-        WHEN "10" =>
-          bw_b       <= "1011";
-          data_write <= (8 DOWNTO 0 => '0') & PIXEL_WRITE & (17 DOWNTO 0 => '0');
-        WHEN "11" =>
-          bw_b       <= "0111";
-          data_write <= PIXEL_WRITE & (26 DOWNTO 0 => '0');
-        WHEN OTHERS => NULL;
-      END CASE;
-    END IF;
+    CASE ADDR(1 DOWNTO 0) IS
+      WHEN "00" =>
+        bw_b       <= "1110";
+        data_write <= (26 DOWNTO 0 => '0') & PIXEL_WRITE;
+      WHEN "01" =>
+        bw_b       <= "1101";
+        data_write <= (17 DOWNTO 0 => '0') & PIXEL_WRITE & (8 DOWNTO 0 => '0');
+      WHEN "10" =>
+        bw_b       <= "1011";
+        data_write <= (8 DOWNTO 0 => '0') & PIXEL_WRITE & (17 DOWNTO 0 => '0');
+      WHEN "11" =>
+        bw_b       <= "0111";
+        data_write <= PIXEL_WRITE & (26 DOWNTO 0 => '0');
+      WHEN OTHERS => NULL;
+
+    END CASE;
   END PROCESS;
 
-
   -- Extract the pixel that we requested from the 4 read
-  PROCESS (byte_buf, data_read) IS
+  PROCESS (byte_buf, data_read_buf) IS
   BEGIN  -- PROCESS
     CASE byte_buf IS
       WHEN "00" =>
@@ -126,28 +122,24 @@ BEGIN
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      data_read_buf    <= data_read;
-      cs_b_buf         <= CS_B;
-      we_b_buf         <= WE_B;
-      addr_buf         <= ADDR(19 DOWNTO 2);
-      PIXEL_READ_VALID <= pixel_read_valid_wire;
+      data_read_buf <= data_read;
     END IF;
   END PROCESS;
   
   zbt_controller_i : zbt_controller PORT MAP (
-    CLK    => CLK,
-    RST    => RST,
+    CLK => CLK,
+    RST => RST,
 
     -- Control signals
     ADV_LD_B        => '0',
-    ADDR            => addr_buf,               -- 
-    WE_B            => we_b_buf,               -- 
-    BW_B            => bw_b,                   -- 
+    ADDR            => ADDR(19 DOWNTO 2),
+    WE_B            => WE_B,
+    BW_B            => bw_b,
     CKE_B           => '0',
-    CS_B            => cs_b_buf,               -- 
-    DATA_WRITE      => data_write,             -- 
-    DATA_READ       => data_read,              -- 
-    DATA_READ_VALID => pixel_read_valid_wire,  -- 
+    CS_B            => CS_B,
+    DATA_WRITE      => data_write,
+    DATA_READ       => data_read,
+    DATA_READ_VALID => PIXEL_READ_VALID,
 
     -- SRAM Connections
     SRAM_ADV_LD_B => SRAM_ADV_LD_B,

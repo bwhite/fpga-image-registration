@@ -35,7 +35,6 @@ USE IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 ENTITY zbt_controller IS
   PORT (CLK    : IN std_logic;
-        CLK_OE : IN std_logic;
         RST    : IN std_logic;
 
         -- Control signals

@@ -125,10 +125,10 @@ BEGIN
       PHASE_SHIFT           => 0,  -- Amount of fixed phase shift from -255 to 1023
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
     PORT MAP (
-      CLK0  => clk_freq0,               -- 0 degree DCM CLK ouptput
-      CLKFB => clk_freq0,               -- DCM clock feedback
+      CLK0  => clk_buf,               -- 0 degree DCM CLK ouptput
+      CLKFB => clk_buf,               -- DCM clock feedback
 --      CLKFX =>  clk_buf,
-      CLKDV => clk_buf,
+     -- CLKDV => clk_buf,
       CLKIN => CLK_P,              -- Clock input (from IBUFG, BUFG or DCM)
       RST   => rst_not                  -- DCM asynchronous reset input
       );
@@ -140,15 +140,15 @@ BEGIN
       CLKFX_DIVIDE          => 1,       -- Can be any interger from 1 to 32
       CLKFX_MULTIPLY        => 3,       -- Can be any integer from 2 to 32
       CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
-      CLKIN_PERIOD          => 20.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
+      CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
       DCM_AUTOCALIBRATION   => true,  -- DCM calibrartion circuitry TRUE/FALSE
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
                                         --   an integer from 0 to 15
-      DFS_FREQUENCY_MODE    => "LOW",  -- LOW or HIGH frequency mode for frequency synthesis
-      DLL_FREQUENCY_MODE    => "LOW",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
+      DFS_FREQUENCY_MODE    => "HIGH",  -- LOW or HIGH frequency mode for frequency synthesis
+      DLL_FREQUENCY_MODE    => "HIGH",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
       DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
       FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0" 
       PHASE_SHIFT           => 0,  -- Amount of fixed phase shift from -255 to 1023
@@ -175,7 +175,7 @@ BEGIN
       CLKFX_DIVIDE          => 1,       -- Can be any integer from 1 to 32
       CLKFX_MULTIPLY        => 4,       -- Can be any integer from 2 to 32
       CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
-      CLKIN_PERIOD          => 20.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
+      CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLKOUT_PHASE_SHIFT    => "NONE",  --"VARIABLE_CENTER",  -- Specify phase shift mode of NONE, FIXED, 
       -- VARIABLE_POSITIVE, VARIABLE_CENTER or DIRECT
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
@@ -183,8 +183,8 @@ BEGIN
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
                                         --   an integer from 0 to 15
-      DFS_FREQUENCY_MODE    => "LOW",  -- HIGH or LOW frequency mode for frequency synthesis
-      DLL_FREQUENCY_MODE    => "LOW",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
+      DFS_FREQUENCY_MODE    => "HIGH",  -- HIGH or LOW frequency mode for frequency synthesis
+      DLL_FREQUENCY_MODE    => "HIGH",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
       DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
       FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0" 
       PHASE_SHIFT           => 0,  -- Amount of fixed phase shift from -255 to 1023

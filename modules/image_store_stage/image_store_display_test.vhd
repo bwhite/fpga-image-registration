@@ -303,6 +303,13 @@ BEGIN
           -- by VGA)
           WHEN MEM_DUMP_READ =>         -- 011
             memory_dump_rst_reg <= '0';
+
+            if image_store_fifo_empty='0' THEN
+              image_store_fifo_re <= '1';  -- Read Values
+            ELSE
+              image_store_fifo_re <= '0';
+            END if;      
+            
             IF memory_dump_done = '1' THEN
               cur_state <= IDLE;
             END IF;
@@ -347,9 +354,9 @@ BEGIN
 
       WHEN IMAGE_STORE =>
         we_b            <= '0';
-        cs_b            <= NOT image_store_fifo_empty;
-        mem_addr        <= image_store_mem_addr;
-        mem_write_value <= mem_out_value;
+        cs_b            <= image_store_fifo_empty OR (NOT image_store_fifo_re);
+        mem_addr        <= image_store_mem_addr_fifo;
+        mem_write_value <= mem_out_value_fifo;
 
 --      WHEN IMAGE_DISPLAY =>
 --        we_b            <= '1';
@@ -414,10 +421,6 @@ BEGIN
       WRCLK   => VGA_PIXEL_CLK,         -- Input write clock
       WREN    => image_store_mem_output_valid  -- Input write enable
       );
-
-  -- This is always enabled when in IMAGE_STORE state because we can take data
-  -- every memory clock time
-  image_store_fifo_re <= '1' WHEN cur_state = IMAGE_STORE ELSE '0';
 
   -- Pack data into fifo in/out signals
   image_store_fifo_di       <= mem_out_value&image_store_mem_addr;

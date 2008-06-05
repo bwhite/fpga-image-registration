@@ -59,8 +59,6 @@ BEGIN
       VSYNC       => VGA_VSYNC,
       HSYNC       => VGA_HSYNC,
       DATA_VALID  => vga_data_valid,
---      X_COORD     => vga_x_coord_wire,
---      Y_COORD     => vga_y_coord_wire,
       PIXEL_COUNT => vga_pixel_count_wire,
       DONE        => vga_done);
 

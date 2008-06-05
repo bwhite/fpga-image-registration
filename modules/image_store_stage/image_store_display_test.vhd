@@ -5,6 +5,9 @@ USE ieee.numeric_std.ALL;
 LIBRARY UNISIM;
 USE UNISIM.VComponents.ALL;
 
+LIBRARY UNIMACRO;
+USE UNIMACRO.vcomponents.ALL;
+
 ENTITY image_store_display_test IS
   GENERIC (
     IMGSIZE_BITS : integer := 10;
@@ -15,6 +18,27 @@ ENTITY image_store_display_test IS
         -- IO
         RST     : IN std_logic;
         GPIO_SW : IN std_logic_vector(4 DOWNTO 0);
+
+        -- I2C Signals
+        I2C_SDA : OUT std_logic;
+        I2C_SCL : OUT std_logic;
+
+        -- DVI Signals
+--        DVI_D       : OUT std_logic_vector (11 DOWNTO 0);
+--        DVI_H       : OUT std_logic;
+--        DVI_V       : OUT std_logic;
+--        DVI_DE      : OUT std_logic;
+--        DVI_XCLK_N  : OUT std_logic;
+--        DVI_XCLK_P  : OUT std_logic;
+--        DVI_RESET_B : OUT std_logic;
+
+        -- VGA Chip connections
+        VGA_PIXEL_CLK  : IN std_logic;
+        VGA_Y_GREEN    : IN std_logic_vector (7 DOWNTO 0);
+        VGA_CBCR_RED   : IN std_logic_vector (7 DOWNTO 0);
+        VGA_BLUE       : IN std_logic_vector (7 DOWNTO 0);
+        VGA_HSYNC      : IN std_logic;
+        VGA_VSYNC      : IN std_logic;
 
         -- SRAM Connections
         SRAM_CLK_FB : IN    std_logic;
@@ -65,30 +89,91 @@ ARCHITECTURE Behavioral OF image_store_display_test IS
           );
   END COMPONENT;
 
+  COMPONENT i2c_video_programmer IS
+    PORT (CLK200Mhz : IN  std_logic;
+          RST       : IN  std_logic;
+          I2C_SDA   : OUT std_logic;
+          I2C_SCL   : OUT std_logic);
+  END COMPONENT;
+
+  COMPONENT image_store_stage IS
+    GENERIC (
+      IMGSIZE_BITS : integer := 10;
+      PIXEL_BITS   : integer := 9;
+      BASE_OFFSET  : integer := 0);
+    PORT (CLK       : IN std_logic;
+          RST       : IN std_logic;
+          -- VGA Chip Connections
+          VGA_Y     : IN std_logic_vector (7 DOWNTO 0);
+          VGA_HSYNC : IN std_logic;
+          VGA_VSYNC : IN std_logic;
+
+          -- External Memory Connections
+          -- 0:0:PIXEL_BITS Format
+          MEM_OUT_VALUE    : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          MEM_ADDR         : OUT std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+          MEM_OUTPUT_VALID : OUT std_logic;
+          DONE             : OUT std_logic
+          );
+  END COMPONENT;
+
+  COMPONENT image_display_stage IS
+    GENERIC (
+      IMGSIZE_BITS : integer := 10;
+      PIXEL_BITS   : integer := 9;
+      BASE_OFFSET  : integer := 0);
+    PORT (CLK : IN std_logic;
+          RST : IN std_logic;
+
+          -- RAM Signals
+          MEM_IN_VALUE  : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          MEM_ADDR      : OUT std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+          MEM_OUT_VALID : OUT std_logic;
+
+          -- DVI Signals
+          DVI_D       : OUT std_logic_vector (11 DOWNTO 0);
+          DVI_H       : OUT std_logic;
+          DVI_V       : OUT std_logic;
+          DVI_DE      : OUT std_logic;
+          DVI_XCLK_N  : OUT std_logic;
+          DVI_XCLK_P  : OUT std_logic;
+          DVI_RESET_B : OUT std_logic);
+  END COMPONENT;
+
   SIGNAL rst_not, clk200mhz_buf, clk_freq_fb, clk_int, clk_freq0, sram_int_clk_3x, clk_buf, sram_int_clk, clk_intbuf, we_b, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, image_store_rst : std_logic;
 
   SIGNAL memory_dump_done, memory_dump_rst, memory_dump_mem_out_valid, memory_dump_rst_reg, image_display_rst, image_display_done : std_logic;
 
-  SIGNAL image_store_mem_addr, image_display_mem_addr, memory_dump_mem_addr, mem_addr : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL mem_out_value, mem_write_value, mem_read_value, mem_read_buf                 : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  SIGNAL image_store_mem_addr, image_store_mem_addr_fifo, image_display_mem_addr, memory_dump_mem_addr, mem_addr : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+  SIGNAL mem_out_value, mem_out_value_fifo, mem_write_value, mem_read_value, mem_read_buf                        : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
   TYPE   current_state IS (IMAGE_STORE, IMAGE_DISPLAY, MEM_DUMP_WRITE, MEM_DUMP_READ, IDLE);
-  SIGNAL cur_state                                                                    : current_state        := IDLE;
-  SIGNAL memory_dump_done_reg, psen, pscount_enable, psincdec                         : std_logic            := '0';
-  SIGNAL pscounter                                                                    : signed(10 DOWNTO 0)  := (OTHERS => '0');
-  SIGNAL psinner_count                                                                : unsigned(5 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL cur_state                                                                                               : current_state        := IDLE;
+  SIGNAL memory_dump_done_reg, psen, pscount_enable, psincdec                                                    : std_logic            := '0';
+  SIGNAL pscounter                                                                                               : signed(10 DOWNTO 0)  := (OTHERS => '0');
+  SIGNAL psinner_count                                                                                           : unsigned(5 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL image_store_fifo_empty, image_store_fifo_re                                                             : std_logic;
 
   SIGNAL MEMORY_ADDR_VALUE                             : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
   SIGNAL MEMORY_READ_VALUE, MEMORY_WRITE_VALUE         : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
   SIGNAL MEMORY_DUMP_RST_VALUE, MEMORY_DUMP_DONE_VALUE : std_logic;
   SIGNAL PSCOUNTER_VALUE                               : std_logic_vector(10 DOWNTO 0);
-  ATTRIBUTE KEEP                                       : string;
-  ATTRIBUTE KEEP OF MEMORY_DUMP_RST_VALUE              : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF MEMORY_DUMP_DONE_VALUE             : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF MEMORY_READ_VALUE                  : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF MEMORY_WRITE_VALUE                 : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF MEMORY_ADDR_VALUE                  : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF PSCOUNTER_VALUE                    : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF mem_write_value                    : SIGNAL IS "TRUE";
+
+  -- Pixel Memory Controller Signals
+  signal mem_read_valid,mem_read_valid_reg : std_logic;
+  
+  -- Image Store FIFO Signals
+  SIGNAL image_store_fifo_read_count, image_store_fifo_write_count : std_logic_vector(8 DOWNTO 0);
+  SIGNAL image_store_fifo_do, image_store_fifo_di                  : std_logic_vector(35 DOWNTO 0);
+
+  ATTRIBUTE KEEP                           : string;
+  ATTRIBUTE KEEP OF MEMORY_DUMP_RST_VALUE  : SIGNAL IS "TRUE";
+  ATTRIBUTE KEEP OF MEMORY_DUMP_DONE_VALUE : SIGNAL IS "TRUE";
+  ATTRIBUTE KEEP OF MEMORY_READ_VALUE      : SIGNAL IS "TRUE";
+  ATTRIBUTE KEEP OF MEMORY_WRITE_VALUE     : SIGNAL IS "TRUE";
+  ATTRIBUTE KEEP OF MEMORY_ADDR_VALUE      : SIGNAL IS "TRUE";
+  ATTRIBUTE KEEP OF PSCOUNTER_VALUE        : SIGNAL IS "TRUE";
+  ATTRIBUTE KEEP OF mem_write_value        : SIGNAL IS "TRUE";
+  ATTRIBUTE KEEP OF mem_read_valid_reg        : SIGNAL IS "TRUE";
 BEGIN
 -------------------------------------------------------------------------------
 -- CLK Management
@@ -170,7 +255,7 @@ BEGIN
       CLKIN => clk_buf,              -- Clock input (from IBUFG, BUFG or DCM)
       RST   => rst_not                  -- DCM asynchronous reset input
       );
-  
+
   SRAM_CLK <= sram_int_clk;
 
 -------------------------------------------------------------------------------
@@ -183,11 +268,12 @@ BEGIN
         cur_state <= IDLE;
       ELSE
         -- Store into regs for chipscope
-        MEMORY_DUMP_RST_VALUE  <= memory_dump_rst;
-        MEMORY_DUMP_DONE_VALUE <= memory_dump_done;
-        MEMORY_READ_VALUE      <= mem_read_value;
-        MEMORY_WRITE_VALUE     <= mem_write_value;
-        MEMORY_ADDR_VALUE      <= mem_addr;
+        memory_dump_rst_value  <= memory_dump_rst;
+        memory_dump_done_value  <= memory_dump_done;
+        memory_read_value     <= mem_read_value;
+        memory_write_value     <= mem_write_value;
+        memory_addr_value      <= mem_addr;
+        mem_read_valid_reg <= mem_read_valid;
 
         CASE cur_state IS
           WHEN IDLE =>                  -- 001
@@ -201,6 +287,10 @@ BEGIN
                 cur_state <= MEM_DUMP_WRITE;
               WHEN "00010" =>           -- E
                 cur_state <= MEM_DUMP_READ;
+              WHEN "00100" =>           -- S
+                cur_state <= IMAGE_STORE;
+              WHEN "01000" =>           -- W
+                cur_state <= IMAGE_DISPLAY;
               WHEN OTHERS => NULL;
             END CASE;
           WHEN MEM_DUMP_WRITE =>        -- 100
@@ -208,19 +298,33 @@ BEGIN
             IF memory_dump_done = '1' THEN
               cur_state <= IDLE;
             END IF;
-            
+          -- TODO Output STATE value so that it can be used for chipscope triggering
+          -- TODO Create another ILA that shows the image store stage (clocked
+          -- by VGA)
           WHEN MEM_DUMP_READ =>         -- 011
             memory_dump_rst_reg <= '0';
             IF memory_dump_done = '1' THEN
               cur_state <= IDLE;
             END IF;
+
+          WHEN IMAGE_STORE =>           -- 000
+            image_store_rst <= '0';
+            IF image_store_done = '1'THEN
+              cur_state <= IDLE;
+            END IF;
+
+--          WHEN IMAGE_DISPLAY =>         -- 001
+--            image_display_rst <= '0';
+--            IF image_display_done = '1'THEN
+--              cur_state <= IDLE;
+--            END IF;
           WHEN OTHERS => NULL;
         END CASE;
       END IF;
     END IF;
   END PROCESS;
 
-  PROCESS (cur_state, memory_dump_mem_out_valid, memory_dump_mem_addr) IS
+  PROCESS (cur_state, memory_dump_mem_out_valid, memory_dump_mem_addr, image_store_mem_output_valid, image_display_mem_output_valid, image_store_mem_addr, image_display_mem_addr) IS
   BEGIN  -- PROCESS
     CASE cur_state IS
       WHEN IDLE =>
@@ -233,14 +337,25 @@ BEGIN
         we_b            <= '0';
         cs_b            <= NOT memory_dump_mem_out_valid;
         mem_addr        <= memory_dump_mem_addr;
-        mem_write_value <= memory_dump_mem_addr(8 DOWNTO 0);
-        
+        mem_write_value <= memory_dump_mem_addr(8 DOWNTO 0);        
         
       WHEN MEM_DUMP_READ =>
         we_b            <= '1';
         cs_b            <= NOT memory_dump_mem_out_valid;
         mem_addr        <= memory_dump_mem_addr;
         mem_write_value <= (OTHERS => '0');
+
+      WHEN IMAGE_STORE =>
+        we_b            <= '0';
+        cs_b            <= NOT image_store_fifo_empty;
+        mem_addr        <= image_store_mem_addr;
+        mem_write_value <= mem_out_value;
+
+--      WHEN IMAGE_DISPLAY =>
+--        we_b            <= '1';
+--        cs_b            <= NOT image_display_mem_output_valid;
+--        mem_addr        <= image_display_mem_addr;
+--        mem_write_value <= (OTHERS => '0');
         
       WHEN OTHERS =>
         we_b            <= '1';
@@ -249,6 +364,82 @@ BEGIN
         mem_write_value <= (OTHERS => '0');
     END CASE;
   END PROCESS;
+
+-------------------------------------------------------------------------------
+-- Program Video In/Out Over I2C
+  i2c_video_programmer_i : i2c_video_programmer
+    PORT MAP (
+      CLK200Mhz => clk200mhz_buf,
+      RST       => rst_not,
+      I2C_SDA   => I2C_SDA,
+      I2C_SCL   => I2C_SCL);
+
+-------------------------------------------------------------------------------  
+-- Image Store Stage
+  image_store_stage_i : image_store_stage
+    PORT MAP (
+      CLK              => VGA_PIXEL_CLK,
+      RST              => image_store_rst,
+      -- VGA Chip Connections
+      VGA_Y            => VGA_Y_GREEN,
+      VGA_HSYNC        => VGA_HSYNC,
+      VGA_VSYNC        => VGA_VSYNC,
+      -- External Memory Connections
+      -- 0:0:PIXEL_BITS Format
+      MEM_OUT_VALUE    => mem_out_value,
+      MEM_ADDR         => image_store_mem_addr,
+      MEM_OUTPUT_VALID => image_store_mem_output_valid,
+      DONE             => image_store_done);
+
+
+  -- Use FIFOs to buffer valid ADDR and Value signals on the VGA clock
+  -- domain to be used by the ZBT RAM domain
+  FIFO_DUALCLOCK_vgain : FIFO_DUALCLOCK_MACRO
+    GENERIC MAP (
+      DEVICE                  => "VIRTEX5",    -- Target Device: "VIRTEX5" 
+      ALMOST_FULL_OFFSET      => X"0000",  -- Sets almost full threshold
+      ALMOST_EMPTY_OFFSET     => X"0000",  -- Sets the almost empty threshold
+      DATA_WIDTH              => 36,  -- Valid values are 4, 9, 18, 36 or 72 (72 only valid when FIFO_SIZE="36Kb")
+      FIFO_SIZE               => "18Kb",   -- Target BRAM, "18Kb" or "36Kb" 
+      FIRST_WORD_FALL_THROUGH => true)  -- Sets the FIFO FWFT to TRUE or FALSE
+    PORT MAP (
+      DO      => image_store_fifo_do,  --mem_out_value_fifo&image_store_mem_addr_fifo,  -- Output data
+      RDCOUNT => image_store_fifo_read_count,
+      WRCOUNT => image_store_fifo_write_count,
+      EMPTY   => image_store_fifo_empty,   -- Output empty
+      DI      => image_store_fifo_di,  --mem_out_value&image_store_mem_addr,            -- Input data
+      RDCLK   => clk_intbuf,            -- Input read clock
+      RDEN    => image_store_fifo_re,   -- Input read enable
+      RST     => image_store_rst,       -- Input reset
+      WRCLK   => VGA_PIXEL_CLK,         -- Input write clock
+      WREN    => image_store_mem_output_valid  -- Input write enable
+      );
+
+  -- This is always enabled when in IMAGE_STORE state because we can take data
+  -- every memory clock time
+  image_store_fifo_re <= '1' WHEN cur_state = IMAGE_STORE ELSE '0';
+
+  -- Pack data into fifo in/out signals
+  image_store_fifo_di       <= mem_out_value&image_store_mem_addr;
+  image_store_mem_addr_fifo <= image_store_fifo_do(19 DOWNTO 0);
+  mem_out_value_fifo        <= image_store_fifo_do(28 DOWNTO 20);
+
+-------------------------------------------------------------------------------
+-- Image Display Stage
+--  image_display_stage_i : image_display_stage
+--    PORT MAP (
+--      CLK           => clk_intbuf,
+--      RST           => rst_not,
+--      MEM_IN_VALUE  => mem_read_value,
+--      MEM_ADDR      => image_display_mem_addr,
+--      MEM_OUT_VALID => image_display_mem_output_valid,
+--      DVI_D         => DVI_D,
+--      DVI_H         => DVI_H,
+--      DVI_V         => DVI_V,
+--      DVI_DE        => DVI_DE,
+--      DVI_XCLK_P    => DVI_XCLK_P,
+--      DVI_XCLK_N    => DVI_XCLK_N,
+--      DVI_RESET_B   => DVI_RESET_B);
 
 -------------------------------------------------------------------------------
 -- Memory Dump:  A counter with a base offset that is used to output a range of
@@ -283,6 +474,7 @@ BEGIN
       CS_B        => cs_b,
       PIXEL_WRITE => mem_write_value,
       PIXEL_READ  => mem_read_value,
+      PIXEL_READ_VALID => mem_read_valid,
 
       -- SRAM Connections
       SRAM_ADDR => SRAM_ADDR,

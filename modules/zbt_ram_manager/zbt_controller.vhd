@@ -21,39 +21,26 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
--------------------------------------------------------------------------------
--- DOESN'T SUPPORT:  ADV_LD_B=1, CKE_B=1, 
--- TODO
--- Fix ADV such that when bursting, it maintains it's mode (so that we still
--- can accurately say when data is ready)
--- Use generators to implement delays so that they can be parameterized
-
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
-USE IEEE.STD_LOGIC_ARITH.ALL;
-USE IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 ENTITY zbt_controller IS
   PORT (CLK : IN std_logic;
         RST : IN std_logic;
 
         -- Control signals
-        ADV_LD_B        : IN  std_logic;
         ADDR            : IN  std_logic_vector (17 DOWNTO 0);
         WE_B            : IN  std_logic;
         BW_B            : IN  std_logic_vector (3 DOWNTO 0);
-        CKE_B           : IN  std_logic;
         CS_B            : IN  std_logic;
         DATA_WRITE      : IN  std_logic_vector (35 DOWNTO 0);
         DATA_READ       : OUT std_logic_vector(35 DOWNTO 0);
         DATA_READ_VALID : OUT std_logic;
 
         -- SRAM Connections
-        SRAM_ADV_LD_B : OUT   std_logic;
         SRAM_ADDR     : OUT   std_logic_vector (17 DOWNTO 0);
         SRAM_WE_B     : OUT   std_logic;
         SRAM_BW_B     : OUT   std_logic_vector (3 DOWNTO 0);
-        SRAM_CKE_B    : OUT   std_logic;
         SRAM_CS_B     : OUT   std_logic;
         SRAM_OE_B     : OUT   std_logic;
         SRAM_DATA     : INOUT std_logic_vector (35 DOWNTO 0));
@@ -67,11 +54,9 @@ ARCHITECTURE Behavioral OF zbt_controller IS
   ATTRIBUTE KEEP OF data_write_delay    : SIGNAL IS "TRUE";
   ATTRIBUTE KEEP OF data_read_valid_reg : SIGNAL IS "TRUE";
 BEGIN
-  SRAM_ADV_LD_B   <= ADV_LD_B;
   SRAM_ADDR       <= ADDR;
   SRAM_WE_B       <= WE_B;
   SRAM_BW_B       <= BW_B;
-  SRAM_CKE_B      <= CKE_B;
   SRAM_CS_B       <= CS_B;
   DATA_READ       <= SRAM_DATA;
   DATA_READ_VALID <= data_read_valid_reg;

@@ -9,29 +9,23 @@ ENTITY image_store_display_test IS
   GENERIC (
     IMGSIZE_BITS : integer := 10;
     PIXEL_BITS   : integer := 9);
-  PORT (CLK_P   : IN std_logic;
-        CLK_N   : IN std_logic;
+  PORT (CLK_P : IN std_logic;
+        CLK_N : IN std_logic;
+
         -- IO
         RST     : IN std_logic;
         GPIO_SW : IN std_logic_vector(4 DOWNTO 0);
-        -- GPIO_ROTARY : IN std_logic_vector(2 DOWNTO 0);
 
-                                        -- SRAM Connections
-        SRAM_CLK_FB   : IN    std_logic;
-        SRAM_CLK      : OUT   std_logic;
-        SRAM_ADV_LD_B : OUT   std_logic;
-        SRAM_ADDR     : OUT   std_logic_vector (17 DOWNTO 0);
-        SRAM_WE_B     : OUT   std_logic;
-        SRAM_BW_B     : OUT   std_logic_vector (3 DOWNTO 0);
-        --SRAM_CKE_B    : OUT   std_logic;  -- NOTE Unconnected for now
-        SRAM_CS_B     : OUT   std_logic;
-        SRAM_OE_B     : OUT   std_logic;
-        SRAM_DATA     : INOUT std_logic_vector (35 DOWNTO 0)
-
-        -- Testing output
-       -- MEMORY_READ_VALUE_OUT : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0)
+        -- SRAM Connections
+        SRAM_CLK_FB : IN    std_logic;
+        SRAM_CLK    : OUT   std_logic;
+        SRAM_ADDR   : OUT   std_logic_vector (17 DOWNTO 0);
+        SRAM_WE_B   : OUT   std_logic;
+        SRAM_BW_B   : OUT   std_logic_vector (3 DOWNTO 0);
+        SRAM_CS_B   : OUT   std_logic;
+        SRAM_OE_B   : OUT   std_logic;
+        SRAM_DATA   : INOUT std_logic_vector (35 DOWNTO 0)
         );
-
 END image_store_display_test;
 
 ARCHITECTURE Behavioral OF image_store_display_test IS
@@ -48,14 +42,12 @@ ARCHITECTURE Behavioral OF image_store_display_test IS
           PIXEL_READ_VALID : OUT std_logic;
 
           -- SRAM Connections
-          SRAM_ADV_LD_B : OUT   std_logic;
-          SRAM_ADDR     : OUT   std_logic_vector (17 DOWNTO 0);
-          SRAM_WE_B     : OUT   std_logic;
-          SRAM_BW_B     : OUT   std_logic_vector (3 DOWNTO 0);
-          SRAM_CKE_B    : OUT   std_logic;
-          SRAM_CS_B     : OUT   std_logic;
-          SRAM_OE_B     : OUT   std_logic;
-          SRAM_DATA     : INOUT std_logic_vector (35 DOWNTO 0));
+          SRAM_ADDR : OUT   std_logic_vector (17 DOWNTO 0);
+          SRAM_WE_B : OUT   std_logic;
+          SRAM_BW_B : OUT   std_logic_vector (3 DOWNTO 0);
+          SRAM_CS_B : OUT   std_logic;
+          SRAM_OE_B : OUT   std_logic;
+          SRAM_DATA : INOUT std_logic_vector (35 DOWNTO 0));
   END COMPONENT;
 
   COMPONENT memory_dump IS
@@ -97,22 +89,23 @@ ARCHITECTURE Behavioral OF image_store_display_test IS
   ATTRIBUTE KEEP OF MEMORY_ADDR_VALUE                  : SIGNAL IS "TRUE";
   ATTRIBUTE KEEP OF PSCOUNTER_VALUE                    : SIGNAL IS "TRUE";
   ATTRIBUTE KEEP OF mem_write_value                    : SIGNAL IS "TRUE";
-
 BEGIN
-
 -------------------------------------------------------------------------------
 -- CLK Management
   rst_not <= NOT RST;
 
+  IBUFGDS_inst : IBUFGDS
+    GENERIC MAP (
+      IOSTANDARD => "DEFAULT")
+    PORT MAP (
+      O  => clk200mhz_buf,              -- Clock buffer output
+      I  => CLK_P,                      -- Diff_p clock buffer input
+      IB => CLK_N                       -- Diff_n clock buffer input
+      );
+
   DCM_BASE_freq : DCM_BASE
     GENERIC MAP (
-      CLKDV_DIVIDE          => 4.0,  -- Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5
-      --   7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0
-      CLKFX_DIVIDE          => 1,       -- Can be any interger from 1 to 32
-      CLKFX_MULTIPLY        => 3,       -- Can be any integer from 2 to 32
-      CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
       CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
-      CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
       DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
@@ -122,28 +115,19 @@ BEGIN
       DLL_FREQUENCY_MODE    => "HIGH",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
       DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
       FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0" 
-      PHASE_SHIFT           => 0,  -- Amount of fixed phase shift from -255 to 1023
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
     PORT MAP (
-      CLK0  => clk_buf,               -- 0 degree DCM CLK ouptput
-      CLKFB => clk_buf,               -- DCM clock feedback
---      CLKFX =>  clk_buf,
-     -- CLKDV => clk_buf,
-      CLKIN => CLK_P,              -- Clock input (from IBUFG, BUFG or DCM)
+      CLK0  => clk_buf,                 -- 0 degree DCM CLK ouptput
+      CLKFB => clk_buf,                 -- DCM clock feedback
+      CLKIN => clk200mhz_buf,        -- Clock input (from IBUFG, BUFG or DCM)
       RST   => rst_not                  -- DCM asynchronous reset input
       );
 
   DCM_BASE_internal : DCM_BASE
     GENERIC MAP (
-      CLKDV_DIVIDE          => 2.0,  -- Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5
-      --   7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0
-      CLKFX_DIVIDE          => 1,       -- Can be any interger from 1 to 32
-      CLKFX_MULTIPLY        => 3,       -- Can be any integer from 2 to 32
-      CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
       CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
-      CLKOUT_PHASE_SHIFT    => "NONE",  -- Specify phase shift mode of NONE or FIXED
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
-      DCM_AUTOCALIBRATION   => true,  -- DCM calibrartion circuitry TRUE/FALSE
+      DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
                                         --   an integer from 0 to 15
@@ -151,12 +135,11 @@ BEGIN
       DLL_FREQUENCY_MODE    => "HIGH",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
       DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
       FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0" 
-      PHASE_SHIFT           => 0,  -- Amount of fixed phase shift from -255 to 1023
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
     PORT MAP (
       CLK0  => clk_int,                 -- 0 degree DCM CLK ouptput
       CLKFB => clk_intbuf,              -- DCM clock feedback
-      CLKIN => clk_buf,            -- Clock input (from IBUFG, BUFG or DCM)
+      CLKIN => clk_buf,              -- Clock input (from IBUFG, BUFG or DCM)
       RST   => rst_not                  -- DCM asynchronous reset input
       );
 
@@ -168,100 +151,28 @@ BEGIN
       );
 
   -- Buffer and Deskew SRAM CLK
-  DCM_ADV_sram : DCM_ADV
+  DCM_BASE_sram : DCM_BASE
     GENERIC MAP (
-      CLKDV_DIVIDE          => 2.0,  -- Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5
-      --   7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0
-      CLKFX_DIVIDE          => 1,       -- Can be any integer from 1 to 32
-      CLKFX_MULTIPLY        => 4,       -- Can be any integer from 2 to 32
-      CLKIN_DIVIDE_BY_2     => false,  -- TRUE/FALSE to enable CLKIN divide by two feature
       CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
-      CLKOUT_PHASE_SHIFT    => "NONE",  --"VARIABLE_CENTER",  -- Specify phase shift mode of NONE, FIXED, 
-      -- VARIABLE_POSITIVE, VARIABLE_CENTER or DIRECT
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
-      DCM_AUTOCALIBRATION   => true,    -- DCM calibration circuitry TRUE/FALSE
+      DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
                                         --   an integer from 0 to 15
-      DFS_FREQUENCY_MODE    => "HIGH",  -- HIGH or LOW frequency mode for frequency synthesis
+      DFS_FREQUENCY_MODE    => "HIGH",  -- LOW or HIGH frequency mode for frequency synthesis
       DLL_FREQUENCY_MODE    => "HIGH",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
       DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
       FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0" 
-      PHASE_SHIFT           => 0,  -- Amount of fixed phase shift from -255 to 1023
-      SIM_DEVICE            => "VIRTEX5",  -- Set target device, "VIRTEX4" or "VIRTEX5" 
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
     PORT MAP (
-      CLK0     => sram_int_clk,         -- 0 degree DCM CLK output
-      --DO => DO,             -- 16-bit data output for Dynamic Reconfiguration Port (DRP)
-      --DRDY => DRDY,         -- Ready output signal from the DRP
-      -- LOCKED   => LOCKED,               -- DCM LOCK status output
-      CLKFB    => SRAM_CLK_FB,          -- DCM clock feedback
-      CLKIN    => clk_buf,         -- Clock input (from IBUFG, BUFG or DCM)
-      --DADDR => DADDR,       -- 7-bit address for the DRP
-      --DCLK => DCLK,         -- Clock for the DRP
-      --DEN => DEN,           -- Enable input for the DRP
-      --DI => DI,             -- 16-bit data input for the DRP
-      --DWE => DWE,           -- Active high allows for writing configuration memory
-      PSCLK    => '0',--clk_buf,              -- Dynamic phase adjust clock input
-      PSEN     => '0',--psen,                 -- Dynamic phase adjust enable input
-      PSINCDEC => '0',--psincdec,        -- Dynamic phase adjust increment/decrement
-      RST      => rst_not               -- DCM asynchronous reset input
+      CLK0  => sram_int_clk,            -- 0 degree DCM CLK output
+      CLKFB => SRAM_CLK_FB,             -- DCM clock feedback
+      CLKIN => clk_buf,              -- Clock input (from IBUFG, BUFG or DCM)
+      RST   => rst_not                  -- DCM asynchronous reset input
       );
-
+  
   SRAM_CLK <= sram_int_clk;
 
-  -- Controls the phase shift counter value, keeps track of the count so that
-  -- it can be displayed
-  -- Uses a button to enable scroller input per increment for debouncing
---  PROCESS (clk_buf) IS
---  BEGIN  -- PROCESS
---    IF clk_buf'event AND clk_buf = '1' THEN  -- rising clock edge
---      IF rst_not = '1' THEN                  -- synchronous reset (active high)
---        pscounter      <= (OTHERS => '0');
---        psen           <= '0';
---        psincdec       <= '0';
---        pscount_enable <= '0';
---        psinner_count  <= (OTHERS => '0');
---      ELSE
---        IF pscount_enable = '1' AND psinner_count = 0 THEN
---          CASE GPIO_SW(3 DOWNTO 2) IS
---            WHEN "01" =>                     -- INC - South
---              pscount_enable <= '0';
---              IF pscounter < 1023 THEN
---                psincdec      <= '1';
---                pscounter     <= pscounter + 1;
---                psen          <= '1';
---                psinner_count <= to_unsigned(7, 6);
---              ELSE
---                psen <= '0';
---              END IF;
---            WHEN "10" =>                     -- DEC - West
---              pscount_enable <= '0';
---              IF pscounter > -255 THEN
---                psincdec      <= '0';
---                pscounter     <= pscounter - 1;
---                psen          <= '1';
---                psinner_count <= to_unsigned(7, 6);
---              ELSE
---                psen <= '0';
---              END IF;
---            WHEN OTHERS =>
---              psen <= '0';
---          END CASE;
---        ELSIF psinner_count /= 0 THEN
---          psinner_count <= psinner_count -1;
---        ELSE
---          psen <= '0';
---          IF GPIO_SW(4) = '1' THEN           -- Unlock other switches
---            pscount_enable <= '1';
---          END IF;
---        END IF;
---      END IF;
---    END IF;
---  END PROCESS;
---  PSCOUNTER_VALUE <= std_logic_vector(pscounter);
-
---MEMORY_READ_VALUE_OUT <= MEMORY_READ_VALUE;
 -------------------------------------------------------------------------------
 -- Main State Machine
 --Controls activity of IMAGE_STORE_STAGE, IMAGE_DISPLAY_STAGE, MEMORY_DUMP
@@ -374,12 +285,10 @@ BEGIN
       PIXEL_READ  => mem_read_value,
 
       -- SRAM Connections
-      SRAM_ADV_LD_B => SRAM_ADV_LD_B,
-      SRAM_ADDR     => SRAM_ADDR,
-      SRAM_WE_B     => SRAM_WE_B,
-      SRAM_BW_B     => SRAM_BW_B,
-      --SRAM_CKE_B    => SRAM_CKE_B,
-      SRAM_CS_B     => SRAM_CS_B,
-      SRAM_OE_B     => SRAM_OE_B,
-      SRAM_DATA     => SRAM_DATA);
+      SRAM_ADDR => SRAM_ADDR,
+      SRAM_WE_B => SRAM_WE_B,
+      SRAM_BW_B => SRAM_BW_B,
+      SRAM_CS_B => SRAM_CS_B,
+      SRAM_OE_B => SRAM_OE_B,
+      SRAM_DATA => SRAM_DATA);
 END Behavioral;

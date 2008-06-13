@@ -3,24 +3,24 @@ NET CLK_P		LOC="L19" |SLEW=FAST | PERIOD=5ns;
 NET CLK_N               LOC="K19" |SLEW=FAST;
 
 # DVI Out Ports
-#NET DVI_D<0>            LOC="AB8" | IOSTANDARD="LVDCI_33";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_D<1>            LOC="AC8" | IOSTANDARD="LVDCI_33";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_D<2>            LOC="AN12" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_D<3>            LOC="AP12" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_D<4>            LOC="AA9" | IOSTANDARD="LVDCI_33";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_D<5>            LOC="AA8" | IOSTANDARD="LVDCI_33";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_D<6>            LOC="AM13" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_D<7>            LOC="AN13" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_D<8>            LOC="AA10" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_D<9>            LOC="AB10" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_D<10>           LOC="AP14" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_D<11>           LOC="AN14" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_DE              LOC="AE8" | IOSTANDARD="LVDCI_33" | SLEW=FAST;   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_H               LOC="AM12" | IOSTANDARD="LVDCI_33" | SLEW=FAST;  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_RESET_B         LOC="AK6" | IOSTANDARD="LVCMOS33";   # Bank 18, Vcco=3.3V, No DCI
-#NET DVI_V               LOC="AM11" | IOSTANDARD="LVDCI_33" | SLEW=FAST;  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
-#NET DVI_XCLK_N          LOC="AL10" | IOSTANDARD="LVCMOS33" | DRIVE=24 | SLEW=FAST;  # Bank 22, Vcco=3.3V, No DCI
-#NET DVI_XCLK_P          LOC="AL11" | IOSTANDARD="LVCMOS33" | DRIVE=24 | SLEW=FAST;  # Bank 22, Vcco=3.3V, No DCI
+NET DVI_D<0>            LOC="AB8" | IOSTANDARD="LVDCI_33";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_D<1>            LOC="AC8" | IOSTANDARD="LVDCI_33";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_D<2>            LOC="AN12" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_D<3>            LOC="AP12" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_D<4>            LOC="AA9" | IOSTANDARD="LVDCI_33";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_D<5>            LOC="AA8" | IOSTANDARD="LVDCI_33";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_D<6>            LOC="AM13" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_D<7>            LOC="AN13" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_D<8>            LOC="AA10" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_D<9>            LOC="AB10" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_D<10>           LOC="AP14" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_D<11>           LOC="AN14" | IOSTANDARD="LVDCI_33";  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_DE              LOC="AE8" | IOSTANDARD="LVDCI_33" | SLEW=FAST;   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_H               LOC="AM12" | IOSTANDARD="LVDCI_33" | SLEW=FAST;  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_RESET_B         LOC="AK6" | IOSTANDARD="LVCMOS33";   # Bank 18, Vcco=3.3V, No DCI
+NET DVI_V               LOC="AM11" | IOSTANDARD="LVDCI_33" | SLEW=FAST;  # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
+NET DVI_XCLK_N          LOC="AL10" | IOSTANDARD="LVCMOS33" | DRIVE=24 | SLEW=FAST;  # Bank 22, Vcco=3.3V, No DCI
+NET DVI_XCLK_P          LOC="AL11" | IOSTANDARD="LVCMOS33" | DRIVE=24 | SLEW=FAST;  # Bank 22, Vcco=3.3V, No DCI
 
 # VIDEO I2C
 NET I2C_SCL	        LOC="U27" | PULLUP | IOSTANDARD=LVCMOS18;

@@ -34,6 +34,8 @@ ENTITY vga_timing_decode IS
     V_BP        : integer := 34;
     HEIGHT_BITS : integer := 10;
     WIDTH_BITS  : integer := 10;
+    HCOUNT_BITS : integer := 11;
+    VCOUNT_BITS : integer := 11;
     DATA_DELAY  : integer := 0
     );
   PORT (CLK         : IN  std_logic;
@@ -48,8 +50,8 @@ ENTITY vga_timing_decode IS
 END vga_timing_decode;
 
 ARCHITECTURE Behavioral OF vga_timing_decode IS
-  SIGNAL hcount                   : unsigned(WIDTH_BITS-1 DOWNTO 0)             := (OTHERS => '0');
-  SIGNAL vcount                   : unsigned(HEIGHT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
+  SIGNAL hcount                   : unsigned(HCOUNT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
+  SIGNAL vcount                   : unsigned(VCOUNT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
   SIGNAL pixel_count_reg          : unsigned(HEIGHT_BITS+WIDTH_BITS-1 DOWNTO 0) := (OTHERS => '0');
   SIGNAL x_coord_reg              : unsigned(WIDTH_BITS-1 DOWNTO 0)             := (OTHERS => '0');
   SIGNAL y_coord_reg              : unsigned(HEIGHT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
@@ -62,7 +64,7 @@ BEGIN
   PIXEL_COUNT <= pixel_count_reg;
   -- Output data as valid only starting at the first full frame we receive
   DATA_VALID  <= data_valid_reg WHEN vsync_asserted = '1' ELSE '0';
-  DONE <= done_reg;
+  DONE        <= done_reg;
   PROCESS (CLK) IS
   BEGIN  -- PROCESS 
     IF CLK'event AND CLK = '1' THEN
@@ -75,7 +77,7 @@ BEGIN
         prev_hsync      <= '0';
         data_valid_reg  <= '0';
         vsync_asserted  <= '0';
-        done_reg <= '0';
+        done_reg        <= '0';
       ELSE
         prev_hsync <= HSYNC;
         prev_vsync <= VSYNC;
@@ -86,8 +88,11 @@ BEGIN
         -- H_BP+WIDTH-1<=X              -       Front Porch/HSYNC
 
         -- The backporch -1 is due to the register delay
-        IF HSYNC = '0' AND VSYNC = '0' AND hcount >= H_BP-DATA_DELAY-1 AND hcount < H_BP+WIDTH-DATA_DELAY-1 AND vcount >= V_BP AND vcount < V_BP+HEIGHT THEN
-          data_valid_reg <= '1';
+        IF HSYNC = '0' AND VSYNC = '0' AND hcount >= H_BP-DATA_DELAY-1 AND hcount < H_BP+WIDTH-DATA_DELAY-1 AND vcount >= V_BP AND vcount < V_BP+HEIGHT THEN    
+          IF vsync_asserted='1' THEN
+            data_valid_reg <= '1';
+          END IF;
+
           IF data_valid_reg = '1' THEN  -- This makes the first valid pixel 0,
                                         -- instead of 1
             x_coord_reg <= x_coord_reg + 1;
@@ -107,22 +112,22 @@ BEGIN
           IF HSYNC = '1' AND prev_hsync = '0' AND vcount >= V_BP AND vcount < V_BP+HEIGHT-1 THEN
             y_coord_reg <= y_coord_reg + 1;
           END IF;
-        ELSE
+        ELSE          -- End of Frame
           vcount          <= (OTHERS => '0');
           pixel_count_reg <= (OTHERS => '0');
           y_coord_reg     <= (OTHERS => '0');
-          vsync_asserted <= '1';
+          vsync_asserted  <= '1';
           -- We are done when we have been in the VSYNC='1' region previously,
           -- and the last CT we were in the VSYNC='0' region, which means we
           -- have been through all of the coordinates.  It will be high for one
           -- CT, then reset to 0.
           -- NOTE: This assumes that the VSYNC level has no glitches
           -- NOTE: Done will be high for one CT every full frame processed
-          IF prev_vsync = '0' AND vsync_asserted='1' THEN
+          IF prev_vsync = '0' AND vsync_asserted = '1' THEN
             done_reg <= '1';
-          ELSIF done_reg='1' THEN
+          ELSE
             done_reg <= '0';
-          END IF;
+          END IF;     
         END IF;
 
         IF HSYNC = '0' THEN

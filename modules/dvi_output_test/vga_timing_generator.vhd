@@ -23,8 +23,8 @@
 
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
-USE IEEE.STD_LOGIC_ARITH.ALL;
-USE IEEE.STD_LOGIC_UNSIGNED.ALL;
+USE ieee.numeric_std.ALL;
+
 
 ENTITY vga_timing_generator IS
   GENERIC (WIDTH       : integer := 1024;
@@ -55,16 +55,18 @@ ENTITY vga_timing_generator IS
 END vga_timing_generator;
 
 ARCHITECTURE Behavioral OF vga_timing_generator IS
-  CONSTANT H_TOTAL              : integer                                     := WIDTH+H_FP+H_SYNC+H_BP;
-  CONSTANT V_TOTAL              : integer                                     := HEIGHT+V_FP+V_SYNC+V_BP;
+  CONSTANT H_TOTAL                  : integer                                     := WIDTH+H_FP+H_SYNC+H_BP;
+  CONSTANT V_TOTAL                  : integer                                     := HEIGHT+V_FP+V_SYNC+V_BP;
   -- bit more than specified to cover the H_FP
-  SIGNAL   hcount               : unsigned(HCOUNT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
-  SIGNAL   vcount               : unsigned(VCOUNT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
-  SIGNAL   vsync_reg, hsync_reg : std_logic                                   := '0';  -- NOTE These are active high signals
-  SIGNAL   pixel_count_reg      : unsigned(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0) := (OTHERS => '0');  -- This is used to keep track of the number of valid pixels that have been output this frame.  Used to allow pixel selection to be made based on 1D memory addresses.
-  SIGNAL   x_coord_reg          : unsigned(WIDTH_BITS-1 DOWNTO 0)             := (OTHERS => '0');
-  SIGNAL   y_coord_reg          : unsigned(HEIGHT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
-  SIGNAL   data_valid_reg       : std_logic                                   := '0';
+  SIGNAL   hcount                   : unsigned(HCOUNT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
+  SIGNAL   vcount                   : unsigned(VCOUNT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
+  SIGNAL   vsync_reg, hsync_reg     : std_logic                                   := '0';  -- NOTE These are active high signals
+  SIGNAL   pixel_count_reg          : unsigned(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0) := (OTHERS => '0');  -- This is used to keep track of the number of valid pixels that have been output this frame.  Used to allow pixel selection to be made based on 1D memory addresses.
+  SIGNAL   x_coord_reg              : unsigned(WIDTH_BITS-1 DOWNTO 0)             := (OTHERS => '0');
+  SIGNAL   y_coord_reg              : unsigned(HEIGHT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
+  SIGNAL   data_valid_reg           : std_logic                                   := '0';
+  ATTRIBUTE KEEP                    : string;
+  ATTRIBUTE KEEP OF pixel_count_reg : SIGNAL IS "TRUE";
 BEGIN
   HSYNC       <= hsync_reg;
   VSYNC       <= vsync_reg;
@@ -74,6 +76,12 @@ BEGIN
   DATA_VALID  <= data_valid_reg;
   PROCESS(CLK)
   BEGIN
+    -----------------------------------------------------------------------
+    -- Zones w.r.t. hcount
+    -- 0<=X<H_BP-1                  -       Back Porch of H
+    -- H_BP-1=<X<H_BP+WIDTH-1       -       Active horizontal data
+    -- H_BP+WIDTH-1<=X              -       Front Porch/HSYNC
+
     -- Horizontal Pixel Count
     IF (CLK'event AND CLK = '1') THEN
       IF (RST = '1') THEN

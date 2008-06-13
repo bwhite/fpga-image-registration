@@ -105,7 +105,7 @@ BEGIN
   END PROCESS;
 
   -- Extract the pixel that we requested from the 4 read
-  PROCESS (byte_buf, data_read) IS
+  PROCESS (byte_buf, data_read_buf) IS
   BEGIN  -- PROCESS
     CASE byte_buf IS
       WHEN "00" =>

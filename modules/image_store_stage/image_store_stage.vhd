@@ -46,7 +46,7 @@ ARCHITECTURE Behavioral OF image_store_stage IS
           DATA_VALID  : OUT std_logic;
           DONE        : OUT std_logic);
   END COMPONENT;
-  SIGNAL vga_timing_rst, vga_data_valid, vga_done : std_logic;
+  SIGNAL vga_data_valid, vga_done : std_logic;
   SIGNAL vga_data_valid_buf, vga_done_buf         : std_logic                           := '0';
   SIGNAL mem_addr_reg, vga_pixel_count_wire       : unsigned(2*IMGSIZE_BITS-1 DOWNTO 0) := (OTHERS => '0');
 BEGIN

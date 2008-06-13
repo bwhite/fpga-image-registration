@@ -65,8 +65,6 @@ ARCHITECTURE Behavioral OF vga_timing_generator IS
   SIGNAL   x_coord_reg              : unsigned(WIDTH_BITS-1 DOWNTO 0)             := (OTHERS => '0');
   SIGNAL   y_coord_reg              : unsigned(HEIGHT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
   SIGNAL   data_valid_reg           : std_logic                                   := '0';
-  ATTRIBUTE KEEP                    : string;
-  ATTRIBUTE KEEP OF pixel_count_reg : SIGNAL IS "TRUE";
 BEGIN
   HSYNC       <= hsync_reg;
   VSYNC       <= vsync_reg;

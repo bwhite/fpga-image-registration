@@ -142,26 +142,22 @@ ARCHITECTURE Behavioral OF image_store_display_test IS
           DVI_RESET_B : OUT std_logic);
   END COMPONENT;
 
-  SIGNAL rst_not, clk200mhz_buf, clk_freq_fb, clk_int, clk_freq0, sram_int_clk_3x, clk_buf, sram_int_clk, clk_intbuf, we_b, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, image_store_rst : std_logic;
+  SIGNAL rst_not, clk200mhz_buf, clk_int, clk_buf, sram_int_clk, clk_intbuf, we_b, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, image_store_rst : std_logic;
 
-  SIGNAL memory_dump_done, memory_dump_rst, memory_dump_mem_out_valid, memory_dump_rst_reg, image_display_rst, image_display_done : std_logic;
+  SIGNAL memory_dump_done, memory_dump_rst, memory_dump_mem_out_valid, memory_dump_rst_reg : std_logic;
 
   SIGNAL image_store_mem_addr, image_store_mem_addr_fifo, image_display_mem_addr, memory_dump_mem_addr, mem_addr : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL mem_out_value, mem_out_value_fifo, mem_write_value, mem_read_value, mem_read_buf                        : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_read_value            : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
   TYPE   current_state IS (IMAGE_STORE, IMAGE_DISPLAY, MEM_DUMP_WRITE, MEM_DUMP_READ, IDLE);
-  SIGNAL cur_state                                                                                               : current_state        := IDLE;
-  SIGNAL memory_dump_done_reg, psen, pscount_enable, psincdec                                                    : std_logic            := '0';
-  SIGNAL pscounter                                                                                               : signed(10 DOWNTO 0)  := (OTHERS => '0');
-  SIGNAL psinner_count                                                                                           : unsigned(5 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL cur_state                                                                                               : current_state := IDLE;
 
 
-  SIGNAL MEMORY_ADDR_VALUE, image_display_fifo_mem_addr                  : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL MEMORY_READ_VALUE, MEMORY_WRITE_VALUE, image_display_value_fifo : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-  SIGNAL MEMORY_DUMP_RST_VALUE, MEMORY_DUMP_DONE_VALUE                   : std_logic;
-  SIGNAL PSCOUNTER_VALUE                                                 : std_logic_vector(10 DOWNTO 0);
+  SIGNAL image_display_fifo_mem_addr : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+  SIGNAL image_display_value_fifo    : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+
 
   -- Pixel Memory Controller Signals
-  SIGNAL mem_read_valid, mem_read_valid_reg : std_logic;
+  SIGNAL mem_read_valid : std_logic;
 
   -- Image Store FIFO Signals
   SIGNAL image_store_fifo_read_count, image_store_fifo_write_count : std_logic_vector(8 DOWNTO 0);
@@ -169,30 +165,10 @@ ARCHITECTURE Behavioral OF image_store_display_test IS
   SIGNAL image_store_fifo_empty, image_store_fifo_re               : std_logic;
 
   -- DVI Signals
-  SIGNAL clk_dvi_fb, dvi_pixel_clk, image_display_fifo_re, image_display_fifo_re_buf, image_display_fifo_empty, image_display_fifo_rst, image_display_fifo_we, image_store_fifo_we, dvi_v_wire, dvi_h_wire, image_display_fifo_rderr : std_logic;
-  SIGNAL image_display_fifo_read_count0, image_display_fifo_write_count0, image_display_fifo_read_count1, image_display_fifo_write_count1                                                                                            : std_logic_vector(8 DOWNTO 0);
-  SIGNAL image_display_fifo_do, image_display_fifo_di                                                                                                                                                                                : std_logic_vector(19 DOWNTO 0);
+  SIGNAL clk_dvi_fb, dvi_pixel_clk, image_display_fifo_re, image_display_fifo_re_buf, image_display_fifo_empty, image_display_fifo_rst, image_display_fifo_we, dvi_h_wire, dvi_v_wire : std_logic;
+  SIGNAL image_display_fifo_read_count0, image_display_fifo_write_count0, image_display_fifo_read_count1, image_display_fifo_write_count1                                                                  : std_logic_vector(8 DOWNTO 0);
 
-  -- Chipscope
-  SIGNAL image_display_fifo_empty_cs, image_display_fifo_rst_cs, image_display_fifo_re_cs, image_display_mem_output_valid_cs, image_display_fifo_rderr_cs : std_logic;
-  SIGNAL image_display_fifo_mem_addr_cs, image_display_mem_addr_cs                                                                                        : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL image_display_fifo_read_count0_cs, image_display_fifo_write_count0_cs                                                                            : std_logic_vector(8 DOWNTO 0);
-
-  ATTRIBUTE KEEP                                                                                                                                  : string;
-  ATTRIBUTE KEEP OF MEMORY_DUMP_RST_VALUE                                                                                                         : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF MEMORY_DUMP_DONE_VALUE                                                                                                        : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF MEMORY_READ_VALUE                                                                                                             : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF MEMORY_WRITE_VALUE                                                                                                            : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF MEMORY_ADDR_VALUE                                                                                                             : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF PSCOUNTER_VALUE                                                                                                               : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF mem_write_value                                                                                                               : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF mem_read_valid_reg                                                                                                            : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF image_display_fifo_empty_cs                                                                                                   : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF image_display_fifo_rst_cs                                                                                                     : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF image_display_fifo_re_cs                                                                                                      : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF image_display_mem_output_valid_cs                                                                                             : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF image_display_fifo_mem_addr_cs                                                                                                : SIGNAL IS "TRUE";
-  ATTRIBUTE KEEP OF image_display_mem_addr_cs, image_display_fifo_rderr_cs, image_display_fifo_read_count0_cs, image_display_fifo_write_count0_cs : SIGNAL IS "TRUE";
+  ATTRIBUTE KEEP : string;
   
 BEGIN
 -------------------------------------------------------------------------------
@@ -310,19 +286,10 @@ BEGIN
       IF rst_not = '1' THEN             -- synchronous reset (active high)
         cur_state <= IDLE;
       ELSE
-        -- Store into regs for chipscope
-        memory_dump_rst_value  <= memory_dump_rst;
-        memory_dump_done_value <= memory_dump_done;
-        memory_read_value      <= mem_read_value;
-        memory_write_value     <= mem_write_value;
-        memory_addr_value      <= mem_addr;
-        mem_read_valid_reg     <= mem_read_valid;
-
         CASE cur_state IS
           WHEN IDLE =>                  -- 001
             memory_dump_rst_reg <= '1';
             image_store_rst     <= '1';
-            image_display_rst   <= '1';
 
             -- Switch states on button press
             CASE GPIO_SW IS
@@ -356,13 +323,13 @@ BEGIN
             END IF;
 
             IF image_store_fifo_empty = '0' THEN
-              image_store_fifo_re <= '1';  -- Read Values
+              image_store_fifo_re <= '1';    -- Read Values
             ELSE
               image_store_fifo_re <= '0';
             END IF;
-          WHEN IMAGE_DISPLAY =>            -- 001
-            image_display_rst <= '0';
-
+          WHEN IMAGE_DISPLAY =>              -- 001
+            -- If not empty then read a value, if it is empty when we try to
+            -- read, then don't read from memory
             IF image_display_fifo_empty = '0' THEN
               image_display_fifo_re <= '1';  -- Read Values
             ELSE
@@ -384,7 +351,9 @@ BEGIN
     END IF;
   END PROCESS;
 
-  PROCESS (cur_state, memory_dump_mem_out_valid, memory_dump_mem_addr, image_store_mem_output_valid, image_display_mem_output_valid, image_store_mem_addr, image_display_mem_addr) IS
+
+  -- Multiplexer for memory IO
+  PROCESS (cur_state, memory_dump_mem_out_valid, memory_dump_mem_addr, image_store_mem_output_valid, image_store_mem_addr, image_store_mem_addr_fifo, image_store_fifo_re, image_store_mem_out_value_fifo, image_display_fifo_re_buf, image_display_fifo_mem_addr) IS
   BEGIN  -- PROCESS
     CASE cur_state IS
       WHEN IDLE =>
@@ -409,12 +378,12 @@ BEGIN
         we_b            <= '0';
         cs_b            <= NOT image_store_fifo_re;
         mem_addr        <= image_store_mem_addr_fifo;
-        mem_write_value <= mem_out_value_fifo;
+        mem_write_value <= image_store_mem_out_value_fifo;
 
       WHEN IMAGE_DISPLAY =>
         we_b            <= '1';
-        cs_b            <= NOT image_display_fifo_re_buf;--NOT image_display_mem_output_valid;--
-        mem_addr        <= image_display_fifo_mem_addr;--image_display_mem_addr;--
+        cs_b            <= NOT image_display_fifo_re_buf;
+        mem_addr        <= image_display_fifo_mem_addr;
         mem_write_value <= (OTHERS => '0');
         
       WHEN OTHERS =>
@@ -457,17 +426,15 @@ BEGIN
   FIFO_DUALCLOCK_vgain : FIFO_DUALCLOCK_MACRO
     GENERIC MAP (
       DEVICE                  => "VIRTEX5",    -- Target Device: "VIRTEX5" 
-      ALMOST_FULL_OFFSET      => X"0000",  -- Sets almost full threshold
-      ALMOST_EMPTY_OFFSET     => X"0000",  -- Sets the almost empty threshold
       DATA_WIDTH              => 29,  -- Valid values are 4, 9, 18, 36 or 72 (72 only valid when FIFO_SIZE="36Kb")
-      FIFO_SIZE               => "18Kb",   -- Target BRAM, "18Kb" or "36Kb" 
+      FIFO_SIZE               => "18Kb",  -- Target BRAM, "18Kb" or "36Kb" 
       FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
     PORT MAP (
-      DO      => image_store_fifo_do,  --mem_out_value_fifo&image_store_mem_addr_fifo,  -- Output data
+      DO      => image_store_fifo_do,   -- Output data
       RDCOUNT => image_store_fifo_read_count,
       WRCOUNT => image_store_fifo_write_count,
-      EMPTY   => image_store_fifo_empty,   -- Output empty
-      DI      => image_store_fifo_di,  --mem_out_value&image_store_mem_addr,            -- Input data
+      EMPTY   => image_store_fifo_empty,  -- Output empty
+      DI      => image_store_fifo_di,   -- Input data
       RDCLK   => clk_intbuf,            -- Input read clock
       RDEN    => image_store_fifo_re,   -- Input read enable
       RST     => image_store_rst,       -- Input reset
@@ -476,9 +443,9 @@ BEGIN
       );
 
   -- Pack data into fifo in/out signals
-  image_store_fifo_di       <= mem_out_value&image_store_mem_addr;
-  image_store_mem_addr_fifo <= image_store_fifo_do(19 DOWNTO 0);
-  mem_out_value_fifo        <= image_store_fifo_do(28 DOWNTO 20);
+  image_store_fifo_di            <= mem_out_value&image_store_mem_addr;
+  image_store_mem_addr_fifo      <= image_store_fifo_do(19 DOWNTO 0);
+  image_store_mem_out_value_fifo <= image_store_fifo_do(28 DOWNTO 20);
 
 -------------------------------------------------------------------------------
 -- Image Display Stage
@@ -486,7 +453,7 @@ BEGIN
     PORT MAP (
       CLK           => dvi_pixel_clk,
       RST           => rst_not,
-      MEM_IN_VALUE  => image_display_value_fifo,--mem_read_value,--
+      MEM_IN_VALUE  => image_display_value_fifo,
       MEM_ADDR      => image_display_mem_addr,
       MEM_OUT_VALID => image_display_mem_output_valid,
       DVI_D         => DVI_D,
@@ -496,9 +463,9 @@ BEGIN
       DVI_XCLK_P    => DVI_XCLK_P,
       DVI_XCLK_N    => DVI_XCLK_N,
       DVI_RESET_B   => DVI_RESET_B);
-  DVI_V <= dvi_v_wire;
   DVI_H <= dvi_h_wire;
-  
+  DVI_V <= dvi_v_wire;
+
   -- Reset Circuitry
   PROCESS (rst_not, dvi_v_wire, dvi_h_wire, cur_state) IS
   BEGIN  -- PROCESS
@@ -512,29 +479,28 @@ BEGIN
   -- Pass address from the DVI clock region to the RAM
   FIFO_DUALCLOCK_address : FIFO_DUALCLOCK_MACRO
     GENERIC MAP (
-      DEVICE                  => "VIRTEX5",  -- Target Device: "VIRTEX5" 
-      ALMOST_FULL_OFFSET      => X"0000",    -- Sets almost full threshold
+      DEVICE                  => "VIRTEX5",  -- Target Device: "VIRTEX5"
+      ALMOST_FULL_OFFSET     => X"0000",
       ALMOST_EMPTY_OFFSET     => X"0001",    -- Sets the almost empty threshold
       DATA_WIDTH              => 20,  -- Valid values are 4, 9, 18, 36 or 72 (72 only valid when FIFO_SIZE="36Kb")
       FIFO_SIZE               => "18Kb",     -- Target BRAM, "18Kb" or "36Kb" 
-      FIRST_WORD_FALL_THROUGH => FALSE)  -- Sets the FIFO FWFT to TRUE or FALSE
+      FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
     PORT MAP (
       RDCOUNT => image_display_fifo_read_count0,
       WRCOUNT => image_display_fifo_write_count0,
 
 
-      DO    => image_display_fifo_mem_addr,    -- Output data      
-      ALMOSTEMPTY => image_display_fifo_empty, -- Output empty
-      DI    => image_display_mem_addr,         -- Input data
-      RDCLK => clk_intbuf,                     -- Input read clock
-      RDEN  => image_display_fifo_re,          -- Input read enable
-      RDERR => image_display_fifo_rderr,
-      RST   => image_display_fifo_rst,         -- Input reset
-      WRCLK => dvi_pixel_clk,                  -- Input write clock
-      WREN  => image_display_mem_output_valid  -- Input write enable
+      DO          => image_display_fifo_mem_addr,    -- Output data      
+      ALMOSTEMPTY => image_display_fifo_empty,       -- Output empty
+      DI          => image_display_mem_addr,         -- Input data
+      RDCLK       => clk_intbuf,                     -- Input read clock
+      RDEN        => image_display_fifo_re,          -- Input read enable
+      RST         => image_display_fifo_rst,         -- Input reset
+      WRCLK       => dvi_pixel_clk,                  -- Input write clock
+      WREN        => image_display_mem_output_valid  -- Input write enable
       );
 
-  PROCESS (cur_state) IS
+  PROCESS (cur_state, mem_read_valid) IS
   BEGIN  -- PROCESS
     IF cur_state = IMAGE_DISPLAY AND mem_read_valid = '1' THEN
       image_display_fifo_we <= '1';
@@ -547,11 +513,9 @@ BEGIN
   FIFO_DUALCLOCK_value : FIFO_DUALCLOCK_MACRO
     GENERIC MAP (
       DEVICE                  => "VIRTEX5",  -- Target Device: "VIRTEX5" 
-      ALMOST_FULL_OFFSET      => X"0000",    -- Sets almost full threshold
-      ALMOST_EMPTY_OFFSET     => X"0000",    -- Sets the almost empty threshold
       DATA_WIDTH              => 9,  -- Valid values are 4, 9, 18, 36 or 72 (72 only valid when FIFO_SIZE="36Kb")
       FIFO_SIZE               => "18Kb",     -- Target BRAM, "18Kb" or "36Kb" 
-      FIRST_WORD_FALL_THROUGH => FALSE)  -- Sets the FIFO FWFT to TRUE or FALSE
+      FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
     PORT MAP (
       RDCOUNT => image_display_fifo_read_count1,
       WRCOUNT => image_display_fifo_write_count1,
@@ -607,28 +571,4 @@ BEGIN
       SRAM_CS_B => SRAM_CS_B,
       SRAM_OE_B => SRAM_OE_B,
       SRAM_DATA => SRAM_DATA);
-
--------------------------------------------------------------------------------
-  -- Chipscope registers for DVI CLK
-  PROCESS (dvi_pixel_clk) IS
-  BEGIN  -- PROCESS
-    IF dvi_pixel_clk'event AND dvi_pixel_clk = '1' THEN  -- rising clock edge      
-      image_display_mem_output_valid_cs  <= image_display_mem_output_valid;
-      image_display_mem_addr_cs          <= image_display_mem_addr;
-      image_display_fifo_write_count0_cs <= image_display_fifo_write_count0;
-    END IF;
-  END PROCESS;
-
-  -- Chipscope registers for internal CLK
-  PROCESS (clk_intbuf) IS
-  BEGIN  -- PROCESS
-    IF clk_intbuf'event AND clk_intbuf = '1' THEN  -- rising clock edge
-      image_display_fifo_mem_addr_cs    <= image_display_fifo_mem_addr;
-      image_display_fifo_re_cs          <= image_display_fifo_re;
-      image_display_fifo_rst_cs         <= image_display_fifo_rst;
-      image_display_fifo_empty_cs       <= image_display_fifo_empty;
-      image_display_fifo_read_count0_cs <= image_display_fifo_read_count0;
-      image_display_fifo_rderr_cs       <= image_display_fifo_rderr;
-    END IF;
-  END PROCESS; 
 END Behavioral;

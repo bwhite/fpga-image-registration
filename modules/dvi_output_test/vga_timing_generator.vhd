@@ -78,9 +78,10 @@ BEGIN
   BEGIN
     -----------------------------------------------------------------------
     -- Zones w.r.t. hcount
-    -- 0<=X<H_BP-1                  -       Back Porch of H
-    -- H_BP-1=<X<H_BP+WIDTH-1       -       Active horizontal data
-    -- H_BP+WIDTH-1<=X              -       Front Porch/HSYNC
+    -- 0<=X<H_BP-1                        -  Back Porch of H
+    -- H_BP-1=<X<H_BP+WIDTH-1             -  Active horizontal data
+    -- H_BP+WIDTH-1<=X<WIDTH+H_FP+H_BP-1  -  Front Porch/HSYNC
+    -- WIDTH+H_FP+H_BP-1<=X<H_TOTAL-1     -  HSYNC
 
     -- Horizontal Pixel Count
     IF (CLK'event AND CLK = '1') THEN
@@ -93,7 +94,8 @@ BEGIN
         x_coord_reg     <= (OTHERS => '0');
         y_coord_reg     <= (OTHERS => '0');
       ELSE
-        -- Data valid signal
+        -- Data valid signal - This is corrected for the data delay by doing
+        -- everything early by DATA_DELAY CTs.
         IF (H_BP-DATA_DELAY-1 <= hcount AND hcount < WIDTH+H_BP-DATA_DELAY-1 AND V_BP <= vcount AND vcount < HEIGHT+V_BP) THEN
           data_valid_reg <= '1';
           IF data_valid_reg = '1' THEN

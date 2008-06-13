@@ -555,7 +555,6 @@ BEGIN
     PORT MAP (
       RDCOUNT => image_display_fifo_read_count1,
       WRCOUNT => image_display_fifo_write_count1,
-      -- EMPTY   => image_store_fifo_empty,     -- Output empty
       RDEN    => '1',                   -- Input read enable
       RST     => image_display_fifo_rst,     -- Input reset
 

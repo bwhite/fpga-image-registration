@@ -5,11 +5,12 @@ USE ieee.numeric_std.ALL;
 
 ENTITY smooth_stage IS
   GENERIC (
-    WIDTH        :     integer := 36;
+    WIDTH        :     integer := 9;
     IMGSIZE_BITS :     integer := 10);
   PORT (CLK      : IN  std_logic;
         RST      : IN  std_logic;
-        CLKEN    : IN  std_logic;
+        -- TODO Add address output
+        -- TODO Add memory output valid
         DIN      : IN  std_logic_vector(WIDTH-1 DOWNTO 0);
         DOUT     : OUT std_logic_vector(WIDTH-1 DOWNTO 0));
 END smooth_stage;

@@ -82,6 +82,27 @@ ARCHITECTURE Behavioral OF smooth_stage IS
           DOUT  : OUT std_logic_vector(WIDTH-1 DOWNTO 0));
   END COMPONENT;
 
+  COMPONENT smooth_address_selector IS
+    GENERIC (
+      IMGSIZE_BITS : integer := 10;
+      PIXEL_BITS   : integer := 9;
+      MEM_DELAY    : integer := 4);
+
+    PORT (CLK              : IN  std_logic;
+          RST              : IN  std_logic;
+          IMG_MEM_ADDR     : IN  std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
+          IMG_ADDR_VALID   : IN  std_logic;
+          CONV_Y_POS       : IN  std_logic_vector(1 DOWNTO 0);
+          SMOOTH_VALID     : IN  std_logic;
+          MEM_ADDROFF0     : IN  std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
+          MEM_ADDROFF1     : IN  std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
+          MEM_ADDR         : OUT std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
+          MEM_RE           : OUT std_logic;
+          MEM_OUTPUT_VALID : OUT std_logic;
+          PIXGEN_CLKEN     : OUT std_logic;
+          PIXEL_STATE      : OUT std_logic_vector(2 DOWNTO 0));
+  END COMPONENT;
+
   SIGNAL pixgen_clken, img0_addr_valid, coord_gen_new_row, coord_gen_done, coord_gen_new_row_buf : std_logic;
   SIGNAL img_height, img_width, x_coord, y_coord                                                 : std_logic_vector(IMGSIZE-1 DOWNTO 0);
   SIGNAL img_width_offset, img0_mem_addr, img0_mem_addr_buf, initial_mem_offset                  : std_logic_vector(2*IMGSIZE-1 DOWNTO 0);
@@ -118,12 +139,10 @@ BEGIN
             img_width        <= (OTHERS => '0');
             img_width_offset <= (OTHERS => '0');
             initial_mem_addr <= (OTHERS => '0');
-            
         END CASE;
       END IF;
     END IF;
   END PROCESS;
-
 
 -------------------------------------------------------------------------------
 -- Coord Generator
@@ -146,7 +165,6 @@ BEGIN
               NEW_ROW          => coord_gen_new_row,
               DONE             => coord_gen_done);
 
-
 -------------------------------------------------------------------------------
 -- New Row Buffer
   pipebuf_newrow : pipeline_buffer
@@ -161,16 +179,26 @@ BEGIN
       DIN   => (0 DOWNTO 0 => coord_gen_new_row),
       DOUT  => (0 DOWNTO 0 => coord_gen_new_row_buf));
 
-
 -------------------------------------------------------------------------------
 -- Memory Address Selector:  Take in the coord gen state and the pixgen_clken
 -- signal to select the correct address (for reading values to the buffer or
 -- for writing the smoothed value back), control RAM signals,
--- TODO Must buffer img0_mem_addr internally
-  -- CONSTANT: MEM_DELAY
--- INPUT: img_mem_addr, coord_gen_state, img0_addr_valid, (smooth_value, smooth_valid,img0_offset, img1_offset)
--- OUTPUT: MEM_ADDR, MEM_RE, MEM_OUTPUT_VALID, MEM_PIXEL_WRITE, pixgen_clken, (pix_state)
-  
+  smooth_address_selector_i : smooth_address_selector
+    PORT MAP (
+      CLK              => CLK,
+      RST              => RST,
+      IMG_MEM_ADDR     => <actual > ,
+      IMG_ADDR_VALID   => <actual > ,
+      CONV_Y_POS       => <actual > ,
+      SMOOTH_VALID     => <actual > ,
+      MEM_ADDROFF0     => <actual > ,
+      MEM_ADDROFF1     => <actual > ,
+      MEM_ADDR         => <actual > ,
+      MEM_RE           => <actual > ,
+      MEM_OUTPUT_VALID => <actual > ,
+      PIXGEN_CLKEN     => <actual > ,
+      PIXEL_STATE      => <actual > );
+
 -------------------------------------------------------------------------------
 -- State Buffer
   pipebuf_state : pipeline_buffer
@@ -188,12 +216,42 @@ BEGIN
 -------------------------------------------------------------------------------
 -- 3x3 Convolution Buffer:  Buffer a 3x3 neighborhood, ignore values that
 -- result from memory writes (use the stage generated in the address selector)
+  pixel_conv_buffer_i : pixel_conv_buffer_3x3
+    PORT MAP (
+      CLK           => CLK,
+      RST           => RST,
+      NEW_ROW       => ,
+      MEM_VALUE     => ,
+      INPUT_VALID   => ,
+      PATTERN_STATE => ,
+      OUTPUT_VALID  => ,
+      IMG0_0_0      => IMG0_0_0,
+      IMG0_0_1      => IMG0_0_1,
+      IMG0_0_2      => IMG0_0_2,
+      IMG0_1_0      => IMG0_1_0,
+      IMG0_1_1      => IMG0_1_1,
+      IMG0_1_2      => IMG0_1_2,
+      IMG0_2_0      => IMG0_2_0,
+      IMG0_2_1      => IMG0_2_1,
+      IMG0_2_2      => IMG0_2_2);      
 
 -------------------------------------------------------------------------------
 -- 3x3 Smooth: Take in a neighborhood and produce a smoothed pixel value
 -- centered in that neighborhood.
-
-
+  smooth_conv_3x3_i : smooth_conv_3x3
+    PORT MAP (
+      CLK          => CLK,
+      RST          => RST,
+      INPUT_VALID  => <actual > ,
+      OUTPUT_VALID => <actual > ,
+      IMG0_0_0     => img0_0_0,
+      IMG0_0_1     => img0_0_1,
+      IMG0_0_2     => img0_0_2,
+      IMG0_1_0     => img0_1_0,
+      IMG0_1_1     => img0_1_1,
+      IMG0_1_2     => img0_1_2,
+      IMG0_2_0     => img0_2_0,
+      IMG0_2_1     => img0_2_1,
+      IMG0_2_2     => img0_2_2); 
 
 END Behavioral;
-

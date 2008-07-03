@@ -94,6 +94,7 @@ def hdl_test_gen_factory(file_iter):
     re_delay=re.compile("DELAY:([0-9]+)") # Gives the number after the colon
     re_clk=re.compile("CLK:([A-Za-z_]+)") # Gives the string after the colon
     re_rst=re.compile("RST:([A-Za-z_]+)") # Gives the string after the colon
+    re_const=re.compile("CONST:\{((?:[A-Za-z0-9_,=])+)\}") # Gives the comma separated text, needs to be parsed further
     re_in=re.compile("IN:\{((?:[A-Za-z0-9,#\[\]])+)\}") # Gives the comma separated text, needs to be parsed further
     re_out=re.compile("OUT:\{((?:[A-Za-z0-9,#\[\]])+)\}") # Gives the comma separated text, needs to be parsed further
     re_reset_cmd=re.compile("RESET") 
@@ -133,9 +134,17 @@ def hdl_test_gen_factory(file_iter):
     
     print('Name:%s Delay:%d CLK:%s RST:%s') % (module_name,module_delay,module_clk,module_rst)
 
-    # Parse in, out
+    # Parse const,in, out
+    module_const=''
     try:
-        module_in=re_in.search(file_iter.next()).group(1).split(',')
+        cur_line=file_iter.next()
+        module_const=re_const.search(cur_line).group(1).split(',')
+    except AttributeError: # The const line is optional!
+        pass
+    else:
+        cur_line=file_iter.next()
+    try:
+        module_in=re_in.search(cur_line).group(1).split(',')
     except AttributeError:
         print('HDL Test Generator Factory: IN specification not found!')
         return None
@@ -145,6 +154,7 @@ def hdl_test_gen_factory(file_iter):
         print('HDL Test Generator Factory: OUT specification not found!')
         return None
 
+    print(module_const)
     print(module_in)
     print(module_out)
 
@@ -178,23 +188,28 @@ def hdl_test_gen_factory(file_iter):
         return None
     
     # Create the hdl_test_gen class
-    return hdl_test_gen(module_name,module_delay,module_clk,module_rst,module_in, module_out,module_tests)
+    return hdl_test_gen(module_name,module_delay,module_clk,module_rst,module_const,module_in, module_out,module_tests)
 
 class hdl_test_gen(object):
-    def __init__(self, name, delay, clk, rst, input, output, tests):
+    def __init__(self, name, delay, clk, rst, const,input, output, tests):
         # Precompile regexs
         re_name=re.compile("([A-Za-z0-9_]+)")
         re_name_array=re.compile("([A-Za-z0-9_]+)\[([0-9]+)\]")
         re_num_base=re.compile("([0-9]+)#([0-9]+)#") # (base,number in base)
+        re_num_eq=re.compile("([A-Za-z0-9_]+)=([0-9]+)") # (name,decimal number)
         # Copy over simple variables
         self.name=name
         self.delay=delay
         self.clk=clk.upper()
         self.rst=rst.upper()
         self.tests=tests
-        # Parse input/output
+        # Parse const/input/output
+        self.const=[] # Each constant entry in the form of ("Name",value)
         self.input=[] # Buses are '[name,size]' and wires are 'name'
         self.output=[]
+        for const_iter in const:
+            temp_const_re=re_num_eq.search(const_iter)
+            self.const.append((temp_const_re.group(1),int(temp_const_re.group(2))))
         def port_parse(port_list,port): 
             for port_iter in port_list:
                 try:
@@ -208,7 +223,7 @@ class hdl_test_gen(object):
                         continue
         port_parse(input,self.input)
         port_parse(output,self.output)
-
+        print('CONST:'+str(self.const))
         print('INPUT:'+str(self.input))
         print('OUTPUT:'+str(self.output))
         print(self.tests)
@@ -282,7 +297,9 @@ class hdl_test_gen(object):
         return out_str
 
     def __make_uut_component(self):
-        out_str='\tCOMPONENT '+ self.name+'\n\tPORT(\n'
+        out_str='\tCOMPONENT '+self.name+'\n'
+        out_str+=self.__make_const()
+        out_str+='\tPORT(\n'
         def get_port_defs(ports,port_type):
             tmp_defs=''
             end_text=''
@@ -290,12 +307,32 @@ class hdl_test_gen(object):
                 tmp_defs+=end_text # The first time this is called it will be the input string, every other time it is a semi-colon return
                 end_text=';\n'
                 if isinstance(port,tuple):
-                    tmp_defs += '\t\t' + self.__make_port_def(port[0],port_type,port[1])
+                    tmp_defs += '\t'*2 + self.__make_port_def(port[0],port_type,port[1])
                 else:
-                    tmp_defs += '\t\t' + self.__make_port_def(port,port_type)
+                    tmp_defs += '\t'*2 + self.__make_port_def(port,port_type)
             return tmp_defs
         out_str+=get_port_defs([self.clk,self.rst]+self.input,'IN')+';\n'+get_port_defs(self.output,'OUT')+');\n\tEND COMPONENT;\n'
         return out_str
+
+    def __make_const(self):
+        out_str=''
+        end_text=''
+        if len(self.const) > 0:
+            out_str+='\tGENERIC('
+            for const in self.const:
+                out_str+=end_text
+                end_text=';'
+                out_str+='\n'+'\t'*2+self.__make_const_def(const[0],const[1])
+            out_str+=');\n'
+        return out_str
+
+    @staticmethod
+    def __make_const_def(name,value):
+        """
+        >>> hdl_test_gen._hdl_test_gen__make_const_def('ADDr_BItS',8)
+        'ADDR_BITS : integer := 8'
+        """
+        return '%s : integer := %d' % (name.upper(),value)
 
     @staticmethod
     def __make_port_def(port_name, port_type,size=None):
@@ -383,6 +420,8 @@ class hdl_test_gen(object):
                     out_str+=self.__make_wire_assignment(self.input[input_iter].lower(),6,input)+'\n'
         except TypeError: # If there is no input drivers than don't output anything for them
             pass
+        except KeyError: # If there are no test requirements for this CT
+            pass
 
         # Test input signals (output from uut)
         end_text='\t'*6+'IF '
@@ -395,6 +434,8 @@ class hdl_test_gen(object):
                     out_str+=self.__test_notequals_bus(self.output[output_iter][0].lower(),0,output)
                 else:
                     out_str+=self.__test_notequals_wire(self.output[output_iter].lower(),0,output)
+        except KeyError: # If there are no test requirements for this CT
+            out_str+=self.__make_bus_assignment('state',6,to_bin(str(clock_time+1),10,self.state_signal_size(test_dict)))+'\n'
         except TypeError: # If there is no input signals then put in the default state increment
             out_str+=self.__make_bus_assignment('state',6,to_bin(str(clock_time+1),10,self.state_signal_size(test_dict)))+'\n'
         else:
@@ -406,9 +447,12 @@ class hdl_test_gen(object):
             out_str+=self.__make_bus_assignment('state',7,to_bin(str(clock_time+1),10,self.state_signal_size(test_dict)))+'\n'
             out_str+='\t'*6+'END IF;\n'
         # Set reset signal
-        if test_dict[clock_time]==None:
-            out_str+=self.__make_wire_assignment('uut_rst',6,'1')+'\n'
-        else:
+        try:
+            if test_dict[clock_time]==None:
+                out_str+=self.__make_wire_assignment('uut_rst',6,'1')+'\n'
+            else:
+                out_str+=self.__make_wire_assignment('uut_rst',6,'0')+'\n'
+        except KeyError: # If there are no test requirements for this CT
             out_str+=self.__make_wire_assignment('uut_rst',6,'0')+'\n'
 
         return out_str
@@ -486,7 +530,7 @@ class hdl_test_gen(object):
 a=None
 if __name__ == "__main__":
     _test()
-    a=hdl_test_gen_factory(open('test_examples/reg_adder/reg_adder.hdlt','r'))
-    f=open('test_examples/reg_adder/reg_adder_tb.vhd','w')
+    a=hdl_test_gen_factory(open('test_examples/reg_adder_generic/reg_adder_generic.hdlt','r'))
+    f=open('test_examples/reg_adder_generic/reg_adder_generic_tb.vhd','w')
     f.write(a.make_vhdl())
     f.close()

@@ -87,6 +87,9 @@ def _test():
     import doctest
     doctest.testmod()
 
+def tab(num):
+    return '  '*num
+
 def hdl_test_gen_factory(file_iter):
     """Takes in an iterator of lines parses out the relevent data"""
     # Initialize regex parsers
@@ -263,7 +266,7 @@ class hdl_test_gen(object):
         return self.name+'_tb'
 
     def make_vhdl(self):
-        out_str=''+self.__make_header_comments()+self.__make_use_statements()+self.__make_entity()+self.__make_architecture()
+        out_str=self.__make_header_comments()+self.__make_use_statements()+self.__make_entity()+self.__make_architecture()
         return out_str
 
     def __make_header_comments(self):
@@ -280,11 +283,11 @@ class hdl_test_gen(object):
         for port in ports:
             out_str+=end_text # The first time this is called it will be a null string, every other time it is a semi-colon return
             end_text=';\n'
-            out_str+='\t'+self.__make_port_def(port[0],port[1],port[2])
+            out_str+=tab(1)+self.__make_port_def(port[0],port[1],port[2])
         return out_str+");\nEND "+self.tb_name()+';\n'
 
     def __make_rst_logic(self):
-        return '\tuut_rst_wire <= RST OR uut_rst;\n'
+        return tab(1)+'uut_rst_wire <= RST OR uut_rst;\n'
 
     def __make_architecture(self):
         out_str='ARCHITECTURE behavior OF %s IS\n' %(self.tb_name())
@@ -297,9 +300,9 @@ class hdl_test_gen(object):
         return out_str
 
     def __make_uut_component(self):
-        out_str='\tCOMPONENT '+self.name+'\n'
+        out_str=tab(1)+'COMPONENT '+self.name+'\n'
         out_str+=self.__make_const()
-        out_str+='\tPORT(\n'
+        out_str+=tab(1)+'PORT(\n'
         def get_port_defs(ports,port_type):
             tmp_defs=''
             end_text=''
@@ -307,22 +310,22 @@ class hdl_test_gen(object):
                 tmp_defs+=end_text # The first time this is called it will be the input string, every other time it is a semi-colon return
                 end_text=';\n'
                 if isinstance(port,tuple):
-                    tmp_defs += '\t'*2 + self.__make_port_def(port[0],port_type,port[1])
+                    tmp_defs += tab(2)+ self.__make_port_def(port[0],port_type,port[1])
                 else:
-                    tmp_defs += '\t'*2 + self.__make_port_def(port,port_type)
+                    tmp_defs += tab(2)+ self.__make_port_def(port,port_type)
             return tmp_defs
-        out_str+=get_port_defs([self.clk,self.rst]+self.input,'IN')+';\n'+get_port_defs(self.output,'OUT')+');\n\tEND COMPONENT;\n'
+        out_str+=get_port_defs([self.clk,self.rst]+self.input,'IN')+';\n'+get_port_defs(self.output,'OUT')+');\n'+tab(1)+'END COMPONENT;\n'
         return out_str
 
     def __make_const(self):
         out_str=''
         end_text=''
         if len(self.const) > 0:
-            out_str+='\tGENERIC('
+            out_str+=tab(1)+'GENERIC('
             for const in self.const:
                 out_str+=end_text
                 end_text=';'
-                out_str+='\n'+'\t'*2+self.__make_const_def(const[0],const[1])
+                out_str+='\n'+tab(2)+self.__make_const_def(const[0],const[1])
             out_str+=');\n'
         return out_str
 
@@ -350,12 +353,12 @@ class hdl_test_gen(object):
     def __make_state_signal(self,len_test_dict=None):
         if len_test_dict==None:
             len_test_dict=len(self.__make_test_dict())
-        return '\tSIGNAL state : STD_LOGIC_VECTOR(%d DOWNTO 0);\n'%(self.state_signal_size()-1)
+        return tab(1)+'SIGNAL state : STD_LOGIC_VECTOR(%d DOWNTO 0);\n'%(self.state_signal_size()-1)
 
     def __make_signals(self):
-        out_str='\tSIGNAL uut_rst_wire, uut_rst : STD_LOGIC;\n'+self.__make_state_signal()
+        out_str=tab(1)+'SIGNAL uut_rst_wire, uut_rst : STD_LOGIC;\n'+self.__make_state_signal()
         if len(self.input) >0:
-            out_str+='\t-- UUT Input\n'
+            out_str+=tab(1)+'-- UUT Input\n'
         def generate_signals(ports):
             vector_dict={}
             wire_list=[]
@@ -370,46 +373,46 @@ class hdl_test_gen(object):
                     wire_list.append(port.lower())
             # Output wires
             if len(wire_list) != 0:
-                out_str+='\tSIGNAL '+reduce(lambda x,y:x+', '+y,wire_list)+' : STD_LOGIC;\n'
+                out_str+=tab(1)+'SIGNAL '+reduce(lambda x,y:x+', '+y,wire_list)+' : STD_LOGIC;\n'
             # Output buses
             for bus_size in vector_dict.iterkeys():
-                out_str+='\tSIGNAL '+reduce(lambda x,y:x+', '+y,vector_dict[bus_size])+' : STD_LOGIC_VECTOR(%d DOWNTO 0);\n'%(bus_size-1)
+                out_str+=tab(1)+'SIGNAL '+reduce(lambda x,y:x+', '+y,vector_dict[bus_size])+' : STD_LOGIC_VECTOR(%d DOWNTO 0);\n'%(bus_size-1)
             return out_str
             
         # Generate input signals
-        return out_str+generate_signals(self.input)+'\t-- UUT Output\n'+generate_signals(self.output)
+        return out_str+generate_signals(self.input)+tab(1)+'-- UUT Output\n'+generate_signals(self.output)
 
     def __make_uut_instance(self):
-        out_str='\tuut :  '+ self.name+' PORT MAP (\n'
+        out_str=tab(1)+'uut :  '+ self.name+' PORT MAP (\n'
         # CLK and RST
-        out_str += '\t\t%s => CLK,\n\t\t%s => uut_rst_wire' % (self.clk,self.rst)
+        out_str += tab(2)+self.clk+' => CLK,\n'+tab(2)+self.rst+' => uut_rst_wire'
         # IN and OUT
         for port in self.input+self.output:
             out_str+=',\n'
             if isinstance(port,tuple):
-                out_str+='\t\t' + port[0] + ' => ' + port[0].lower()
+                out_str+=tab(2) + port[0] + ' => ' + port[0].lower()
             else:
-                out_str+='\t\t' + port + ' => ' + port.lower()
-        return out_str+'\n\t);\n'
+                out_str+=tab(2) + port + ' => ' + port.lower()
+        return out_str+'\n'+tab(1)+');\n'
 
     def __make_test_process(self,test_dict=None):
         if test_dict==None:
             test_dict=self.__make_test_dict()
-        out_str="\tPROCESS (CLK) IS\n\tBEGIN\n\t\tIF CLK'event AND CLK='1' THEN\n"+'\t'*3+"IF RST='1' THEN\n"
-        out_str+=self.__make_rst_state()+'\t'*3+'ELSE\n'+'\t'*4+'CASE state IS\n'
+        out_str=tab(1)+"PROCESS (CLK) IS\n"+tab(1)+"BEGIN\n"+tab(2)+"IF CLK'event AND CLK='1' THEN\n"+tab(3)+"IF RST='1' THEN\n"
+        out_str+=self.__make_rst_state()+tab(3)+'ELSE\n'+tab(4)+'CASE state IS\n'
         # Make states
         for state in range(len(test_dict)):
             out_str+=self.__make_state(state,test_dict)
-        out_str+='\t'*5+'WHEN OTHERS =>\n'
+        out_str+=tab(5)+'WHEN OTHERS =>\n'
         out_str+=self.__make_wire_assignment('DONE',6,'1')+'\n'
         out_str+=self.__make_wire_assignment('uut_rst',6,'1')+'\n'
-        out_str+='\t'*4+'END CASE;\n'+'\t'*3+'END IF;\n'+'\t'*2+'END IF;\n'+'\t'*1+'END PROCESS;\n'
+        out_str+=tab(4)+'END CASE;\n'+tab(3)+'END IF;\n'+tab(2)+'END IF;\n'+tab(1)+'END PROCESS;\n'
         return out_str
 
     def __make_state(self,clock_time,test_dict=None):
         if test_dict==None:
             test_dict=self.__make_test_dict()
-        out_str='\t'*5+'WHEN "%s" =>\n' % (to_bin(str(clock_time),10,self.state_signal_size(test_dict)))
+        out_str=tab(5)+'WHEN "%s" =>\n' % (to_bin(str(clock_time),10,self.state_signal_size(test_dict)))
         # Output driving signals
         try:
             for input_iter in range(len(test_dict[clock_time][0])):
@@ -424,7 +427,7 @@ class hdl_test_gen(object):
             pass
 
         # Test input signals (output from uut)
-        end_text='\t'*6+'IF '
+        end_text=tab(6)+'IF '
         try:
             for output_iter in range(len(test_dict[clock_time][1])):
                 output=test_dict[clock_time][1][output_iter]
@@ -443,9 +446,9 @@ class hdl_test_gen(object):
             out_str+=self.__make_wire_assignment('FAIL',7,'1')+'\n'
             out_str+=self.__make_bus_assignment('FAIL_NUM',7,to_bin(str(test_dict[clock_time][2]),10,self.fail_num_size()))+'\n'
             out_str+=self.__make_bus_assignment('state',7,to_bin(str(len(test_dict)),10,self.state_signal_size(test_dict)))+'\n'
-            out_str+='\t'*6+'ELSE\n'
+            out_str+=tab(6)+'ELSE\n'
             out_str+=self.__make_bus_assignment('state',7,to_bin(str(clock_time+1),10,self.state_signal_size(test_dict)))+'\n'
-            out_str+='\t'*6+'END IF;\n'
+            out_str+=tab(6)+'END IF;\n'
         # Set reset signal
         try:
             if test_dict[clock_time]==None:
@@ -463,14 +466,14 @@ class hdl_test_gen(object):
         >>> hdl_test_gen._hdl_test_gen__test_notequals_wire('a',0,'1')
         "a /= '1'"
         """
-        return '\t'*tab_level+name+" /= '"+value+"'"
+        return tab(tab_level)+name+" /= '"+value+"'"
     @staticmethod
     def __test_notequals_bus(name,tab_level,value):
         """
         >>> hdl_test_gen._hdl_test_gen__test_notequals_bus('a',0,'1001')
         'a /= "1001"'
         """
-        return '\t'*tab_level+name+' /= "'+value+'"'
+        return tab(tab_level)+name+' /= "'+value+'"'
     def __make_rst_state(self):
         wire_list=map(lambda x:self.__make_wire_assignment(x,4)+'\n',['DONE','FAIL','uut_rst'])
         bus_list=map(lambda x:self.__make_bus_assignment(x,4)+'\n',['FAIL_NUM','state'])
@@ -484,7 +487,7 @@ class hdl_test_gen(object):
         >>> hdl_test_gen._hdl_test_gen__make_wire_assignment('a',0,'1')
         "a <= '1';"
         """
-        return "\t"*tab_level+name+" <= '%s';"%(value)
+        return tab(tab_level)+name+" <= '%s';"%(value)
 
     @staticmethod
     def __make_bus_assignment(name,tab_level=0,value="(OTHERS => '0')"):
@@ -500,9 +503,9 @@ class hdl_test_gen(object):
         """
         aggregate_test=re.compile("(?i)\\([a-z0-9\\s]+=\\>\\s*'[0-1]'\\)")
         if aggregate_test.search(value):
-            return tab_level*"\t"+name+" <= %s;"%(value)
+            return tab(tab_level)+name+" <= %s;"%(value)
         else:
-            return tab_level*"\t"+name+' <= "%s";'%(value)
+            return tab(tab_level)+name+' <= "%s";'%(value)
 
     def __make_test_dict(self):
         test_dict={}

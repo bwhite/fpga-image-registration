@@ -216,7 +216,7 @@ BEGIN
 -------------------------------------------------------------------------------
 -- 3x3 Convolution Buffer:  Buffer a 3x3 neighborhood, ignore values that
 -- result from memory writes (use the stage generated in the address selector)
-  pixel_conv_buffer_i : pixel_conv_buffer_3x3
+  smooth_conv_buffer_i : smooth_conv_buffer_3x3
     PORT MAP (
       CLK           => CLK,
       RST           => RST,

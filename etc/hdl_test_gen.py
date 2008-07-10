@@ -72,12 +72,13 @@ def to_bin(num,in_base,min_str_len=0):
     >>> to_bin("111100110001",2,14)
     '00111100110001'
     """
-    BASE2 = "01"
+    if not isinstance(min_str_len,int):
+        raise TypeError
     CONV_BASE = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     if len(CONV_BASE) < in_base:
         print("TO_BIN: Input base is larger than internal symbol list!")
         return None
-    temp_str=baseconv(num,CONV_BASE[:in_base],BASE2)
+    temp_str=baseconv(num,CONV_BASE[:in_base],CONV_BASE[:2])
     try:
         return '0'*(max(0,min_str_len-len(temp_str)))+temp_str
     except TypeError:
@@ -90,27 +91,37 @@ def _test():
 def tab(num):
     return '  '*num
 
+def next_valid_line(file_iter):
+    """This function takes in a file iter and removes all of the comment lines, finally returning the first non-comment line"""
+    re_comment=re.compile("^\\s*#")
+    re_blank=re.compile("^\\s*$")
+    cur_line=file_iter.next()
+    while re_comment.search(cur_line) or re_blank.search(cur_line):
+        cur_line=file_iter.next()
+    return cur_line
+
+
 def hdl_test_gen_factory(file_iter):
     """Takes in an iterator of lines parses out the relevent data"""
     # Initialize regex parsers
-    re_start=re.compile("/\\\\([A-Za-z_]+)/\\\\") # Gives the tag name
-    re_delay=re.compile("DELAY:([0-9]+)") # Gives the number after the colon
-    re_clk=re.compile("CLK:([A-Za-z_]+)") # Gives the string after the colon
-    re_rst=re.compile("RST:([A-Za-z_]+)") # Gives the string after the colon
-    re_const=re.compile("CONST:\{((?:[A-Za-z0-9_,=])+)\}") # Gives the comma separated text, needs to be parsed further
-    re_in=re.compile("IN:\{((?:[A-Za-z0-9,#\[\]])+)\}") # Gives the comma separated text, needs to be parsed further
-    re_out=re.compile("OUT:\{((?:[A-Za-z0-9,#\[\]])+)\}") # Gives the comma separated text, needs to be parsed further
-    re_reset_cmd=re.compile("RESET") 
-    re_ti=re.compile("TI:\{((?:[A-Za-z0-9_,#\[\]])+)\}") # Gives the comma separated text, needs to be parsed further
-    re_to=re.compile("TO:\{((?:[A-Za-z0-9_,#\[\]])+)\}") # Gives the comma separated text, needs to be parsed further
-    re_end=re.compile("\\\\/([A-Za-z_]+)\\\\/") # Gives the tag name
+    re_start=re.compile("^\\s*/\\\\([A-Za-z0-9_]+)/\\\\") # Gives the tag name
+    re_delay=re.compile("^\\s*DELAY:([0-9]+)") # Gives the number after the colon
+    re_clk=re.compile("^\\s*CLK:([A-Za-z_]+)") # Gives the string after the colon
+    re_rst=re.compile("^\\s*RST:([A-Za-z_]+)") # Gives the string after the colon
+    re_const=re.compile("^\\s*CONST:\{((?:[A-Za-z0-9_,=])+)\}") # Gives the comma separated text, needs to be parsed further
+    re_in=re.compile("^\\s*IN:\{((?:[A-Za-z0-9,_#\[\]])+)\}") # Gives the comma separated text, needs to be parsed further
+    re_out=re.compile("^\\s*OUT:\{((?:[A-Za-z0-9,_#\[\]])+)\}") # Gives the comma separated text, needs to be parsed further
+    re_reset_cmd=re.compile("^\\s*RESET") 
+    re_ti=re.compile("^\\s*TI:\{((?:[A-Za-z0-9_,#\[\]])+)\}") # Gives the comma separated text, needs to be parsed further
+    re_to=re.compile("^\\s*TO:\{((?:[A-Za-z0-9_,#\[\]])+)\}") # Gives the comma separated text, needs to be parsed further
+    re_end=re.compile("^\\s*\\\\/([A-Za-z0-9_]+)\\\\/") # Gives the tag name
 
     # Search for test header and parse the static fields
-    cur_line=file_iter.next()
+    cur_line=next_valid_line(file_iter)
     try:
         while not re_start.search(cur_line):
             print(cur_line)
-            cur_line=file_iter.next()
+            cur_line=next_valid_line(file_iter)
     except StopIteration:
         print('HDL Test Generator Factory: Test header not found!')
         return None
@@ -120,17 +131,17 @@ def hdl_test_gen_factory(file_iter):
     # Parse delay, clk, rst
     try:
         # Min value is 0, add one for input delay from state machine as the inputs to the UUT are registered!!
-        module_delay=max(0,int(re_delay.search(file_iter.next()).group(1))+1)
+        module_delay=max(0,int(re_delay.search(next_valid_line(file_iter)).group(1))+1)
     except AttributeError:
         print('HDL Test Generator Factory: Module delay not found!')
         return None
     try:
-        module_clk=re_clk.search(file_iter.next()).group(1)
+        module_clk=re_clk.search(next_valid_line(file_iter)).group(1)
     except AttributeError:
         print('HDL Test Generator Factory: CLK specification not found!')
         return None
     try:
-        module_rst=re_rst.search(file_iter.next()).group(1)
+        module_rst=re_rst.search(next_valid_line(file_iter)).group(1)
     except AttributeError:
         print('HDL Test Generator Factory: RST specification not found!')
         return None
@@ -140,19 +151,19 @@ def hdl_test_gen_factory(file_iter):
     # Parse const,in, out
     module_const=''
     try:
-        cur_line=file_iter.next()
+        cur_line=next_valid_line(file_iter)
         module_const=re_const.search(cur_line).group(1).split(',')
     except AttributeError: # The const line is optional!
         pass
     else:
-        cur_line=file_iter.next()
+        cur_line=next_valid_line(file_iter)
     try:
         module_in=re_in.search(cur_line).group(1).split(',')
     except AttributeError:
-        print('HDL Test Generator Factory: IN specification not found!')
+        print('HDL Test Generator Factory: IN specification not found! Found:'+cur_line)
         return None
     try:
-        module_out=re_out.search(file_iter.next()).group(1).split(',')
+        module_out=re_out.search(next_valid_line(file_iter)).group(1).split(',')
     except AttributeError:
         print('HDL Test Generator Factory: OUT specification not found!')
         return None
@@ -164,7 +175,7 @@ def hdl_test_gen_factory(file_iter):
     # Parse TI/TO pairs and RESET (build test structure)
     module_tests=[]
     while 1:
-        cur_line=file_iter.next()
+        cur_line=next_valid_line(file_iter)
         if re_reset_cmd.search(cur_line): # Handle reset
             module_tests.append(None) # None signifies RESET
             print('Reset')
@@ -175,7 +186,7 @@ def hdl_test_gen_factory(file_iter):
                 print('HDL Test Generator Factory: TI specification not found!')
                 return None
             try:
-                temp_to=re_to.search(file_iter.next()).group(1).split(',')
+                temp_to=re_to.search(next_valid_line(file_iter)).group(1).split(',')
             except AttributeError:
                 print('HDL Test Generator Factory: TO specification not found!')
                 return None
@@ -230,6 +241,7 @@ class hdl_test_gen(object):
         print('INPUT:'+str(self.input))
         print('OUTPUT:'+str(self.output))
         print(self.tests)
+
         # Parse tests to binary from their arbitrary bases
         def binarize_test_data(index,port,tests):
             for test in tests:
@@ -237,11 +249,21 @@ class hdl_test_gen(object):
                     for test_port_ind in range(len(test[index])): # Input
                         try:
                             tmp_regex=re_num_base.search(test[index][test_port_ind])
-                            test[index][test_port_ind]=to_bin(tmp_regex.group(2),int(tmp_regex.group(1)), port[test_port_ind][1])
+                            test[index][test_port_ind]=to_bin(tmp_regex.group(2),int(tmp_regex.group(1)), int(port[test_port_ind][1]))
                         except AttributeError:
-                            continue
+                            try: # Try using default of decimal
+                                test[index][test_port_ind]=to_bin(test[index][test_port_ind],10,int(port[test_port_ind][1]))
+                            except AttributeError:
+                                pass
+                            except ValueError:
+                                pass
+                        # Make sure that wires only have '0' or '1' values
+                        if isinstance(port[test_port_ind],str) and not (test[index][test_port_ind] == '1' or test[index][test_port_ind] == '0'):
+                            print('HDL Test Generator: Wire %s has value %s, it must be binary!  Did you forget to specify the width (e.g., %s[5])?')%(port[test_port_ind],test[index][test_port_ind],port[test_port_ind])
+                            raise AssertionError
                 except TypeError:
                     continue
+        
         binarize_test_data(0,self.input,self.tests)
         binarize_test_data(1,self.output,self.tests)
         print(self.tests)
@@ -265,8 +287,15 @@ class hdl_test_gen(object):
     def tb_name(self):
         return self.name+'_tb'
 
-    def make_vhdl(self):
+    def sim_name(self):
+        return self.name+'_sim'
+
+    def make_vhdl_tb(self):
         out_str=self.__make_header_comments()+self.__make_use_statements()+self.__make_entity()+self.__make_architecture()
+        return out_str
+
+    def make_vhdl_sim(self):
+        out_str=self.__make_use_statements()+self.__make_sim_entity()+self.__make_sim_architecture()
         return out_str
 
     def __make_header_comments(self):
@@ -286,6 +315,9 @@ class hdl_test_gen(object):
             out_str+=tab(1)+self.__make_port_def(port[0],port[1],port[2])
         return out_str+");\nEND "+self.tb_name()+';\n'
 
+    def __make_sim_entity(self):
+        return 'ENTITY '+self.sim_name()+" IS\nEND "+self.sim_name()+';\n'
+
     def __make_rst_logic(self):
         return tab(1)+'uut_rst_wire <= RST OR uut_rst;\n'
 
@@ -296,6 +328,15 @@ class hdl_test_gen(object):
         out_str+=self.__make_rst_logic()
         out_str+=self.__make_uut_instance()
         out_str+=self.__make_test_process()
+        out_str+='END;\n'
+        return out_str
+
+    def __make_sim_architecture(self):
+        out_str='ARCHITECTURE behavior OF %s IS\n' %(self.sim_name())
+        out_str+=self.__make_tb_component()+self.__make_sim_signals() # Generate section before BEGIN
+        out_str+='BEGIN\n'
+        out_str+=self.__make_tb_instance()
+        out_str+=self.__make_sim_process()
         out_str+='END;\n'
         return out_str
 
@@ -315,6 +356,23 @@ class hdl_test_gen(object):
                     tmp_defs += tab(2)+ self.__make_port_def(port,port_type)
             return tmp_defs
         out_str+=get_port_defs([self.clk,self.rst]+self.input,'IN')+';\n'+get_port_defs(self.output,'OUT')+');\n'+tab(1)+'END COMPONENT;\n'
+        return out_str
+
+    def __make_tb_component(self):
+        out_str=tab(1)+'COMPONENT '+self.tb_name()+'\n'
+        out_str+=tab(1)+'PORT(\n'
+        def get_port_defs(ports,port_type):
+            tmp_defs=''
+            end_text=''
+            for port in ports:
+                tmp_defs+=end_text # The first time this is called it will be the input string, every other time it is a semi-colon return
+                end_text=';\n'
+                if isinstance(port,tuple):
+                    tmp_defs += tab(2)+ self.__make_port_def(port[0],port_type,port[1])
+                else:
+                    tmp_defs += tab(2)+ self.__make_port_def(port,port_type)
+            return tmp_defs
+        out_str+=get_port_defs(['CLK','RST'],'IN')+';\n'+get_port_defs(['DONE','FAIL',('FAIL_NUM',self.fail_num_size())],'OUT')+');\n'+tab(1)+'END COMPONENT;\n'
         return out_str
 
     def __make_const(self):
@@ -359,28 +417,33 @@ class hdl_test_gen(object):
         out_str=tab(1)+'SIGNAL uut_rst_wire, uut_rst : STD_LOGIC;\n'+self.__make_state_signal()
         if len(self.input) >0:
             out_str+=tab(1)+'-- UUT Input\n'
-        def generate_signals(ports):
-            vector_dict={}
-            wire_list=[]
-            out_str=''
-            for port in ports:
-                if isinstance(port,tuple):
-                    try:
-                        vector_dict[port[1]].append(port[0].lower())
-                    except KeyError:
-                        vector_dict[port[1]]=[port[0].lower()]
-                else:
-                    wire_list.append(port.lower())
-            # Output wires
-            if len(wire_list) != 0:
-                out_str+=tab(1)+'SIGNAL '+reduce(lambda x,y:x+', '+y,wire_list)+' : STD_LOGIC;\n'
-            # Output buses
-            for bus_size in vector_dict.iterkeys():
-                out_str+=tab(1)+'SIGNAL '+reduce(lambda x,y:x+', '+y,vector_dict[bus_size])+' : STD_LOGIC_VECTOR(%d DOWNTO 0);\n'%(bus_size-1)
-            return out_str
-            
         # Generate input signals
-        return out_str+generate_signals(self.input)+tab(1)+'-- UUT Output\n'+generate_signals(self.output)
+        return out_str+self.generate_signals(self.input)+tab(1)+'-- UUT Output\n'+self.generate_signals(self.output)
+
+    @staticmethod
+    def generate_signals(ports):
+        vector_dict={}
+        wire_list=[]
+        out_str=''
+        for port in ports:
+            if isinstance(port,tuple):
+                try:
+                    vector_dict[port[1]].append(port[0].lower())
+                except KeyError:
+                    vector_dict[port[1]]=[port[0].lower()]
+            else:
+                wire_list.append(port.lower())
+        # Output wires
+        if len(wire_list) != 0:
+            out_str+=tab(1)+'SIGNAL '+reduce(lambda x,y:x+', '+y,wire_list)+' : STD_LOGIC;\n'
+        # Output buses
+        for bus_size in vector_dict.iterkeys():
+            out_str+=tab(1)+'SIGNAL '+reduce(lambda x,y:x+', '+y,vector_dict[bus_size])+' : STD_LOGIC_VECTOR(%d DOWNTO 0);\n'%(bus_size-1)
+        return out_str
+
+    def __make_sim_signals(self):
+        out_str=tab(1)+"SIGNAL CLK : STD_LOGIC := '0';\n"+tab(1)+"SIGNAL RST : STD_LOGIC := '1';\n"
+        return out_str+self.generate_signals(['DONE','FAIL',('FAIL_NUM',self.fail_num_size())])
 
     def __make_uut_instance(self):
         out_str=tab(1)+'uut :  '+ self.name+' PORT MAP (\n'
@@ -388,6 +451,20 @@ class hdl_test_gen(object):
         out_str += tab(2)+self.clk+' => CLK,\n'+tab(2)+self.rst+' => uut_rst_wire'
         # IN and OUT
         for port in self.input+self.output:
+            out_str+=',\n'
+            if isinstance(port,tuple):
+                out_str+=tab(2) + port[0] + ' => ' + port[0].lower()
+            else:
+                out_str+=tab(2) + port + ' => ' + port.lower()
+        return out_str+'\n'+tab(1)+');\n'
+
+    def __make_tb_instance(self):
+        out_str=tab(1)+'uut :  '+ self.tb_name()+' PORT MAP (\n'
+        # CLK and RST
+        out_str += tab(2)+'CLK'+' => clk,\n'+tab(2)+'RST'+' => rst'
+        # IN and OUT
+        
+        for port in ['DONE','FAIL','FAIL_NUM']:
             out_str+=',\n'
             if isinstance(port,tuple):
                 out_str+=tab(2) + port[0] + ' => ' + port[0].lower()
@@ -407,6 +484,13 @@ class hdl_test_gen(object):
         out_str+=self.__make_wire_assignment('DONE',6,'1')+'\n'
         out_str+=self.__make_wire_assignment('uut_rst',6,'1')+'\n'
         out_str+=tab(4)+'END CASE;\n'+tab(3)+'END IF;\n'+tab(2)+'END IF;\n'+tab(1)+'END PROCESS;\n'
+        return out_str
+
+    def __make_sim_process(self):
+        out_str=tab(1)+"PROCESS\n"+tab(1)+"BEGIN\n"
+        out_str+=reduce(lambda x,y: x+y,map(lambda x: tab(2)+"CLK <= '%d';\n"%(x)+tab(2)+"WAIT FOR 5ns;\n",[0,1,0,1]))
+        out_str+=tab(2)+"RST <= '0';\n"
+        out_str+=tab(1)+'END PROCESS;\n'
         return out_str
 
     def __make_state(self,clock_time,test_dict=None):
@@ -533,7 +617,13 @@ class hdl_test_gen(object):
 a=None
 if __name__ == "__main__":
     _test()
-    a=hdl_test_gen_factory(open('test_examples/reg_adder_generic/reg_adder_generic.hdlt','r'))
-    f=open('test_examples/reg_adder_generic/reg_adder_generic_tb.vhd','w')
-    f.write(a.make_vhdl())
+    #test_name='test_examples/reg_adder_generic/reg_adder_generic'
+    #test_name='test_examples/reg_adder/reg_adder'
+    test_name='/home/brandyn/fpga-image-registration/modules/smooth_stage/pixel_buffer_3x3'
+    a=hdl_test_gen_factory(open(test_name+'.hdlt','r'))
+    f=open(test_name+'_tb.vhd','w')
+    f.write(a.make_vhdl_tb())
+    f.close()
+    f=open(test_name+'_sim.vhd','w')
+    f.write(a.make_vhdl_sim())
     f.close()

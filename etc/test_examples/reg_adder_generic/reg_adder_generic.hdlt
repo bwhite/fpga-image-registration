@@ -2,9 +2,12 @@
 DELAY:1
 CLK:CLK
 RST:RST
-CONST:{A_SHIFT=1,B_SHIFT=0}
-IN:{A[2],B[2],CIN}
+# This is a comment test
+ CONST:{A_SHIFT=1,B_SHIFT=0}
+	IN:{A[2],B[2],CIN}
 OUT:{SUM[3]}
-TI:{10#0#,10#0#,0}
+# This is a comment test
+TI:{0,10#0#,0} # This is a comment test
 TO:{10#1#}
+
 \/reg_adder_generic\/

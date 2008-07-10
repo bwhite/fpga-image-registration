@@ -4,10 +4,14 @@
 # RST exists and is active high
 # Inputs are assumed irrelevent during RST assertion (though 2 resets can be used, one is with no asserted input and the other has asserted input)
 # Only testing is done on posedge of clocks
-# Generics are used with their default values inside of the module
-# By default RST is NOT asserted at the first CT, if you need this explicitly put a RESET at the top of the test fields, this is so that default register values can be tested
+# The module's RST is asserted before the first CT (this means that initial register values are not tested)
 # Default register value is '0' for wires and (others => '0') for buses
 # Test cases properly test the input space of the UUT, if not the the synthesis process may remove logic
+# Generics that must be set are of 'integer' type (or equivelent)
+# Don't cares are specified as X or x in place of the value, whether it is a bus or a wire, there is no way to specify individual bits of don't care for busses
+# Spaces/tabs/blank lines can exist between required fields
+# Comments are denoted by putting a pound "#" before each line that is a comment
+# Since this module registers it's outputs, the true delay is one more than is specified in your module, this is corrected for automatically
 
 # Conventions
 # Internal signals are lower case (forced)
@@ -247,6 +251,10 @@ class hdl_test_gen(object):
             for test in tests:
                 try:
                     for test_port_ind in range(len(test[index])): # Input
+                        # Test to see if this is a don't care value
+                        if test[index][test_port_ind].upper() == 'X':
+                            test[index][test_port_ind]='X'
+                            continue
                         try:
                             tmp_regex=re_num_base.search(test[index][test_port_ind])
                             test[index][test_port_ind]=to_bin(tmp_regex.group(2),int(tmp_regex.group(1)), int(port[test_port_ind][1]))
@@ -512,9 +520,13 @@ class hdl_test_gen(object):
 
         # Test input signals (output from uut)
         end_text=tab(6)+'IF '
+        values_tested=False # This is used to correct for the case where we do have test values, but they are all "don't cares"
         try:
             for output_iter in range(len(test_dict[clock_time][1])):
                 output=test_dict[clock_time][1][output_iter]
+                if output == 'X':
+                    continue
+                values_tested=True
                 out_str+=end_text
                 end_text=' OR '
                 if isinstance(self.output[output_iter],tuple):
@@ -526,13 +538,16 @@ class hdl_test_gen(object):
         except TypeError: # If there is no input signals then put in the default state increment
             out_str+=self.__make_bus_assignment('state',6,to_bin(str(clock_time+1),10,self.state_signal_size(test_dict)))+'\n'
         else:
-            out_str+=' THEN\n'
-            out_str+=self.__make_wire_assignment('FAIL',7,'1')+'\n'
-            out_str+=self.__make_bus_assignment('FAIL_NUM',7,to_bin(str(test_dict[clock_time][2]),10,self.fail_num_size()))+'\n'
-            out_str+=self.__make_bus_assignment('state',7,to_bin(str(len(test_dict)),10,self.state_signal_size(test_dict)))+'\n'
-            out_str+=tab(6)+'ELSE\n'
-            out_str+=self.__make_bus_assignment('state',7,to_bin(str(clock_time+1),10,self.state_signal_size(test_dict)))+'\n'
-            out_str+=tab(6)+'END IF;\n'
+            if values_tested:
+                out_str+=' THEN\n'
+                out_str+=self.__make_wire_assignment('FAIL',7,'1')+'\n'
+                out_str+=self.__make_bus_assignment('FAIL_NUM',7,to_bin(str(test_dict[clock_time][2]),10,self.fail_num_size()))+'\n'
+                out_str+=self.__make_bus_assignment('state',7,to_bin(str(len(test_dict)),10,self.state_signal_size(test_dict)))+'\n'
+                out_str+=tab(6)+'ELSE\n'
+                out_str+=self.__make_bus_assignment('state',7,to_bin(str(clock_time+1),10,self.state_signal_size(test_dict)))+'\n'
+                out_str+=tab(6)+'END IF;\n'
+            else:
+                out_str+=self.__make_bus_assignment('state',6,to_bin(str(clock_time+1),10,self.state_signal_size(test_dict)))+'\n'
         # Set reset signal
         try:
             if test_dict[clock_time]==None:

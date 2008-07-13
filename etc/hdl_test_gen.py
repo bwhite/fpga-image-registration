@@ -20,7 +20,7 @@
 # When tests are done, the unit under test is held in a reset state
 
 # Input format for the following module
-import re,pdb,math
+import re,pdb,math,os,sys
 
 def baseconv(number,fromdigits,todigits):
     if str(number)[0]=='-':
@@ -48,7 +48,7 @@ def baseconv(number,fromdigits,todigits):
         res = "-"+res
     return res
 
-def to_bin(num,in_base,min_str_len=0):
+def to_bin(num,in_base,min_str_len=0,max_base=16):
     """
     >>> to_bin("100",16,10)
     '0100000000'
@@ -79,9 +79,9 @@ def to_bin(num,in_base,min_str_len=0):
     if not isinstance(min_str_len,int):
         raise TypeError
     CONV_BASE = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    if len(CONV_BASE) < in_base:
-        print("TO_BIN: Input base is larger than internal symbol list!")
-        return None
+    if len(CONV_BASE) < in_base or max_base < in_base:
+        print("TO_BIN: Input base (%d) is larger than the maximum allowed (%d)!")%(in_base,min(max_base,len(CONV_BASE)))
+        raise ValueError
     temp_str=baseconv(num,CONV_BASE[:in_base],CONV_BASE[:2])
     try:
         return '0'*(max(0,min_str_len-len(temp_str)))+temp_str
@@ -124,7 +124,6 @@ def hdl_test_gen_factory(file_iter):
     cur_line=next_valid_line(file_iter)
     try:
         while not re_start.search(cur_line):
-            print(cur_line)
             cur_line=next_valid_line(file_iter)
     except StopIteration:
         print('HDL Test Generator Factory: Test header not found!')
@@ -149,8 +148,6 @@ def hdl_test_gen_factory(file_iter):
     except AttributeError:
         print('HDL Test Generator Factory: RST specification not found!')
         return None
-    
-    print('Name:%s Delay:%d CLK:%s RST:%s') % (module_name,module_delay,module_clk,module_rst)
 
     # Parse const,in, out
     module_const=''
@@ -172,17 +169,12 @@ def hdl_test_gen_factory(file_iter):
         print('HDL Test Generator Factory: OUT specification not found!')
         return None
 
-    print(module_const)
-    print(module_in)
-    print(module_out)
-
     # Parse TI/TO pairs and RESET (build test structure)
     module_tests=[]
     while 1:
         cur_line=next_valid_line(file_iter)
         if re_reset_cmd.search(cur_line): # Handle reset
             module_tests.append(None) # None signifies RESET
-            print('Reset')
         elif re_ti.search(cur_line): # Handle TI/TO sequence
             try:
                 temp_ti=re_ti.search(cur_line).group(1).split(',')
@@ -195,8 +187,6 @@ def hdl_test_gen_factory(file_iter):
                 print('HDL Test Generator Factory: TO specification not found!')
                 return None
             module_tests.append([temp_ti,temp_to])
-            print(temp_ti)
-            print(temp_to)
         else:
             break
 
@@ -222,6 +212,7 @@ class hdl_test_gen(object):
         self.rst=rst.upper()
         self.tests=tests
         # Parse const/input/output
+        self.test_num=None
         self.const=[] # Each constant entry in the form of ("Name",value)
         self.input=[] # Buses are '[name,size]' and wires are 'name'
         self.output=[]
@@ -241,10 +232,6 @@ class hdl_test_gen(object):
                         continue
         port_parse(input,self.input)
         port_parse(output,self.output)
-        print('CONST:'+str(self.const))
-        print('INPUT:'+str(self.input))
-        print('OUTPUT:'+str(self.output))
-        print(self.tests)
 
         # Parse tests to binary from their arbitrary bases
         def binarize_test_data(index,port,tests):
@@ -274,10 +261,6 @@ class hdl_test_gen(object):
         
         binarize_test_data(0,self.input,self.tests)
         binarize_test_data(1,self.output,self.tests)
-        print(self.tests)
-
-    def save_vhdl(self,dir):
-        None
 
     def num_tests(self,end=None):
         return sum(map(lambda x: int(x != None), self.tests[0:end]))
@@ -293,10 +276,16 @@ class hdl_test_gen(object):
         return max(int(math.ceil(math.log(len(test_dict)+1,2))),0)
 
     def tb_name(self):
-        return self.name+'_tb'
+        if self.test_num != None:
+            return self.name+'T'+str(self.test_num)+'_tb'
+        else:
+            return self.name+'_tb'
 
     def sim_name(self):
-        return self.name+'_sim'
+        if self.test_num != None:
+            return self.name+'T'+str(self.test_num)+'_sim'
+        else:
+            return self.name+'_sim'
 
     def make_vhdl_tb(self):
         out_str=self.__make_header_comments()+self.__make_use_statements()+self.__make_entity()+self.__make_architecture()
@@ -305,6 +294,9 @@ class hdl_test_gen(object):
     def make_vhdl_sim(self):
         out_str=self.__make_use_statements()+self.__make_sim_entity()+self.__make_sim_architecture()
         return out_str
+
+    def set_test_num(self,test_num):
+        self.test_num=test_num
 
     def __make_header_comments(self):
         return ''
@@ -629,16 +621,34 @@ class hdl_test_gen(object):
                 test_dict[cur_ct+self.delay]=[None,test[1],self.num_tests(cur_ct+1)-1]
             cur_ct+=1
         return test_dict
-a=None
+
 if __name__ == "__main__":
     _test()
-    #test_name='test_examples/reg_adder_generic/reg_adder_generic'
-    #test_name='test_examples/reg_adder/reg_adder'
-    test_name='/home/brandyn/fpga-image-registration/modules/smooth_stage/pixel_buffer_3x3'
-    a=hdl_test_gen_factory(open(test_name+'.hdlt','r'))
-    f=open(test_name+'_tb.vhd','w')
-    f.write(a.make_vhdl_tb())
-    f.close()
-    f=open(test_name+'_sim.vhd','w')
-    f.write(a.make_vhdl_sim())
-    f.close()
+    try:
+        path=sys.argv[1]
+    except IndexError:
+        raise Exception,'Usage "python %s <test_root_directory>"'%(sys.argv[0])
+    for root,dirs, files in os.walk(path):
+        test_sets={} # Stored as module_name:[test_references]
+        for file in files:
+            if file[-5:]=='.hdlt':
+                print('Generating tests for [%s]')%(root+'/'+file)
+                cur_test_file=open(root+'/'+file,'r')
+                hdlt_gen=hdl_test_gen_factory(cur_test_file)
+                cur_test_file.close()
+                try:
+                    test_sets[root+'/'+hdlt_gen.name].append(hdlt_gen)
+                except KeyError:
+                    test_sets[root+'/'+hdlt_gen.name]=[hdlt_gen]
+        for tested_module in test_sets.iterkeys():
+            for test_num in range(len(test_sets[tested_module])):
+                test_name=tested_module+'T'+str(test_num)
+                test_sets[tested_module][test_num].set_test_num(test_num)
+                print('Saving test bench [%s]')%(test_name+'_tb.vhd')
+                tb_file=open(test_name+'_tb.vhd','w')
+                tb_file.write(test_sets[tested_module][test_num].make_vhdl_tb())
+                tb_file.close()
+                print('Saving simulation stub [%s]')%(test_name+'_sim.vhd')
+                sim_file=open(test_name+'_sim.vhd','w')
+                sim_file.write(test_sets[tested_module][test_num].make_vhdl_sim())
+                sim_file.close()

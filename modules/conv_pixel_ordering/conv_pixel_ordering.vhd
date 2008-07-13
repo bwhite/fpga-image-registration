@@ -43,9 +43,8 @@ ENTITY conv_pixel_ordering IS
         WIDTH            : IN  std_logic_vector(WIDTH_BITS-1 DOWNTO 0);
         WIDTH_OFFSET     : IN  std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);  -- (CONV_HEIGHT-1)*WIDTH-1
         -- NOTE: The following 2 inputs are only used when ROW_SKIP /=0
-        --HEIGHT-CONV_HEIGHT-BORDER_SIZE-(HEIGHT-2*BORDER_SIZE-CONV_HEIGHT)%(1+ROW_SKIP)
-        LAST_VALID_Y_POS : IN  std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);                                                                          
-        NEW_ROW_OFFSET   : IN  std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0); -- WIDTH_OFFSET-2*BORDER_SIZE-ROW_SKIP*WIDTH
+        LAST_VALID_Y_POS : IN  std_logic_vector(HEIGHT_BITS-1 DOWNTO 0);--HEIGHT-CONV_HEIGHT-BORDER_SIZE-(HEIGHT-2*BORDER_SIZE-CONV_HEIGHT)%(1+ROW_SKIP)
+        NEW_ROW_OFFSET   : IN  std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);  -- WIDTH_OFFSET-2*BORDER_SIZE-ROW_SKIP*WIDTH
         -- Generally WIDTH*BORDER_SIZE+BORDER_SIZE+BASE_ADDR; however,
         -- BASE_ADDR may be added later on and thus =0 here
         INITIAL_MEM_ADDR : IN  std_logic_vector(WIDTH_BITS+HEIGHT_BITS-1 DOWNTO 0);
@@ -92,21 +91,18 @@ BEGIN
       END IF;
       width_minus_one_minus_border <= unsigned(WIDTH)-1-BORDER_SIZE;
 
-
-      -- NOTE: These must be constant throughout the operation, after changing
-      -- them assert RST before using any output from this module.  They must be
       IF RST = '1' THEN                 -- synchronous reset (active high)
         -- The x/y_coord_reg's are the current active pixel
         x_coord_reg    <= to_unsigned(BORDER_SIZE, WIDTH_BITS);
         y_coord_reg    <= to_unsigned(BORDER_SIZE, HEIGHT_BITS);
         y_coord_pos    <= to_unsigned(BORDER_SIZE, HEIGHT_BITS);  -- The top pixel's y coord of the pattern
         conv_y_pos_reg <= (OTHERS => '0');
-        mem_addr_reg   <= unsigned(INITIAL_MEM_ADDR);
         first_pixel    <= '1';
         data_valid_reg <= '0';
         done_reg       <= '0';
         new_row_reg    <= '0';
       ELSE
+        mem_addr_reg <= unsigned(INITIAL_MEM_ADDR);
         IF CLKEN = '1' THEN  -- NOTE: DATA_VALID signal stays the same
           IF done_reg = '0' THEN        -- End of entire stream
             -- This controls the innermost loop (the one that creates the vertical

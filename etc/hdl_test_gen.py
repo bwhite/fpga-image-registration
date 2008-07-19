@@ -20,7 +20,7 @@
 # When tests are done, the unit under test is held in a reset state
 
 # Input format for the following module
-import re,pdb,math,os,sys
+import re,math,os,sys,copy
 
 def baseconv(number,fromdigits,todigits):
     if str(number)[0]=='-':
@@ -211,6 +211,7 @@ class hdl_test_gen(object):
         self.clk=clk.upper()
         self.rst=rst.upper()
         self.tests=tests
+        self.uut_signal_pre = 'uut_'
         # Parse const/input/output
         self.test_num=None
         self.const=[] # Each constant entry in the form of ("Name",value)
@@ -418,7 +419,16 @@ class hdl_test_gen(object):
         if len(self.input) >0:
             out_str+=tab(1)+'-- UUT Input\n'
         # Generate input signals
-        return out_str+self.generate_signals(self.input)+tab(1)+'-- UUT Output\n'+self.generate_signals(self.output)
+        return out_str+self.generate_signals(self.add_prefix(self.input))+tab(1)+'-- UUT Output\n'+self.generate_signals(self.add_prefix(self.output))
+
+    def add_prefix(self,ports):
+        ports=copy.deepcopy(ports)
+        for port_ind in range(len(ports)):
+            if isinstance(ports[port_ind],tuple):
+                ports[port_ind]=(self.uut_signal_pre+ports[port_ind][0],ports[port_ind][1])
+            else:
+                ports[port_ind]=self.uut_signal_pre+ports[port_ind]
+        return ports
 
     @staticmethod
     def generate_signals(ports):
@@ -453,9 +463,9 @@ class hdl_test_gen(object):
         for port in self.input+self.output:
             out_str+=',\n'
             if isinstance(port,tuple):
-                out_str+=tab(2) + port[0] + ' => ' + port[0].lower()
+                out_str+=tab(2) + port[0] + ' => ' + self.uut_signal_pre+port[0].lower()
             else:
-                out_str+=tab(2) + port + ' => ' + port.lower()
+                out_str+=tab(2) + port + ' => ' + self.uut_signal_pre+port.lower()
         return out_str+'\n'+tab(1)+');\n'
 
     def __make_tb_instance(self):
@@ -500,11 +510,11 @@ class hdl_test_gen(object):
         # Output driving signals
         try:
             for input_iter in range(len(test_dict[clock_time][0])):
-                input=test_dict[clock_time][0][input_iter]
+                tmp_input=test_dict[clock_time][0][input_iter]
                 if isinstance(self.input[input_iter],tuple):
-                    out_str+=self.__make_bus_assignment(self.input[input_iter][0].lower(),6,input)+'\n'
+                    out_str+=self.__make_bus_assignment(self.uut_signal_pre+self.input[input_iter][0].lower(),6,tmp_input)+'\n'
                 else:
-                    out_str+=self.__make_wire_assignment(self.input[input_iter].lower(),6,input)+'\n'
+                    out_str+=self.__make_wire_assignment(self.uut_signal_pre+self.input[input_iter].lower(),6,tmp_input)+'\n'
         except TypeError: # If there is no input drivers than don't output anything for them
             pass
         except KeyError: # If there are no test requirements for this CT
@@ -522,9 +532,9 @@ class hdl_test_gen(object):
                 out_str+=end_text
                 end_text=' OR '
                 if isinstance(self.output[output_iter],tuple):
-                    out_str+=self.__test_notequals_bus(self.output[output_iter][0].lower(),0,output)
+                    out_str+=self.__test_notequals_bus(self.uut_signal_pre+self.output[output_iter][0].lower(),0,output)
                 else:
-                    out_str+=self.__test_notequals_wire(self.output[output_iter].lower(),0,output)
+                    out_str+=self.__test_notequals_wire(self.uut_signal_pre+self.output[output_iter].lower(),0,output)
         except KeyError: # If there are no test requirements for this CT
             out_str+=self.__make_bus_assignment('state',6,to_bin(str(clock_time+1),10,self.state_signal_size(test_dict)))+'\n'
         except TypeError: # If there is no input signals then put in the default state increment
@@ -630,10 +640,10 @@ if __name__ == "__main__":
         raise Exception,'Usage "python %s <test_root_directory>"'%(sys.argv[0])
     for root,dirs, files in os.walk(path):
         test_sets={} # Stored as module_name:[test_references]
-        for file in files:
-            if file[-5:]=='.hdlt':
-                print('Generating tests for [%s]')%(root+'/'+file)
-                cur_test_file=open(root+'/'+file,'r')
+        for cur_file in files:
+            if cur_file[-5:]=='.hdlt':
+                print('Generating tests for [%s]')%(root+'/'+cur_file)
+                cur_test_file=open(root+'/'+cur_file,'r')
                 hdlt_gen=hdl_test_gen_factory(cur_test_file)
                 cur_test_file.close()
                 try:

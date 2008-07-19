@@ -82,7 +82,7 @@ BEGIN
       -- valid upon the first posedge of the CLK.
       -- NOTE: This assumes that the result of this will be positive
       -- TODO: Ensure that negative values will be handled properly
-      IF ROW_SKIP /= 0 THEN
+      IF ROW_SKIP = 0 THEN
         height_conv_diff_minus_border <= unsigned(HEIGHT)-CONV_HEIGHT-BORDER_SIZE;
         width_offset_minus_border_reg <= unsigned(WIDTH_OFFSET)-2*BORDER_SIZE;
       ELSE
@@ -90,7 +90,6 @@ BEGIN
         width_offset_minus_border_reg <= unsigned(NEW_ROW_OFFSET);
       END IF;
       width_minus_one_minus_border <= unsigned(WIDTH)-1-BORDER_SIZE;
-
       IF RST = '1' THEN                 -- synchronous reset (active high)
         -- The x/y_coord_reg's are the current active pixel
         x_coord_reg    <= to_unsigned(BORDER_SIZE, WIDTH_BITS);
@@ -102,7 +101,6 @@ BEGIN
         done_reg       <= '0';
         new_row_reg    <= '0';
       ELSE
-        mem_addr_reg <= unsigned(INITIAL_MEM_ADDR);
         IF CLKEN = '1' THEN  -- NOTE: DATA_VALID signal stays the same
           IF done_reg = '0' THEN        -- End of entire stream
             -- This controls the innermost loop (the one that creates the vertical
@@ -139,6 +137,7 @@ BEGIN
                 new_row_reg    <= '0';
               ELSE                      -- If it is the first pixel
                 new_row_reg <= '1';
+                mem_addr_reg <= unsigned(INITIAL_MEM_ADDR);  
               END IF;
               data_valid_reg <= '1';
               first_pixel    <= '0';

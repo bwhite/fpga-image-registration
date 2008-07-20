@@ -1,0 +1,44 @@
+/\pixel_buffer_3x3/\
+DELAY:1
+CLK:CLK
+RST:RST
+CONST:{PIXEL_BITS=9}
+IN:{MEM_VALUE[9],INPUT_VALID}
+OUT:{OUTPUT_VALID,IMG_0_0[9],IMG_1_0[9],IMG_2_0[9],IMG_0_1[9],IMG_1_1[9],IMG_2_1[9],IMG_0_2[9],IMG_1_2[9],IMG_2_2[9]}
+# First we are going to simply put in unique values and make sure they shift properly
+TI:{1,1}
+TO:{0,0,0,0,0,0,0,1,0,0}
+TI:{2,1}
+TO:{0,0,0,0,0,0,0,1,2,0}
+TI:{3,1}
+TO:{0,0,0,0,0,0,0,1,2,3}
+TI:{4,1}
+TO:{0,0,0,0,1,2,3,4,2,3}
+TI:{5,1}
+TO:{0,0,0,0,1,2,3,4,5,3}
+TI:{6,1}
+TO:{0,0,0,0,1,2,3,4,5,6}
+TI:{7,1}
+TO:{0,1,2,3,4,5,6,7,5,6}
+TI:{8,1}
+TO:{0,1,2,3,4,5,6,7,8,6}
+
+# This should produce an OUTPUT_VALID=1 signal.
+TI:{9,1}
+TO:{1,1,2,3,4,5,6,7,8,9}
+
+# Test invalid input, this should not change the pixel values, but should have OUTPUT_VALID=0
+# as we only have it high the first CT that it is valid
+TI:{0,0}
+TO:{0,1,2,3,4,5,6,7,8,9}
+
+# Continue with the pattern
+TI:{10,1}
+TO:{0,4,5,6,7,8,9,10,8,9}
+TI:{11,1}
+TO:{0,4,5,6,7,8,9,10,11,9}
+
+# This should produce an OUTPUT_VALID=1 signal.
+TI:{12,1}
+TO:{1,4,5,6,7,8,9,10,11,12}
+\/pixel_buffer_3x3\/

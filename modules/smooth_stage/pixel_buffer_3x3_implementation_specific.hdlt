@@ -3,7 +3,7 @@ DELAY:1
 CLK:CLK
 RST:RST
 CONST:{PIXEL_BITS=9}
-IN:{MEM_VALUE[9],INPUT_VALID}
+IN:{MEM_VALUE[9],CLKEN,NEW_ROW}
 OUT:{OUTPUT_VALID,IMG_0_0[9],IMG_1_0[9],IMG_2_0[9],IMG_0_1[9],IMG_1_1[9],IMG_2_1[9],IMG_0_2[9],IMG_1_2[9],IMG_2_2[9]}
 # First we are going to simply put in unique values and make sure they shift properly
 TI:{1,1}

@@ -21,9 +21,7 @@ ENTITY smooth_address_selector IS
         MEM_ADDR         : OUT std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
         MEM_RE           : OUT std_logic;
         MEM_OUTPUT_VALID : OUT std_logic;
-        PIXGEN_CLKEN     : OUT std_logic;
-        PIXEL_STATE      : OUT std_logic_vector(2 DOWNTO 0));
-
+        PIXGEN_CLKEN     : OUT std_logic);
 END smooth_address_selector;
 
 ARCHITECTURE Behavioral OF smooth_address_selector IS
@@ -69,7 +67,7 @@ BEGIN
   pipebuf_valid : pipeline_buffer
     GENERIC MAP (
       WIDTH         => 1,
-      STAGES        => 4,    -- TODO Fix this
+      STAGES        => 4,               -- TODO Fix this
       DEFAULT_VALUE => 2#0#)
     PORT MAP (
       CLK   => CLK,
@@ -80,8 +78,8 @@ BEGIN
 
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
-    IF CLK'event AND CLK = '1' THEN       -- rising clock edge
-      IF RST = '1' THEN                   -- synchronous reset (active high)
+    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
+      IF RST = '1' THEN                 -- synchronous reset (active high)
         addr_select_img0 <= '1';
       ELSE
         IF unsigned(CONV_Y_POS) = 2 THEN  -- IMG1 -- TODO Correct this value
@@ -104,8 +102,6 @@ BEGIN
           output_valid_reg <= img_addr_valid_buf;
           mem_re_reg       <= '0';
         END IF;
-
-        PIXEL_STATE <= CONV_Y_POS & addr_select_img0;
       END IF;
     END IF;
   END PROCESS;

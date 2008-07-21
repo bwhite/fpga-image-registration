@@ -46,11 +46,11 @@ ARCHITECTURE Behavioral OF smooth_conv_3x3 IS
   END COMPONENT;
 
 
-  TYPE prod_vec9x1 IS ARRAY (8 DOWNTO 0) OF std_logic_vector(PIXEL_BITS+KERNEL_BITS-1 DOWNTO 0);
-  TYPE sum_vec3x1 IS ARRAY (2 DOWNTO 0) OF std_logic_vector(PIXEL_BITS+KERNEL_BITS-1 DOWNTO 0);
+  TYPE prod_vec9x1 IS ARRAY (8 DOWNTO 0) OF unsigned(PIXEL_BITS+KERNEL_BITS-1 DOWNTO 0);
+  TYPE sum_vec3x1 IS ARRAY (2 DOWNTO 0) OF unsigned(PIXEL_BITS+KERNEL_BITS-1 DOWNTO 0);
   SIGNAL smooth_prod0, smooth_prod1 : prod_vec9x1;
   SIGNAL smooth_sum                 : sum_vec3x1;
-  SIGNAL smooth_full                : std_logic_vector(PIXEL_BITS+KERNEL_BITS DOWNTO 0);
+  SIGNAL smooth_full                : unsigned(PIXEL_BITS+KERNEL_BITS DOWNTO 0);
 BEGIN
   valid_pipeline                    : pipeline_bit_buffer
     GENERIC MAP (
@@ -89,12 +89,12 @@ BEGIN
       END LOOP;  -- i
 
       -- 0:1:PIXEL_BITS+KERNEL_BITS
-      smooth_full <= '0'&smooth_sum(0)+'0'&smooth_sum(1)+'0'&smooth_sum(2);
+      smooth_full <= ('0'&smooth_sum(0))+('0'&smooth_sum(1))+('0'&smooth_sum(2));
 
       -- IMG_SMOOTH
       -- 0:0:PIXEL_BITS
       IF smooth_full(PIXEL_BITS+KERNEL_BITS) = '0' THEN
-        IMG_SMOOTH <= smooth_full(PIXEL_BITS+KERNEL_BITS-1 DOWNTO KERNEL_BITS);
+        IMG_SMOOTH <= std_logic_vector(smooth_full(PIXEL_BITS+KERNEL_BITS-1 DOWNTO KERNEL_BITS));
       ELSE
         IMG_SMOOTH <= (OTHERS => '1');
       END IF;

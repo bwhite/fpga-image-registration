@@ -40,14 +40,14 @@ ARCHITECTURE Behavioral OF smooth_conv_3x3 IS
   END COMPONENT;
 
 
-  TYPE   prod_vec9x1 IS ARRAY (8 DOWNTO 0) OF unsigned(PIXEL_BITS+KERNEL_BITS-1 DOWNTO 0);
-  TYPE   sum_vec3x1 IS ARRAY (2 DOWNTO 0) OF unsigned(PIXEL_BITS+KERNEL_BITS-1 DOWNTO 0);
-  SIGNAL smooth_prod0, smooth_prod1 : prod_vec9x1;
+  TYPE   prod_vec3x1 IS ARRAY (8 DOWNTO 0) OF unsigned(PIXEL_BITS+KERNEL_BITS+2 DOWNTO 0);
+  TYPE   sum_vec3x1 IS ARRAY (2 DOWNTO 0) OF unsigned(PIXEL_BITS+2 DOWNTO 0);
+  SIGNAL smooth_prod : prod_vec3x1;
   SIGNAL smooth_sum                 : sum_vec3x1;
 BEGIN
   valid_pipeline : pipeline_bit_buffer
     GENERIC MAP (
-      STAGES => 4)
+      STAGES => 3)
     PORT MAP (
       CLK   => CLK,
       RST   => RST,
@@ -60,31 +60,22 @@ BEGIN
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
 
-      -- 0:0:PIXEL_BITS+KERNEL_BITS
-      smooth_prod0(0) <= unsigned(IMG_0_0)*to_unsigned(SMOOTH_0_0, KERNEL_BITS);
-      smooth_prod0(1) <= unsigned(IMG_0_1)*to_unsigned(SMOOTH_0_1, KERNEL_BITS);
-      smooth_prod0(2) <= unsigned(IMG_0_2)*to_unsigned(SMOOTH_0_0, KERNEL_BITS);
-      smooth_prod0(3) <= unsigned(IMG_1_0)*to_unsigned(SMOOTH_0_1, KERNEL_BITS);
-      smooth_prod0(4) <= unsigned(IMG_1_1)*to_unsigned(SMOOTH_1_1, KERNEL_BITS);
-      smooth_prod0(5) <= unsigned(IMG_1_2)*to_unsigned(SMOOTH_0_1, KERNEL_BITS);
-      smooth_prod0(6) <= unsigned(IMG_2_0)*to_unsigned(SMOOTH_0_0, KERNEL_BITS);
-      smooth_prod0(7) <= unsigned(IMG_2_1)*to_unsigned(SMOOTH_0_1, KERNEL_BITS);
-      smooth_prod0(8) <= unsigned(IMG_2_2)*to_unsigned(SMOOTH_0_0, KERNEL_BITS);
-
-      -- One pipeline stage
-      smooth_prod1 <= smooth_prod0;
-
-      -- As long as the smoothing kernel sums to 1 we don't need any carry bits,
-      -- 0:0:PIXEL_BITS+KERNEL_BITS
-      FOR i IN 2 DOWNTO 0 LOOP
-        smooth_sum(i) <= smooth_prod1(3*i)+smooth_prod1(3*i+1)+smooth_prod1(3*i+2);
-      END LOOP;  -- i
-
-      -- 0:0:PIXEL_BITS+KERNEL_BITS
+      -- 0:3:PIXEL_BITS
+      smooth_sum(0) <= ("000"&unsigned(IMG_0_0))+("000"&unsigned(IMG_0_2))+("000"&unsigned(IMG_2_0))+("000"&unsigned(IMG_2_2));
+      smooth_sum(1) <= ("000"&unsigned(IMG_0_1))+("000"&unsigned(IMG_1_0))+("000"&unsigned(IMG_1_2))+("000"&unsigned(IMG_2_1));
+      smooth_sum(2) <= ("000"&unsigned(IMG_1_1));
+      
+      -- 0:3:PIXEL_BITS+KERNEL_BITS
+      smooth_prod0(0) <= smooth_sum(0)*to_unsigned(SMOOTH_0_0, KERNEL_BITS);
+      smooth_prod0(1) <= smooth_sum(1)*to_unsigned(SMOOTH_0_1, KERNEL_BITS);
+      smooth_prod0(2) <= smooth_sum(2)*to_unsigned(SMOOTH_1_1, KERNEL_BITS);
+      
+      -- 0:0:PIXEL_BITS
       -- Sum results
-      IMG_SMOOTH <= std_logic_vector(smooth_sum(0) + smooth_sum(1) + smooth_sum(2));
+      -- NOTE: Since the kernel must sum to exactly 1, we do not need to check
+      -- carry bits in the final sum
+      IMG_SMOOTH <= std_logic_vector(smooth_prod(0)(PIXEL_BITS+KERNEL_BITS-1 DOWNTO KERNEL_BITS)+smooth_prod(1)(PIXEL_BITS+KERNEL_BITS-1 DOWNTO KERNEL_BITS)+smooth_prod(2)(PIXEL_BITS+KERNEL_BITS-1 DOWNTO KERNEL_BITS));
     END IF;
   END PROCESS;
-
 END Behavioral;
 

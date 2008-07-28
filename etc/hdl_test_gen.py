@@ -35,7 +35,7 @@ def baseconv(number,fromdigits,todigits):
         try:
             x = x*len(fromdigits) + fromdigits.index(digit)
         except ValueError:
-            print("Baseconv: Character in input number not found in conversion table.")
+            print("Baseconv: Character in input number(%s) not found in conversion table.")%(digit)
             return None
     
     # create the result in base 'len(todigits)'
@@ -203,7 +203,7 @@ class hdl_test_gen(object):
         # Precompile regexs
         re_name=re.compile("([A-Za-z0-9_]+)")
         re_name_array=re.compile("([A-Za-z0-9_]+)\[([0-9]+)\]")
-        re_num_base=re.compile("([0-9]+)#([0-9]+)#") # (base,number in base)
+        re_num_base=re.compile("([0-9]+)#([0-9A-Za-z]+)#") # (base,number in base)
         re_num_eq=re.compile("([A-Za-z0-9_]+)=([0-9]+)") # (name,decimal number)
         # Copy over simple variables
         self.name=name
@@ -576,7 +576,7 @@ class hdl_test_gen(object):
         """
         return tab(tab_level)+name+' /= "'+value+'"'
     def __make_rst_state(self):
-        wire_list=map(lambda x:self.__make_wire_assignment(x,4)+'\n',['DONE','FAIL','uut_rst'])
+        wire_list=map(lambda x,y:self.__make_wire_assignment(x,4,y)+'\n',['DONE','FAIL','uut_rst'],['0','0','1'])
         bus_list=map(lambda x:self.__make_bus_assignment(x,4)+'\n',['FAIL_NUM','state'])
         return reduce(lambda x,y: x+y, wire_list+bus_list)
 

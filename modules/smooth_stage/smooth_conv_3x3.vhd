@@ -6,9 +6,9 @@ ENTITY smooth_conv_3x3 IS
   GENERIC (
     PIXEL_BITS  : integer := 9;
     KERNEL_BITS : integer := 16;
-    SMOOTH_0_0  : integer := 16#133B#;  -- Corners
-    SMOOTH_0_1  : integer := 16#1FB4#;  -- Up/Down/Left/Right of center
-    SMOOTH_1_1  : integer := 16#3444#); -- Center
+    SMOOTH_0_0  : integer := 16#133B#;   -- Corners
+    SMOOTH_0_1  : integer := 16#1FB4#;   -- Up/Down/Left/Right of center
+    SMOOTH_1_1  : integer := 16#3444#);  -- Center
   PORT (CLK          : IN  std_logic;
         RST          : IN  std_logic;
         INPUT_VALID  : IN  std_logic;
@@ -40,11 +40,15 @@ ARCHITECTURE Behavioral OF smooth_conv_3x3 IS
   END COMPONENT;
 
 
-  TYPE   prod_vec3x1 IS ARRAY (8 DOWNTO 0) OF unsigned(PIXEL_BITS+KERNEL_BITS+2 DOWNTO 0);
+  TYPE   prod_vec3x1 IS ARRAY (2 DOWNTO 0) OF unsigned(PIXEL_BITS+KERNEL_BITS+2 DOWNTO 0);
   TYPE   sum_vec3x1 IS ARRAY (2 DOWNTO 0) OF unsigned(PIXEL_BITS+2 DOWNTO 0);
-  SIGNAL smooth_prod : prod_vec3x1;
-  SIGNAL smooth_sum                 : sum_vec3x1;
+  SIGNAL smooth_prod    : prod_vec3x1;
+  SIGNAL smooth_sum     : sum_vec3x1;
+  SIGNAL img_smooth_reg : std_logic_vector(PIXEL_BITS+KERNEL_BITS+2 DOWNTO 0);
 BEGIN
+  -- NOTE: Since the kernel must sum to exactly 1, we do not need to check
+  -- carry bits in the final sum
+  IMG_SMOOTH <= img_smooth_reg(PIXEL_BITS+KERNEL_BITS-1 DOWNTO KERNEL_BITS);
   valid_pipeline : pipeline_bit_buffer
     GENERIC MAP (
       STAGES => 3)
@@ -64,17 +68,18 @@ BEGIN
       smooth_sum(0) <= ("000"&unsigned(IMG_0_0))+("000"&unsigned(IMG_0_2))+("000"&unsigned(IMG_2_0))+("000"&unsigned(IMG_2_2));
       smooth_sum(1) <= ("000"&unsigned(IMG_0_1))+("000"&unsigned(IMG_1_0))+("000"&unsigned(IMG_1_2))+("000"&unsigned(IMG_2_1));
       smooth_sum(2) <= ("000"&unsigned(IMG_1_1));
-      
+
       -- 0:3:PIXEL_BITS+KERNEL_BITS
-      smooth_prod0(0) <= smooth_sum(0)*to_unsigned(SMOOTH_0_0, KERNEL_BITS);
-      smooth_prod0(1) <= smooth_sum(1)*to_unsigned(SMOOTH_0_1, KERNEL_BITS);
-      smooth_prod0(2) <= smooth_sum(2)*to_unsigned(SMOOTH_1_1, KERNEL_BITS);
-      
-      -- 0:0:PIXEL_BITS
-      -- Sum results
-      -- NOTE: Since the kernel must sum to exactly 1, we do not need to check
-      -- carry bits in the final sum
-      IMG_SMOOTH <= std_logic_vector(smooth_prod(0)(PIXEL_BITS+KERNEL_BITS-1 DOWNTO KERNEL_BITS)+smooth_prod(1)(PIXEL_BITS+KERNEL_BITS-1 DOWNTO KERNEL_BITS)+smooth_prod(2)(PIXEL_BITS+KERNEL_BITS-1 DOWNTO KERNEL_BITS));
+      smooth_prod(0) <= smooth_sum(0)*to_unsigned(SMOOTH_0_0, KERNEL_BITS);
+      smooth_prod(1) <= smooth_sum(1)*to_unsigned(SMOOTH_0_1, KERNEL_BITS);
+      smooth_prod(2) <= smooth_sum(2)*to_unsigned(SMOOTH_1_1, KERNEL_BITS);
+
+      -- 0:3:PIXEL_BITS+KERNEL_BITS
+      -- Sum results, round to nearest
+      -- Total Size PIXEL_BITS+KERNEL_BITS+2 DOWNTO 0
+      -- PIXEL_BITS+KERNEL_BITS-1 DOWNTO KERNEL_BITS
+      -- +((PIXEL_BITS+KERNEL_BITS+2 DOWNTO KERNEL_BITS => '0')&"1"&(KERNEL_BITS-1 DOWNTO 0 => '0'))
+      img_smooth_reg <= std_logic_vector(smooth_prod(0)+smooth_prod(1)+smooth_prod(2));
     END IF;
   END PROCESS;
 END Behavioral;

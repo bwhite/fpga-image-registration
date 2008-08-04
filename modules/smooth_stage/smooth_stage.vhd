@@ -56,7 +56,8 @@ ARCHITECTURE Behavioral OF smooth_stage IS
   COMPONENT conv_pixel_ordering IS
     GENERIC (
       CONV_HEIGHT      : integer := 3;
-      BORDER_SIZE      : integer := 1;
+      BORDER_SIZE      : integer := 0;
+      ROW_SKIP         : integer := 0;
       WIDTH_BITS       : integer := IMGSIZE_BITS;
       HEIGHT_BITS      : integer := IMGSIZE_BITS;
       CONV_HEIGHT_BITS : integer := 2);
@@ -106,7 +107,8 @@ ARCHITECTURE Behavioral OF smooth_stage IS
     GENERIC (
       IMGSIZE_BITS : integer := 10;
       PIXEL_BITS   : integer := 9;
-      MEM_DELAY    : integer := 4);
+      MEM_DELAY    : integer := 4;
+      IMG_ADDR_DELAY : integer := 14);
 
     PORT (CLK              : IN  std_logic;
           RST              : IN  std_logic;
@@ -168,8 +170,8 @@ END COMPONENT;
   SIGNAL img_width_offset, img0_mem_addr, img0_mem_addr_buf, initial_mem_offset                                                                              : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
   SIGNAL coord_gen_state                                                                                                                                     : std_logic_vector(1 DOWNTO 0);
   SIGNAL pattern_state, pattern_state_buf                                                                                                                    : std_logic_vector(2 DOWNTO 0);
-  SIGNAL img_0_0, img_0_1, img_0_2, img_1_0, img_1_1, img_1_2, img_2_0, img_2_1, img_2_2                                                                     : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-  SIGNAL initial_mem_addr, mem_addroff0, mem_addroff1, img_mem_addr                                                                                          : std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
+  SIGNAL img_0_0, img_0_1, img_0_2, img_1_0, img_1_1, img_1_2, img_2_0, img_2_1, img_2_2, img_smooth_pix, fake_memory_input                                                                    : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  SIGNAL initial_mem_addr, mem_addroff0, mem_addroff1, img_mem_addr, mem_addr_wire                                                                                          : std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
 BEGIN
 -------------------------------------------------------------------------------
 -- Parameter ROM: Holds parameters that vary depending on the pyramid level.
@@ -186,7 +188,7 @@ BEGIN
         img_height       <= int_to_stdlvec(10#5#, IMGSIZE_BITS);    -- 5
         img_width        <= int_to_stdlvec(10#5#, IMGSIZE_BITS);    -- 5
         img_width_offset <= int_to_stdlvec(10#9#, 2*IMGSIZE_BITS);  -- 9
-        initial_mem_addr <= int_to_stdlvec(10#6#, 2*IMGSIZE_BITS);  -- 6
+        initial_mem_addr <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 0 -- Originally6
         -- TODO Update
         mem_addroff0     <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);
         mem_addroff1     <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);
@@ -212,8 +214,8 @@ BEGIN
               WIDTH            => img_width,
               WIDTH_OFFSET     => img_width_offset,
               INITIAL_MEM_ADDR => initial_mem_addr,
---              NEW_ROW_OFFSET   => ,
---              LAST_VALID_Y_POS => ,
+              NEW_ROW_OFFSET   => "00000000000000000000",
+              LAST_VALID_Y_POS => "0000000000",
               MEM_ADDR         => img_mem_addr,
               CONV_Y_POS       => coord_gen_state,  -- 0=above cur pixel, 1=
                                                     -- current pixel, 2=below cur pixel for
@@ -226,7 +228,7 @@ BEGIN
 -- New Row Buffer
   pipebuf_newrow : pipeline_bit_buffer
     GENERIC MAP (
-      STAGES => 3)
+      STAGES => 5)
     PORT MAP (
       CLK   => CLK,
       SET   => '0',
@@ -251,10 +253,11 @@ BEGIN
       MEM_ADDROFF1     => mem_addroff1,
       PIXGEN_CLKEN     => pixgen_clken,
       -- Memory Outputs
-      MEM_ADDR         => MEM_ADDR,
+      MEM_ADDR         => mem_addr_wire,
       MEM_RE           => MEM_RE,
       MEM_OUTPUT_VALID => MEM_OUTPUT_VALID);
-
+MEM_ADDR <= mem_addr_wire;
+  
 -------------------------------------------------------------------------------
 -- State Buffer
   pipebuf_state : pipeline_bit_buffer
@@ -277,7 +280,7 @@ BEGIN
       RST          => RST,
       CLKEN        => pixgen_clken_buf,
       NEW_ROW      => coord_gen_new_row_buf,
-      MEM_VALUE    => MEM_PIXEL_READ,   -- From Memory
+      MEM_VALUE    => fake_memory_input,--MEM_PIXEL_READ,   -- From Memory
       OUTPUT_VALID => pix_buf_output_valid,
       IMG_0_0      => img_0_0,
       IMG_0_1      => img_0_1,
@@ -307,5 +310,33 @@ BEGIN
       IMG_2_1         => img_2_1,
       IMG_2_2         => img_2_2,
       OUTPUT_VALID    => smooth_output_valid,
-      IMG_SMOOTH => MEM_PIXEL_WRITE);
+      IMG_SMOOTH => img_smooth_pix);
+-------------------------------------------------------------------------------
+-- Mem Pixel Write Buffer
+    pipebuf_mem_pixel_write : pipeline_buffer
+    GENERIC MAP (
+      WIDTH         => PIXEL_BITS,
+      STAGES        => 1,
+      DEFAULT_VALUE => 2#0#)
+    PORT MAP (
+      CLK   => CLK,
+      RST   => RST,
+      CLKEN => '1',
+      DIN   => img_smooth_pix,
+      DOUT  => MEM_PIXEL_WRITE);
+
+-------------------------------------------------------------------------------
+-- FAKE Memory: This is just for testing, it delays the LSBs of the address for
+-- 4 CTs.
+      pipebuf_fake_memory : pipeline_buffer
+    GENERIC MAP (
+      WIDTH         => PIXEL_BITS,
+      STAGES        => 4,
+      DEFAULT_VALUE => 2#0#)
+    PORT MAP (
+      CLK   => CLK,
+      RST   => RST,
+      CLKEN => '1',
+      DIN   => mem_addr_wire(8 DOWNTO 0),
+      DOUT  => fake_memory_input); 
 END Behavioral;

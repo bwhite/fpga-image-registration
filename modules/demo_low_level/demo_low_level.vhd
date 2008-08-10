@@ -16,8 +16,9 @@ ENTITY demo_low_level IS
         CLK_N : IN std_logic;
 
         -- IO
-        RST     : IN std_logic;
-        GPIO_SW : IN std_logic_vector(4 DOWNTO 0);
+        RST      : IN std_logic;
+        GPIO_SW  : IN std_logic_vector(4 DOWNTO 0);
+        GPIO_DIP : IN std_logic_vector(7 DOWNTO 0);
 
         -- I2C Signals
         I2C_SDA : OUT std_logic;
@@ -147,7 +148,7 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   SIGNAL memory_dump_done, memory_dump_rst, memory_dump_mem_out_valid, memory_dump_rst_reg : std_logic;
 
   SIGNAL image_store_mem_addr, image_store_mem_addr_fifo, image_display_mem_addr, memory_dump_mem_addr, mem_addr : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_read_value            : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_read_value                          : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
   TYPE   current_state IS (IMAGE_STORE, IMAGE_DISPLAY, MEM_DUMP_WRITE, MEM_DUMP_READ, IDLE);
   SIGNAL cur_state                                                                                               : current_state := IDLE;
 
@@ -166,7 +167,7 @@ ARCHITECTURE Behavioral OF demo_low_level IS
 
   -- DVI Signals
   SIGNAL clk_dvi_fb, dvi_pixel_clk, image_display_fifo_re, image_display_fifo_re_buf, image_display_fifo_empty, image_display_fifo_rst, image_display_fifo_we, dvi_h_wire, dvi_v_wire : std_logic;
-  SIGNAL image_display_fifo_read_count0, image_display_fifo_write_count0, image_display_fifo_read_count1, image_display_fifo_write_count1                                                                  : std_logic_vector(8 DOWNTO 0);
+  SIGNAL image_display_fifo_read_count0, image_display_fifo_write_count0, image_display_fifo_read_count1, image_display_fifo_write_count1                                             : std_logic_vector(8 DOWNTO 0);
 
   ATTRIBUTE KEEP : string;
   
@@ -279,6 +280,7 @@ BEGIN
 
 -------------------------------------------------------------------------------
 -- Main State Machine
+-- DIP Switch selects state, center button press activates state
 --Controls activity of IMAGE_STORE_STAGE, IMAGE_DISPLAY_STAGE, MEMORY_DUMP
   PROCESS (clk_intbuf) IS
   BEGIN  -- PROCESS
@@ -292,17 +294,19 @@ BEGIN
             image_store_rst     <= '1';
 
             -- Switch states on button press
-            CASE GPIO_SW IS
-              WHEN "00001" =>           -- N
-                cur_state <= MEM_DUMP_WRITE;
-              WHEN "00010" =>           -- E
-                cur_state <= MEM_DUMP_READ;
-              WHEN "00100" =>           -- S
-                cur_state <= IMAGE_STORE;
-              WHEN "01000" =>           -- W
-                cur_state <= IMAGE_DISPLAY;
-              WHEN OTHERS => NULL;
-            END CASE;
+            IF GPIO_SW="10000" THEN
+              CASE GPIO_DIP IS
+                WHEN "00000001" =>
+                  cur_state <= MEM_DUMP_WRITE;
+                WHEN "00000010" =>
+                  cur_state <= MEM_DUMP_READ;
+                WHEN "00000100" =>
+                  cur_state <= IMAGE_STORE;
+                WHEN "00001000" =>
+                  cur_state <= IMAGE_DISPLAY;
+                WHEN OTHERS => NULL;
+              END CASE;
+            END IF;
           WHEN MEM_DUMP_WRITE =>        -- 100
             memory_dump_rst_reg <= '0';
             IF memory_dump_done = '1' THEN
@@ -342,9 +346,9 @@ BEGIN
               image_display_fifo_re_buf <= '0';
             END IF;
 
-            IF GPIO_SW /= "01000" THEN
+            IF GPIO_SW/="10000" OR GPIO_DIP/="00001000" THEN
               cur_state <= IDLE;
-            END IF;
+            END IF;           
           WHEN OTHERS => NULL;
         END CASE;
       END IF;
@@ -480,7 +484,7 @@ BEGIN
   FIFO_DUALCLOCK_address : FIFO_DUALCLOCK_MACRO
     GENERIC MAP (
       DEVICE                  => "VIRTEX5",  -- Target Device: "VIRTEX5"
-      ALMOST_FULL_OFFSET     => X"0000",
+      ALMOST_FULL_OFFSET      => X"0000",
       ALMOST_EMPTY_OFFSET     => X"0001",    -- Sets the almost empty threshold
       DATA_WIDTH              => 20,  -- Valid values are 4, 9, 18, 36 or 72 (72 only valid when FIFO_SIZE="36Kb")
       FIFO_SIZE               => "18Kb",     -- Target BRAM, "18Kb" or "36Kb" 

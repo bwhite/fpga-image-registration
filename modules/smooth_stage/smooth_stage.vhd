@@ -184,11 +184,18 @@ BEGIN
     CASE LEVEL IS
       -- NOTE x/y_coord_trans is in 1:IMGSIZE_BITS:1 Format, thus constants
       -- are multiplied by 2
+      WHEN "000" =>                     -- 5x5 TESTING ONLY!!!
+        img_height       <= int_to_stdlvec(10#640#, IMGSIZE_BITS);    -- 5
+        img_width        <= int_to_stdlvec(10#480#, IMGSIZE_BITS);    -- 5
+        img_width_offset <= int_to_stdlvec(10#1279#, 2*IMGSIZE_BITS);  -- 9
+        initial_mem_addr <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 0
+        mem_addroff0     <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);
+        mem_addroff1     <= int_to_stdlvec(10#409200#, 2*IMGSIZE_BITS);-- Main image and 4 pyramids
       WHEN "101" =>                     -- 5x5 TESTING ONLY!!!
         img_height       <= int_to_stdlvec(10#5#, IMGSIZE_BITS);    -- 5
         img_width        <= int_to_stdlvec(10#5#, IMGSIZE_BITS);    -- 5
         img_width_offset <= int_to_stdlvec(10#9#, 2*IMGSIZE_BITS);  -- 9
-        initial_mem_addr <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 0 -- Originally6
+        initial_mem_addr <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 0
         -- TODO Update
         mem_addroff0     <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);
         mem_addroff1     <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);

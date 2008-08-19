@@ -43,7 +43,8 @@ ENTITY smooth_stage IS
         MEM_ADDR         : OUT std_logic_vector (2*IMGSIZE_BITS-1 DOWNTO 0);
         MEM_PIXEL_WRITE  : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
         MEM_RE           : OUT std_logic;
-        MEM_OUTPUT_VALID : OUT std_logic);
+        MEM_OUTPUT_VALID : OUT std_logic;
+        DONE             : OUT std_logic);
 END smooth_stage;
 
 ARCHITECTURE Behavioral OF smooth_stage IS
@@ -105,9 +106,9 @@ ARCHITECTURE Behavioral OF smooth_stage IS
 
   COMPONENT smooth_address_selector IS
     GENERIC (
-      IMGSIZE_BITS : integer := 10;
-      PIXEL_BITS   : integer := 9;
-      MEM_DELAY    : integer := 4;
+      IMGSIZE_BITS   : integer := 10;
+      PIXEL_BITS     : integer := 9;
+      MEM_DELAY      : integer := 4;
       IMG_ADDR_DELAY : integer := 14);
 
     PORT (CLK              : IN  std_logic;
@@ -145,33 +146,33 @@ ARCHITECTURE Behavioral OF smooth_stage IS
   END COMPONENT;
 
   COMPONENT smooth_conv_3x3 IS
-  GENERIC (
-    PIXEL_BITS : IN integer := 9);
-  PORT (CLK          : IN  std_logic;
-        RST          : IN  std_logic;
-        INPUT_VALID  : IN  std_logic;
-        -- 0:0:9
-        IMG_0_0      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-        IMG_0_1      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-        IMG_0_2      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-        IMG_1_0      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-        IMG_1_1      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-        IMG_1_2      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-        IMG_2_0      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-        IMG_2_1      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-        IMG_2_2      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-        OUTPUT_VALID : OUT std_logic;
-        -- 0:0:9
-        IMG_SMOOTH   : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0));
-END COMPONENT;
-  
-  SIGNAL pixgen_clken, coord_gen_new_row, coord_gen_done, coord_gen_new_row_buf, img_addr_valid, smooth_output_valid, pixgen_clken_buf, pix_buf_output_valid : std_logic;
-  SIGNAL img_height, img_width, x_coord, y_coord                                                                                                             : std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL img_width_offset, img0_mem_addr, img0_mem_addr_buf, initial_mem_offset                                                                              : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL coord_gen_state                                                                                                                                     : std_logic_vector(1 DOWNTO 0);
-  SIGNAL pattern_state, pattern_state_buf                                                                                                                    : std_logic_vector(2 DOWNTO 0);
-  SIGNAL img_0_0, img_0_1, img_0_2, img_1_0, img_1_1, img_1_2, img_2_0, img_2_1, img_2_2, img_smooth_pix, fake_memory_input                                                                    : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-  SIGNAL initial_mem_addr, mem_addroff0, mem_addroff1, img_mem_addr, mem_addr_wire                                                                                          : std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
+    GENERIC (
+      PIXEL_BITS : IN integer := 9);
+    PORT (CLK          : IN  std_logic;
+          RST          : IN  std_logic;
+          INPUT_VALID  : IN  std_logic;
+          -- 0:0:9
+          IMG_0_0      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG_0_1      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG_0_2      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG_1_0      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG_1_1      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG_1_2      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG_2_0      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG_2_1      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG_2_2      : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          OUTPUT_VALID : OUT std_logic;
+          -- 0:0:9
+          IMG_SMOOTH   : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0));
+  END COMPONENT;
+
+  SIGNAL pixgen_clken, coord_gen_new_row, coord_gen_done, coord_gen_done_buf, coord_gen_new_row_buf, img_addr_valid, smooth_output_valid, pixgen_clken_buf, pix_buf_output_valid : std_logic;
+  SIGNAL img_height, img_width, x_coord, y_coord                                                                                                                                 : std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0);
+  SIGNAL img_width_offset, img0_mem_addr, img0_mem_addr_buf, initial_mem_offset                                                                                                  : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+  SIGNAL coord_gen_state                                                                                                                                                         : std_logic_vector(1 DOWNTO 0);
+  SIGNAL pattern_state, pattern_state_buf                                                                                                                                        : std_logic_vector(2 DOWNTO 0);
+  SIGNAL img_0_0, img_0_1, img_0_2, img_1_0, img_1_1, img_1_2, img_2_0, img_2_1, img_2_2, img_smooth_pix, fake_memory_input                                                      : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  SIGNAL initial_mem_addr, mem_addroff0, mem_addroff1, img_mem_addr, mem_addr_wire                                                                                               : std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
 BEGIN
 -------------------------------------------------------------------------------
 -- Parameter ROM: Holds parameters that vary depending on the pyramid level.
@@ -184,19 +185,21 @@ BEGIN
     CASE LEVEL IS
       -- NOTE x/y_coord_trans is in 1:IMGSIZE_BITS:1 Format, thus constants
       -- are multiplied by 2
-      WHEN "000" =>                     -- 5x5 TESTING ONLY!!!
-        img_height       <= int_to_stdlvec(10#640#, IMGSIZE_BITS);    -- 5
-        img_width        <= int_to_stdlvec(10#480#, IMGSIZE_BITS);    -- 5
-        img_width_offset <= int_to_stdlvec(10#1279#, 2*IMGSIZE_BITS);  -- 9
-        initial_mem_addr <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 0
+      WHEN "000" =>                     -- 640x480
+        img_height       <= int_to_stdlvec(10#480#, IMGSIZE_BITS);     -- 480
+        img_width        <= int_to_stdlvec(10#640#, IMGSIZE_BITS);     -- 640
+        img_width_offset <= int_to_stdlvec(10#1279#, 2*IMGSIZE_BITS);  -- 1279
+        initial_mem_addr <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);     -- 0
         mem_addroff0     <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);
-        mem_addroff1     <= int_to_stdlvec(10#409200#, 2*IMGSIZE_BITS);-- Main image and 4 pyramids
+        -- Main image and 4 pyramids = 640*480+320*240+160*120+80*60+40*30
+
+        
+        mem_addroff1     <= int_to_stdlvec(10#307200#, 2*IMGSIZE_BITS);
       WHEN "101" =>                     -- 5x5 TESTING ONLY!!!
-        img_height       <= int_to_stdlvec(10#5#, IMGSIZE_BITS);    -- 5
-        img_width        <= int_to_stdlvec(10#5#, IMGSIZE_BITS);    -- 5
-        img_width_offset <= int_to_stdlvec(10#9#, 2*IMGSIZE_BITS);  -- 9
-        initial_mem_addr <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 0
-        -- TODO Update
+        img_height       <= int_to_stdlvec(10#5#, IMGSIZE_BITS);       -- 5
+        img_width        <= int_to_stdlvec(10#5#, IMGSIZE_BITS);       -- 5
+        img_width_offset <= int_to_stdlvec(10#9#, 2*IMGSIZE_BITS);     -- 9
+        initial_mem_addr <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);     -- 0
         mem_addroff0     <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);
         mem_addroff1     <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);
 
@@ -245,6 +248,19 @@ BEGIN
       DOUT  => coord_gen_new_row_buf);
 
 -------------------------------------------------------------------------------
+-- Done BUFFER
+  pipebuf_done : pipeline_bit_buffer
+    GENERIC MAP (
+      STAGES => 10)
+    PORT MAP (
+      CLK   => CLK,
+      SET   => '0',
+      RST   => RST,
+      CLKEN => '1',
+      DIN   => coord_gen_done,
+      DOUT  => coord_gen_done_buf);
+  DONE <= coord_gen_done_buf;
+-------------------------------------------------------------------------------
 -- Memory Address Selector:  Take in the coord gen state and the pixgen_clken
 -- signal to select the correct address (for reading values to the buffer or
 -- for writing the smoothed value back), control RAM signals,
@@ -263,8 +279,8 @@ BEGIN
       MEM_ADDR         => mem_addr_wire,
       MEM_RE           => MEM_RE,
       MEM_OUTPUT_VALID => MEM_OUTPUT_VALID);
-MEM_ADDR <= mem_addr_wire;
-  
+  MEM_ADDR <= mem_addr_wire;
+
 -------------------------------------------------------------------------------
 -- State Buffer
   pipebuf_state : pipeline_bit_buffer
@@ -287,7 +303,7 @@ MEM_ADDR <= mem_addr_wire;
       RST          => RST,
       CLKEN        => pixgen_clken_buf,
       NEW_ROW      => coord_gen_new_row_buf,
-      MEM_VALUE    => fake_memory_input,--MEM_PIXEL_READ,   -- From Memory
+      MEM_VALUE    => MEM_PIXEL_READ,  -- From Memory --fake_memory_input,
       OUTPUT_VALID => pix_buf_output_valid,
       IMG_0_0      => img_0_0,
       IMG_0_1      => img_0_1,
@@ -304,23 +320,23 @@ MEM_ADDR <= mem_addr_wire;
 -- centered in that neighborhood.
   smooth_conv_3x3_i : smooth_conv_3x3
     PORT MAP (
-      CLK             => CLK,
-      RST             => RST,
-      INPUT_VALID     => pix_buf_output_valid,
-      IMG_0_0         => img_0_0,
-      IMG_0_1         => img_0_1,
-      IMG_0_2         => img_0_2,
-      IMG_1_0         => img_1_0,
-      IMG_1_1         => img_1_1,
-      IMG_1_2         => img_1_2,
-      IMG_2_0         => img_2_0,
-      IMG_2_1         => img_2_1,
-      IMG_2_2         => img_2_2,
-      OUTPUT_VALID    => smooth_output_valid,
-      IMG_SMOOTH => img_smooth_pix);
+      CLK          => CLK,
+      RST          => RST,
+      INPUT_VALID  => pix_buf_output_valid,
+      IMG_0_0      => img_0_0,
+      IMG_0_1      => img_0_1,
+      IMG_0_2      => img_0_2,
+      IMG_1_0      => img_1_0,
+      IMG_1_1      => img_1_1,
+      IMG_1_2      => img_1_2,
+      IMG_2_0      => img_2_0,
+      IMG_2_1      => img_2_1,
+      IMG_2_2      => img_2_2,
+      OUTPUT_VALID => smooth_output_valid,
+      IMG_SMOOTH   => img_smooth_pix);
 -------------------------------------------------------------------------------
 -- Mem Pixel Write Buffer
-    pipebuf_mem_pixel_write : pipeline_buffer
+  pipebuf_mem_pixel_write : pipeline_buffer
     GENERIC MAP (
       WIDTH         => PIXEL_BITS,
       STAGES        => 1,

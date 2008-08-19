@@ -11,7 +11,8 @@ USE UNIMACRO.vcomponents.ALL;
 ENTITY demo_low_level IS
   GENERIC (
     IMGSIZE_BITS : integer := 10;
-    PIXEL_BITS   : integer := 9);
+    PIXEL_BITS   : integer := 9;
+    MEM_ADDROFF1 : integer := 10#307200#);
   PORT (CLK_P : IN std_logic;
         CLK_N : IN std_logic;
 
@@ -143,14 +144,31 @@ ARCHITECTURE Behavioral OF demo_low_level IS
           DVI_RESET_B : OUT std_logic);
   END COMPONENT;
 
-  SIGNAL rst_not, clk200mhz_buf, clk_int, clk_buf, sram_int_clk, clk_intbuf, we_b, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, image_store_rst : std_logic;
+  COMPONENT smooth_stage IS
+    GENERIC (
+      IMGSIZE_BITS : integer := 10;
+      PIXEL_BITS   : integer := 9;
+      MEM_DELAY    : integer := 4);
+    PORT (CLK   : IN std_logic;
+          RST   : IN std_logic;
+          LEVEL : IN std_logic_vector(2 DOWNTO 0);
+
+          MEM_PIXEL_READ   : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          MEM_ADDR         : OUT std_logic_vector (2*IMGSIZE_BITS-1 DOWNTO 0);
+          MEM_PIXEL_WRITE  : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          MEM_RE           : OUT std_logic;
+          MEM_OUTPUT_VALID : OUT std_logic;
+          DONE             : OUT std_logic);
+  END COMPONENT;
+
+  SIGNAL rst_not, clk200mhz_buf, clk_int, clk_buf, sram_int_clk, clk_intbuf, we_b, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, image_store_rst, smooth_rst, smooth_rst_reg, smooth_re, smooth_done, smooth_output_valid : std_logic;
 
   SIGNAL memory_dump_done, memory_dump_rst, memory_dump_mem_out_valid, memory_dump_rst_reg : std_logic;
 
-  SIGNAL image_store_mem_addr, image_store_mem_addr_fifo, image_display_mem_addr, memory_dump_mem_addr, mem_addr : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_read_value                          : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-  TYPE   current_state IS (IMAGE_STORE, IMAGE_DISPLAY, MEM_DUMP_WRITE, MEM_DUMP_READ, IDLE);
-  SIGNAL cur_state                                                                                               : current_state := IDLE;
+  SIGNAL image_store_mem_addr, image_store_mem_addr_fifo, image_display_mem_addr, memory_dump_mem_addr, mem_addr, smooth_addr : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_read_value, smooth_pixel_write                   : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  TYPE   current_state IS (IMAGE_STORE, IMAGE_DISPLAY, MEM_DUMP_WRITE, MEM_DUMP_READ, SMOOTH , IDLE);
+  SIGNAL cur_state                                                                                                            : current_state := IDLE;
 
 
   SIGNAL image_display_fifo_mem_addr : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
@@ -292,18 +310,21 @@ BEGIN
           WHEN IDLE =>                  -- 001
             memory_dump_rst_reg <= '1';
             image_store_rst     <= '1';
-
+            smooth_rst_reg      <= '1';
             -- Switch states on button press
-            IF GPIO_SW="10000" THEN
-              CASE GPIO_DIP IS
-                WHEN "00000001" =>
+            IF GPIO_SW = "10000" THEN
+              -- Lower 7 bits select mode, upper bit selects image slot
+              CASE GPIO_DIP(6 DOWNTO 0) IS
+                WHEN "0000001" =>
                   cur_state <= MEM_DUMP_WRITE;
-                WHEN "00000010" =>
+                WHEN "0000010" =>
                   cur_state <= MEM_DUMP_READ;
-                WHEN "00000100" =>
+                WHEN "0000100" =>
                   cur_state <= IMAGE_STORE;
-                WHEN "00001000" =>
+                WHEN "0001000" =>
                   cur_state <= IMAGE_DISPLAY;
+                WHEN "0010000" =>
+                  cur_state <= SMOOTH;
                 WHEN OTHERS => NULL;
               END CASE;
             END IF;
@@ -346,9 +367,14 @@ BEGIN
               image_display_fifo_re_buf <= '0';
             END IF;
 
-            IF GPIO_SW/="10000" OR GPIO_DIP/="00001000" THEN
+            IF GPIO_SW /= "10000" OR GPIO_DIP(6 DOWNTO 0) /= "0001000" THEN
               cur_state <= IDLE;
-            END IF;           
+            END IF;
+          WHEN SMOOTH =>
+            smooth_rst_reg <= '0';
+            IF smooth_done = '1'THEN
+              cur_state      <= IDLE;
+            END IF;
           WHEN OTHERS => NULL;
         END CASE;
       END IF;
@@ -369,7 +395,11 @@ BEGIN
       WHEN MEM_DUMP_WRITE =>
         we_b            <= '0';
         cs_b            <= NOT memory_dump_mem_out_valid;
-        mem_addr        <= memory_dump_mem_addr;
+        IF GPIO_DIP(7) = '0' THEN
+          mem_addr <= memory_dump_mem_addr;
+        ELSE
+          mem_addr <= std_logic_vector(unsigned(memory_dump_mem_addr)+MEM_ADDROFF1);
+        END IF;
         mem_write_value <= memory_dump_mem_addr(8 DOWNTO 0);
         
       WHEN MEM_DUMP_READ =>
@@ -381,14 +411,29 @@ BEGIN
       WHEN IMAGE_STORE =>
         we_b            <= '0';
         cs_b            <= NOT image_store_fifo_re;
-        mem_addr        <= image_store_mem_addr_fifo;
+        IF GPIO_DIP(7) = '0' THEN
+          mem_addr <= image_store_mem_addr_fifo;
+        ELSE
+          mem_addr <= std_logic_vector(unsigned(image_store_mem_addr_fifo)+MEM_ADDROFF1);
+        END IF;
         mem_write_value <= image_store_mem_out_value_fifo;
 
       WHEN IMAGE_DISPLAY =>
-        we_b            <= '1';
-        cs_b            <= NOT image_display_fifo_re_buf;
-        mem_addr        <= image_display_fifo_mem_addr;
+        we_b <= '1';
+        cs_b <= NOT image_display_fifo_re_buf;
+        IF GPIO_DIP(7) = '0' THEN
+          mem_addr <= image_display_fifo_mem_addr;
+        ELSE
+          mem_addr <= std_logic_vector(unsigned(image_display_fifo_mem_addr)+MEM_ADDROFF1);
+        END IF;
+
         mem_write_value <= (OTHERS => '0');
+
+      WHEN SMOOTH =>
+        we_b            <= smooth_re;
+        cs_b            <= NOT smooth_output_valid;
+        mem_addr        <= smooth_addr;
+        mem_write_value <= smooth_pixel_write;
         
       WHEN OTHERS =>
         we_b            <= '1';
@@ -575,4 +620,20 @@ BEGIN
       SRAM_CS_B => SRAM_CS_B,
       SRAM_OE_B => SRAM_OE_B,
       SRAM_DATA => SRAM_DATA);
+
+-------------------------------------------------------------------------------
+-- Smooth Stage
+  smooth_rst <= smooth_rst_reg OR rst_not;
+
+  smooth_stage_i : smooth_stage
+    PORT MAP (
+      CLK              => clk_intbuf,
+      RST              => smooth_rst,
+      LEVEL            => "000",
+      MEM_PIXEL_READ   => mem_read_value,
+      MEM_ADDR         => smooth_addr,
+      MEM_PIXEL_WRITE  => smooth_pixel_write,
+      MEM_RE           => smooth_re,
+      MEM_OUTPUT_VALID => smooth_output_valid,
+      DONE             => smooth_done);
 END Behavioral;

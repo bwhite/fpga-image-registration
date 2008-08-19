@@ -66,6 +66,11 @@ TIMEGRP "VGA_IN_PORTS" OFFSET = IN 4000 ps BEFORE "VGA_PIXEL_CLK";
 # Board General Purpose I/O
 NET RST 	        LOC="E9" |TIG |IOSTANDARD=LVDCI_33;
 
+NET "GPIO_DIP<*>" TNM = USER_IO;
+NET "GPIO_SW<*>" TNM = USER_IO;
+TIMEGRP "USER_IO" TIG;
+
+
 #NET GPIO_ROTARY[0]     	LOC="AH30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
 #NET GPIO_ROTARY[1]     	LOC="AG30";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors
 #NET GPIO_ROTARY[2]     	LOC="AH29";  # Bank 17, Vcco=1.8V, DCI using 49.9 ohm resistors

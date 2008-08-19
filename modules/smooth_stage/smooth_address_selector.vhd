@@ -112,8 +112,7 @@ BEGIN
           ELSE
             output_valid_reg <= '0';
             mem_re_reg       <= '1';
-          END IF;
-          
+          END IF;          
         END IF;
       END IF;
     END IF;

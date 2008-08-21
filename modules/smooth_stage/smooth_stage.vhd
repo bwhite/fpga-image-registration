@@ -194,7 +194,7 @@ BEGIN
         -- Main image and 4 pyramids = 640*480+320*240+160*120+80*60+40*30
 
         
-        mem_addroff1     <= int_to_stdlvec(10#307200#, 2*IMGSIZE_BITS);
+        mem_addroff1     <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);
       WHEN "101" =>                     -- 5x5 TESTING ONLY!!!
         img_height       <= int_to_stdlvec(10#5#, IMGSIZE_BITS);       -- 5
         img_width        <= int_to_stdlvec(10#5#, IMGSIZE_BITS);       -- 5

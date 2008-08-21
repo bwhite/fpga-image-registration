@@ -8,6 +8,7 @@ ENTITY pixel_memory_controller IS
 
         -- Control signals
         ADDR             : IN  std_logic_vector (19 DOWNTO 0);
+        ADDR_OFF         : IN  std_logic_vector (19 DOWNTO 0);
         WE_B             : IN  std_logic;
         CS_B             : IN  std_logic;
         PIXEL_WRITE      : IN  std_logic_vector (8 DOWNTO 0);
@@ -62,7 +63,7 @@ ARCHITECTURE Behavioral OF pixel_memory_controller IS
   SIGNAL cs_b_buf, we_b_buf                   : std_logic := '1';
   SIGNAL pixel_read_valid_wire                : std_logic;
   SIGNAL pixel_read_valid_reg                 : std_logic := '0';
-  SIGNAL addr_buf                             : std_logic_vector(17 DOWNTO 0);
+  SIGNAL addr_buf                             : std_logic_vector(19 DOWNTO 0);
 BEGIN
   PIXEL_READ_VALID <= pixel_read_valid_reg;
 
@@ -71,13 +72,13 @@ BEGIN
   byte_pipe : pipeline_buffer
     GENERIC MAP (
       WIDTH         => 2,
-      STAGES        => 4,
+      STAGES        => 3,
       DEFAULT_VALUE => 0)
     PORT MAP (
       CLK   => CLK,
       RST   => RST,
       CLKEN => '1',
-      DIN   => ADDR(1 DOWNTO 0),
+      DIN   => addr_buf(1 DOWNTO 0),
       DOUT  => byte_buf);
 
   -- Pad the pixel data with zeros and set the byte write mask to only write to
@@ -133,7 +134,7 @@ BEGIN
         we_b_buf             <= WE_B;
       END IF;
       data_read_buf <= data_read;
-      addr_buf      <= ADDR(19 DOWNTO 2);
+      addr_buf      <= std_logic_vector(unsigned(ADDR)+unsigned(ADDR_OFF));
     END IF;
   END PROCESS;
   
@@ -142,7 +143,7 @@ BEGIN
     RST => RST,
 
     -- Control signals
-    ADDR            => addr_buf,
+    ADDR            => addr_buf(19 DOWNTO 2),
     WE_B            => we_b_buf,
     BW_B            => bw_b,
     CS_B            => cs_b_buf,

@@ -101,11 +101,11 @@ BEGIN
         IF addr_select_img0 = '1' THEN
           -- Add an offset to the input address, set the read flag, and pass on
           -- the validity of the address
-          mem_address_reg  <= unsigned(IMG_MEM_ADDR) + unsigned(MEM_ADDROFF0);  -- IMG0
+          mem_address_reg  <= '0'&(unsigned(IMG_MEM_ADDR(18 DOWNTO 0))+unsigned(MEM_ADDROFF0(18 DOWNTO 0)));
           output_valid_reg <= IMG_ADDR_VALID;
           mem_re_reg       <= '1';
         ELSE
-          mem_address_reg <= unsigned(img_mem_addr_buf) + unsigned(MEM_ADDROFF1);  -- IMG1
+          mem_address_reg <= '1'&(unsigned(img_mem_addr_buf(18 DOWNTO 0))+unsigned(MEM_ADDROFF1(18 DOWNTO 0)));  -- IMG1
           IF SMOOTH_VALID = '1' AND img_addr_valid_buf = '1' THEN
             output_valid_reg <= '1';
             mem_re_reg       <= '0';

@@ -22,6 +22,8 @@ ARCHITECTURE Behavioral OF memory_dump IS
   SIGNAL counter           : unsigned(COUNTER_BITS-1 DOWNTO 0) := (OTHERS => '0');
   SIGNAL mem_out_valid_reg : std_logic                         := '0';
   SIGNAL done_reg : std_logic := '0';
+   ATTRIBUTE KEEP                                                                                                                                                                      : string;
+  ATTRIBUTE keep OF mem_addr_reg,counter                                                                                                                                                     : SIGNAL IS "true";
 BEGIN
   MEM_ADDR <= std_logic_vector(mem_addr_reg);
   MEM_OUT_VALID <= mem_out_valid_reg;

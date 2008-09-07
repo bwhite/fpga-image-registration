@@ -37,21 +37,20 @@ ENTITY demo_low_level IS
         -- VGA Chip connections
         VGA_PIXEL_CLK : IN std_logic;
         VGA_Y_GREEN   : IN std_logic_vector (7 DOWNTO 0);
-        VGA_CBCR_RED  : IN std_logic_vector (7 DOWNTO 0);
-        VGA_BLUE      : IN std_logic_vector (7 DOWNTO 0);
+        --VGA_CBCR_RED  : IN std_logic_vector (7 DOWNTO 0);
+        --VGA_BLUE      : IN std_logic_vector (7 DOWNTO 0);
         VGA_HSYNC     : IN std_logic;
         VGA_VSYNC     : IN std_logic;
 
         -- SRAM Connections
-        SRAM_CLK_FB     : IN    std_logic;
-        SRAM_CLK        : OUT   std_logic;
-        SRAM_ADDR       : OUT   std_logic_vector (17 DOWNTO 0);
-        SRAM_WE_B       : OUT   std_logic;
-        SRAM_BW_B       : OUT   std_logic_vector (3 DOWNTO 0);
-        SRAM_CS_B       : OUT   std_logic;
-        SRAM_OE_B       : OUT   std_logic;
-        SRAM_DATA       : INOUT std_logic_vector (35 DOWNTO 0);
-        SRAM_ADDR_EXTRA : OUT   std_logic_vector(3 DOWNTO 0)
+        SRAM_CLK_FB : IN    std_logic;
+        SRAM_CLK    : OUT   std_logic;
+        SRAM_ADDR   : OUT   std_logic_vector (17 DOWNTO 0);
+        SRAM_WE_B   : OUT   std_logic;
+        SRAM_BW_B   : OUT   std_logic_vector (3 DOWNTO 0);
+        SRAM_CS_B   : OUT   std_logic;
+        SRAM_OE_B   : OUT   std_logic;
+        SRAM_DATA   : INOUT std_logic_vector (35 DOWNTO 0)
         );
 END demo_low_level;
 
@@ -93,7 +92,7 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   COMPONENT memory_dump IS
     GENERIC (
       BASE_OFFSET  : integer := 0;
-      COUNT_LENGTH : integer := 1048575;  --307200;
+      COUNT_LENGTH : integer := 307200;
       COUNTER_BITS : integer := 20;
       ADDR_BITS    : integer := 20
       );
@@ -175,12 +174,12 @@ ARCHITECTURE Behavioral OF demo_low_level IS
           DONE             : OUT std_logic);
   END COMPONENT;
 
-  SIGNAL rst_not, clk200mhz_buf, clk_int, clk_buf, sram_int_clk, clk_intbuf, we_b, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, image_store_rst, smooth_rst, smooth_rst_reg, smooth_re, smooth_done, smooth_output_valid, manual_offset_enabled : std_logic;
+  SIGNAL rst_not, clk200mhz_buf, clk_int, clk_buf, sram_int_clk, clk_intbuf, we_b, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, image_store_rst, smooth_rst, smooth_rst_reg, smooth_re, smooth_done, smooth_output_valid, manual_offset_enabled, cs_mem_read_valid : std_logic;
 
   SIGNAL memory_dump_done, memory_dump_rst, memory_dump_mem_out_valid, memory_dump_rst_reg : std_logic;
 
   SIGNAL image_store_mem_addr, image_store_mem_addr_fifo, image_display_mem_addr, memory_dump_mem_addr, mem_addr, mem_addr_split, mem_addr_off, smooth_addr, manual_offset, cs_mem_addr_split : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_read_value, smooth_pixel_write, mem_dump_value, mem_dump_value_wire, bad_value                                   : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_read_value, smooth_pixel_write, cs_mem_read,cs_mem_write_value                                                                      : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
   TYPE   current_state IS (IMAGE_STORE, IMAGE_DISPLAY, MEM_DUMP_WRITE, MEM_DUMP_READ, SMOOTH , IDLE);
   SIGNAL cur_state                                                                                                                                                                            : current_state := IDLE;
 
@@ -200,9 +199,9 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   -- DVI Signals
   SIGNAL clk_dvi_fb, dvi_pixel_clk, image_display_fifo_re, image_display_fifo_re_buf, image_display_fifo_empty, image_display_fifo_rst, image_display_fifo_we, dvi_h_wire, dvi_v_wire : std_logic;
   SIGNAL image_display_fifo_read_count0, image_display_fifo_write_count0, image_display_fifo_read_count1, image_display_fifo_write_count1                                             : std_logic_vector(8 DOWNTO 0);
-  SIGNAL mem_read_fail                                                                                                                                                                : std_logic := '0';
-  ATTRIBUTE KEEP                                                                                                                                                                      : string;
-  ATTRIBUTE keep OF mem_read_fail, mem_dump_value, mem_dump_value_wire, memory_dump_mem_addr, bad_value, cs_mem_addr_split                                                            : SIGNAL IS "true";
+
+  ATTRIBUTE KEEP                                                                            : string;
+  ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value : SIGNAL IS "true";
   
 BEGIN
 -------------------------------------------------------------------------------
@@ -229,7 +228,7 @@ BEGIN
       DFS_FREQUENCY_MODE    => "HIGH",  -- LOW or HIGH frequency mode for frequency synthesis
       DLL_FREQUENCY_MODE    => "HIGH",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
       DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
-      FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0" 
+      FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0"
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
     PORT MAP (
       CLK0  => clk_buf,                 -- 0 degree DCM CLK ouptput
@@ -318,18 +317,13 @@ BEGIN
   PROCESS (clk_intbuf) IS
   BEGIN  -- PROCESS
     IF clk_intbuf'event AND clk_intbuf = '1' THEN  -- rising clock edge
+      cs_mem_read        <= mem_read_value;
+      cs_mem_read_valid  <= mem_read_valid;
+      cs_mem_write_value <= mem_write_value;
       IF rst_not = '1' THEN             -- synchronous reset (active high)
         cur_state     <= IDLE;
         manual_offset <= (OTHERS => '0');
       ELSE
-        IF mem_dump_value /= mem_read_value AND cur_state = MEM_DUMP_READ THEN
-          mem_read_fail <= '1';
-          bad_value     <= mem_dump_value;
-        ELSE
-          bad_value     <= (OTHERS => '0');
-          mem_read_fail <= '0';
-        END IF;
-
         cs_mem_addr_split <= mem_addr_split;
 
         IF manual_offset_enabled = '1' THEN
@@ -651,24 +645,6 @@ BEGIN
       DONE          => memory_dump_done);
 
 -------------------------------------------------------------------------------
--- Mem Dump Read Valid Value - This is the expected value after a write has
--- been performed
-  mem_read_valid_test_buf : pipeline_buffer
-    GENERIC MAP (
-      WIDTH         => 9,
-      STAGES        => 4,
-      DEFAULT_VALUE => 0)
-    PORT MAP (
-      CLK   => clk_intbuf,
-      RST   => '0',
-      CLKEN => '1',
-      DIN   => mem_dump_value_wire,
-      DOUT  => mem_dump_value);
-
-  mem_dump_value_wire <= (memory_dump_mem_addr(19)&memory_dump_mem_addr(18)&memory_dump_mem_addr(17)&
-                          memory_dump_mem_addr(16)&memory_dump_mem_addr(15)&memory_dump_mem_addr(6)&
-                          memory_dump_mem_addr(4)&memory_dump_mem_addr(2)&memory_dump_mem_addr(0));
--------------------------------------------------------------------------------
 -- Pixel Memory Controller  
   pixel_memory_controller_i : pixel_memory_controller
     PORT MAP (
@@ -689,8 +665,7 @@ BEGIN
       SRAM_CS_B => SRAM_CS_B,
       SRAM_OE_B => SRAM_OE_B,
       SRAM_DATA => SRAM_DATA);
-  SRAM_ADDR       <= sram_addr_wire;
-  SRAM_ADDR_EXTRA <= (OTHERS => sram_addr_wire(17));
+  SRAM_ADDR <= sram_addr_wire;
 
 -------------------------------------------------------------------------------
 -- Smooth Stage

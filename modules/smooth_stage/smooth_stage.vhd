@@ -117,8 +117,7 @@ ARCHITECTURE Behavioral OF smooth_stage IS
           IMG_ADDR_VALID   : IN  std_logic;
           CONV_Y_POS       : IN  std_logic_vector(1 DOWNTO 0);
           SMOOTH_VALID     : IN  std_logic;
-          MEM_ADDROFF0     : IN  std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
-          MEM_ADDROFF1     : IN  std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
+          MEM_ADDROFF      : IN  std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
           MEM_ADDR         : OUT std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
           MEM_RE           : OUT std_logic;
           MEM_OUTPUT_VALID : OUT std_logic;
@@ -172,7 +171,7 @@ ARCHITECTURE Behavioral OF smooth_stage IS
   SIGNAL coord_gen_state                                                                                                                                                         : std_logic_vector(1 DOWNTO 0);
   SIGNAL pattern_state, pattern_state_buf                                                                                                                                        : std_logic_vector(2 DOWNTO 0);
   SIGNAL img_0_0, img_0_1, img_0_2, img_1_0, img_1_1, img_1_2, img_2_0, img_2_1, img_2_2, img_smooth_pix, fake_memory_input                                                      : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-  SIGNAL initial_mem_addr, mem_addroff0, mem_addroff1, img_mem_addr, mem_addr_wire                                                                                               : std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
+  SIGNAL initial_mem_addr, mem_addroff, img_mem_addr, mem_addr_wire                                                                                                              : std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
 BEGIN
 -------------------------------------------------------------------------------
 -- Parameter ROM: Holds parameters that vary depending on the pyramid level.
@@ -190,26 +189,21 @@ BEGIN
         img_width        <= int_to_stdlvec(10#640#, IMGSIZE_BITS);     -- 640
         img_width_offset <= int_to_stdlvec(10#1279#, 2*IMGSIZE_BITS);  -- 1279
         initial_mem_addr <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);     -- 0
-        mem_addroff0     <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);
-        -- Main image and 4 pyramids = 640*480+320*240+160*120+80*60+40*30
+        mem_addroff      <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);
 
-        
-        mem_addroff1     <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);
       WHEN "101" =>                     -- 5x5 TESTING ONLY!!!
-        img_height       <= int_to_stdlvec(10#5#, IMGSIZE_BITS);       -- 5
-        img_width        <= int_to_stdlvec(10#5#, IMGSIZE_BITS);       -- 5
-        img_width_offset <= int_to_stdlvec(10#9#, 2*IMGSIZE_BITS);     -- 9
-        initial_mem_addr <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);     -- 0
-        mem_addroff0     <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);
-        mem_addroff1     <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);
+        img_height       <= int_to_stdlvec(10#5#, IMGSIZE_BITS);    -- 5
+        img_width        <= int_to_stdlvec(10#5#, IMGSIZE_BITS);    -- 5
+        img_width_offset <= int_to_stdlvec(10#9#, 2*IMGSIZE_BITS);  -- 9
+        initial_mem_addr <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 0
+        mem_addroff      <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);
 
       WHEN OTHERS =>
         img_height       <= (OTHERS => '0');
         img_width        <= (OTHERS => '0');
         img_width_offset <= (OTHERS => '0');
         initial_mem_addr <= (OTHERS => '0');
-        mem_addroff0     <= (OTHERS => '0');
-        mem_addroff1     <= (OTHERS => '0');
+        mem_addroff      <= (OTHERS => '0');
     END CASE;
   END PROCESS;
 
@@ -272,8 +266,7 @@ BEGIN
       IMG_ADDR_VALID   => img_addr_valid,
       CONV_Y_POS       => coord_gen_state,
       SMOOTH_VALID     => smooth_output_valid,
-      MEM_ADDROFF0     => mem_addroff0,
-      MEM_ADDROFF1     => mem_addroff1,
+      MEM_ADDROFF      => mem_addroff,
       PIXGEN_CLKEN     => pixgen_clken,
       -- Memory Outputs
       MEM_ADDR         => mem_addr_wire,
@@ -303,7 +296,7 @@ BEGIN
       RST          => RST,
       CLKEN        => pixgen_clken_buf,
       NEW_ROW      => coord_gen_new_row_buf,
-      MEM_VALUE    => MEM_PIXEL_READ,  -- From Memory --fake_memory_input,
+      MEM_VALUE    => MEM_PIXEL_READ,--fake_memory_input,----  -- From Memory --
       OUTPUT_VALID => pix_buf_output_valid,
       IMG_0_0      => img_0_0,
       IMG_0_1      => img_0_1,
@@ -351,7 +344,7 @@ BEGIN
 -------------------------------------------------------------------------------
 -- FAKE Memory: This is just for testing, it delays the LSBs of the address for
 -- 4 CTs.
-      pipebuf_fake_memory : pipeline_buffer
+  pipebuf_fake_memory : pipeline_buffer
     GENERIC MAP (
       WIDTH         => PIXEL_BITS,
       STAGES        => 4,

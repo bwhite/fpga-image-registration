@@ -38,17 +38,17 @@ ENTITY zbt_controller IS
         DATA_READ_VALID : OUT std_logic;
 
         -- SRAM Connections
-        SRAM_ADDR     : OUT   std_logic_vector (17 DOWNTO 0);
-        SRAM_WE_B     : OUT   std_logic;
-        SRAM_BW_B     : OUT   std_logic_vector (3 DOWNTO 0);
-        SRAM_CS_B     : OUT   std_logic;
-        SRAM_OE_B     : OUT   std_logic;
-        SRAM_DATA     : INOUT std_logic_vector (35 DOWNTO 0));
+        SRAM_ADDR : OUT   std_logic_vector (17 DOWNTO 0);
+        SRAM_WE_B : OUT   std_logic;
+        SRAM_BW_B : OUT   std_logic_vector (3 DOWNTO 0);
+        SRAM_CS_B : OUT   std_logic;
+        SRAM_OE_B : OUT   std_logic;
+        SRAM_DATA : INOUT std_logic_vector (35 DOWNTO 0));
 END zbt_controller;
 
 ARCHITECTURE Behavioral OF zbt_controller IS
   SIGNAL data_write_delay               : std_logic_vector(35 DOWNTO 0);
-  SIGNAL we_b_delay, cs_b_delay         : std_logic := '0';
+  SIGNAL we_delay, cs_b_delay           : std_logic := '0';
   SIGNAL data_read_valid_reg            : std_logic := '0';
   ATTRIBUTE KEEP                        : string;
   ATTRIBUTE KEEP OF data_write_delay    : SIGNAL IS "TRUE";
@@ -67,27 +67,27 @@ BEGIN
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       -- Control write data output
-      IF we_b_delay = '0' AND cs_b_delay = '0' THEN
+      IF we_delay = '1' AND cs_b_delay = '0' THEN
         SRAM_DATA <= data_write_delay;
       ELSE
         SRAM_DATA <= (OTHERS => 'Z');
       END IF;
 
       data_write_delay <= DATA_WRITE;
-      SRAM_OE_B        <= NOT we_b_delay;
+      SRAM_OE_B        <= NOT WE_B;--we_delay;
       IF RST = '1' THEN                 -- synchronous reset (active high)
         cs_b_delay          <= '1';
-        we_b_delay          <= '1';
+        we_delay            <= '0';
         data_read_valid_reg <= '0';
       ELSE
         -- Signify whether the data on the DATA_READ lines is valid
-        IF we_b_delay = '1' AND cs_b_delay = '0' THEN
+        IF we_delay = '0' AND cs_b_delay = '0' THEN
           data_read_valid_reg <= '1';
         ELSE
           data_read_valid_reg <= '0';
         END IF;
         cs_b_delay <= CS_B;
-        we_b_delay <= WE_B;
+        we_delay   <= NOT WE_B;
       END IF;
     END IF;
   END PROCESS;

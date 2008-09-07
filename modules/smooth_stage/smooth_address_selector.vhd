@@ -17,8 +17,7 @@ ENTITY smooth_address_selector IS
         IMG_ADDR_VALID   : IN  std_logic;
         CONV_Y_POS       : IN  std_logic_vector(1 DOWNTO 0);
         SMOOTH_VALID     : IN  std_logic;
-        MEM_ADDROFF0     : IN  std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
-        MEM_ADDROFF1     : IN  std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
+        MEM_ADDROFF     : IN  std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
         MEM_ADDR         : OUT std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
         MEM_RE           : OUT std_logic;
         MEM_OUTPUT_VALID : OUT std_logic;
@@ -101,11 +100,11 @@ BEGIN
         IF addr_select_img0 = '1' THEN
           -- Add an offset to the input address, set the read flag, and pass on
           -- the validity of the address
-          mem_address_reg  <= '0'&(unsigned(IMG_MEM_ADDR(18 DOWNTO 0))+unsigned(MEM_ADDROFF0(18 DOWNTO 0)));
+          mem_address_reg  <= '0'&(unsigned(IMG_MEM_ADDR(18 DOWNTO 0))+unsigned(MEM_ADDROFF(18 DOWNTO 0)));
           output_valid_reg <= IMG_ADDR_VALID;
           mem_re_reg       <= '1';
         ELSE
-          mem_address_reg <= '1'&(unsigned(img_mem_addr_buf(18 DOWNTO 0))+unsigned(MEM_ADDROFF1(18 DOWNTO 0)));  -- IMG1
+          mem_address_reg <= '1'&(unsigned(img_mem_addr_buf(18 DOWNTO 0))+unsigned(MEM_ADDROFF(18 DOWNTO 0)));  -- IMG1
           IF SMOOTH_VALID = '1' AND img_addr_valid_buf = '1' THEN
             output_valid_reg <= '1';
             mem_re_reg       <= '0';

@@ -77,8 +77,6 @@ BEGIN
       -- 0:3:PIXEL_BITS+KERNEL_BITS
       -- Sum results, round to nearest
       -- Total Size PIXEL_BITS+KERNEL_BITS+2 DOWNTO 0
-      -- PIXEL_BITS+KERNEL_BITS-1 DOWNTO KERNEL_BITS
-      -- +((PIXEL_BITS+KERNEL_BITS+2 DOWNTO KERNEL_BITS => '0')&"1"&(KERNEL_BITS-1 DOWNTO 0 => '0'))
       img_smooth_reg <= std_logic_vector(smooth_prod(0)+smooth_prod(1)+smooth_prod(2));
     END IF;
   END PROCESS;

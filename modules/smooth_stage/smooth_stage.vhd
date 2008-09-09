@@ -43,6 +43,7 @@ ENTITY smooth_stage IS
         MEM_ADDR         : OUT std_logic_vector (2*IMGSIZE_BITS-1 DOWNTO 0);
         MEM_PIXEL_WRITE  : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
         MEM_RE           : OUT std_logic;
+        MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
         MEM_OUTPUT_VALID : OUT std_logic;
         DONE             : OUT std_logic);
 END smooth_stage;
@@ -120,6 +121,7 @@ ARCHITECTURE Behavioral OF smooth_stage IS
           MEM_ADDROFF      : IN  std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
           MEM_ADDR         : OUT std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
           MEM_RE           : OUT std_logic;
+          MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
           MEM_OUTPUT_VALID : OUT std_logic;
           PIXGEN_CLKEN     : OUT std_logic);
   END COMPONENT;
@@ -271,6 +273,7 @@ BEGIN
       -- Memory Outputs
       MEM_ADDR         => mem_addr_wire,
       MEM_RE           => MEM_RE,
+      MEM_BW_B         => MEM_BW_B,
       MEM_OUTPUT_VALID => MEM_OUTPUT_VALID);
   MEM_ADDR <= mem_addr_wire;
 

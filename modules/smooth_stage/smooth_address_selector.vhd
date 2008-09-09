@@ -17,9 +17,10 @@ ENTITY smooth_address_selector IS
         IMG_ADDR_VALID   : IN  std_logic;
         CONV_Y_POS       : IN  std_logic_vector(1 DOWNTO 0);
         SMOOTH_VALID     : IN  std_logic;
-        MEM_ADDROFF     : IN  std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
+        MEM_ADDROFF      : IN  std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
         MEM_ADDR         : OUT std_logic_vector(IMGSIZE_BITS*2-1 DOWNTO 0);
         MEM_RE           : OUT std_logic;
+        MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
         MEM_OUTPUT_VALID : OUT std_logic;
         PIXGEN_CLKEN     : OUT std_logic);
 END smooth_address_selector;
@@ -65,7 +66,7 @@ BEGIN
     PORT MAP (
       CLK   => CLK,
       RST   => '0',
-      CLKEN => '1',--addr_select_img0,
+      CLKEN => '1',                     --addr_select_img0,
       DIN   => IMG_MEM_ADDR,
       DOUT  => img_mem_addr_buf);
 
@@ -78,7 +79,7 @@ BEGIN
       CLK   => CLK,
       RST   => RST,
       SET   => '0',
-      CLKEN => '1',--addr_select_img0,
+      CLKEN => '1',                     --addr_select_img0,
       DIN   => IMG_ADDR_VALID,
       DOUT  => img_addr_valid_buf);
 
@@ -100,18 +101,45 @@ BEGIN
         IF addr_select_img0 = '1' THEN
           -- Add an offset to the input address, set the read flag, and pass on
           -- the validity of the address
-          mem_address_reg  <= '0'&(unsigned(IMG_MEM_ADDR(18 DOWNTO 0))+unsigned(MEM_ADDROFF(18 DOWNTO 0)));
+          mem_address_reg <= '0'&(unsigned(IMG_MEM_ADDR(18 DOWNTO 0))+unsigned(MEM_ADDROFF(18 DOWNTO 0)));
+          -- Precomputes the byte write values as it is hard to meet timing
+          -- when this is done later (this is redundant given the address).
+          -- This assumes that the MEM_ADDROFF%4==0 (as it doesn't consider the
+          -- sum of those; however, this should be fine)
+          CASE IMG_MEM_ADDR(1 DOWNTO 0) IS
+            WHEN "00" =>
+              MEM_BW_B       <= "1110";
+            WHEN "01" =>
+              MEM_BW_B       <= "1101";
+            WHEN "10" =>
+              MEM_BW_B       <= "1011";
+            WHEN "11" =>
+              MEM_BW_B       <= "0111";
+            WHEN OTHERS => NULL;
+          END CASE;
           output_valid_reg <= IMG_ADDR_VALID;
           mem_re_reg       <= '1';
         ELSE
           mem_address_reg <= '1'&(unsigned(img_mem_addr_buf(18 DOWNTO 0))+unsigned(MEM_ADDROFF(18 DOWNTO 0)));  -- IMG1
+          -- Same situation as above
+          CASE img_mem_addr_buf(1 DOWNTO 0) IS
+            WHEN "00" =>
+              MEM_BW_B       <= "1110";
+            WHEN "01" =>
+              MEM_BW_B       <= "1101";
+            WHEN "10" =>
+              MEM_BW_B       <= "1011";
+            WHEN "11" =>
+              MEM_BW_B       <= "0111";
+            WHEN OTHERS => NULL;
+          END CASE;
           IF SMOOTH_VALID = '1' AND img_addr_valid_buf = '1' THEN
             output_valid_reg <= '1';
             mem_re_reg       <= '0';
           ELSE
             output_valid_reg <= '0';
             mem_re_reg       <= '1';
-          END IF;          
+          END IF;
         END IF;
       END IF;
     END IF;

@@ -10,6 +10,7 @@ ENTITY pixel_memory_controller IS
         ADDR             : IN  std_logic_vector (19 DOWNTO 0);
         WE_B             : IN  std_logic;
         CS_B             : IN  std_logic;
+        BW_B             : IN std_logic_vector(3 DOWNTO 0);
         PIXEL_WRITE      : IN  std_logic_vector (8 DOWNTO 0);
         PIXEL_READ       : OUT std_logic_vector(8 DOWNTO 0);
         PIXEL_READ_VALID : OUT std_logic;
@@ -58,11 +59,12 @@ ARCHITECTURE Behavioral OF pixel_memory_controller IS
   END COMPONENT;
   SIGNAL byte_buf                             : std_logic_vector(1 DOWNTO 0);
   SIGNAL data_read, data_read_buf, data_write : std_logic_vector(35 DOWNTO 0);
-  SIGNAL bw_b                                 : std_logic_vector(3 DOWNTO 0);
+  SIGNAL bw_b_reg                                 : std_logic_vector(3 DOWNTO 0);
   SIGNAL cs_b_buf, we_b_buf                   : std_logic := '1';
   SIGNAL pixel_read_valid_wire                : std_logic;
   SIGNAL pixel_read_valid_reg                 : std_logic := '0';
   SIGNAL addr_buf                             : std_logic_vector(19 DOWNTO 0);
+  SIGNAL pixel_write_reg : std_logic_vector(8 DOWNTO 0);
 BEGIN
   PIXEL_READ_VALID <= pixel_read_valid_reg;
 
@@ -82,25 +84,19 @@ BEGIN
 
   -- Pad the pixel data with zeros and set the byte write mask to only write to
   -- the correct pixel
-  PROCESS (CLK) IS
+  PROCESS (addr_buf,PIXEL_WRITE) IS
   BEGIN  -- PROCESS
-    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      CASE ADDR(1 DOWNTO 0) IS
-        WHEN "00" =>
-          bw_b       <= "1110";
-          data_write <= (26 DOWNTO 0 => 'X') & PIXEL_WRITE;
-        WHEN "01" =>
-          bw_b       <= "1101";
-          data_write <= (17 DOWNTO 0 => 'X') & PIXEL_WRITE & (8 DOWNTO 0 => 'X');
-        WHEN "10" =>
-          bw_b       <= "1011";
-          data_write <= (8 DOWNTO 0 => 'X') & PIXEL_WRITE & (17 DOWNTO 0 => 'X');
-        WHEN "11" =>
-          bw_b       <= "0111";
-          data_write <= PIXEL_WRITE & (26 DOWNTO 0 => 'X');
-        WHEN OTHERS => NULL;
-      END CASE;
-    END IF;
+    CASE addr_buf(1 DOWNTO 0) IS
+      WHEN "00" =>
+        data_write <= (26 DOWNTO 0 => 'X') & pixel_write_reg;
+      WHEN "01" =>
+        data_write <= (17 DOWNTO 0 => 'X') & pixel_write_reg & (8 DOWNTO 0 => 'X');
+      WHEN "10" =>
+        data_write <= (8 DOWNTO 0 => 'X') & pixel_write_reg & (17 DOWNTO 0 => 'X');
+      WHEN "11" =>
+        data_write <= pixel_write_reg & (26 DOWNTO 0 => 'X');
+      WHEN OTHERS => NULL;
+    END CASE;
   END PROCESS;
 
   -- Extract the pixel that we requested from the 4 read
@@ -122,6 +118,8 @@ BEGIN
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
+      pixel_write_reg <= PIXEL_WRITE;
+      bw_b_reg <= BW_B;
       IF RST = '1' THEN
         pixel_read_valid_reg <= '0';
         cs_b_buf             <= '1';
@@ -143,7 +141,7 @@ BEGIN
     -- Control signals
     ADDR            => addr_buf(19 DOWNTO 2),
     WE_B            => we_b_buf,
-    BW_B            => bw_b,
+    BW_B            => bw_b_reg,
     CS_B            => cs_b_buf,
     DATA_WRITE      => data_write,
     DATA_READ       => data_read,

@@ -119,6 +119,7 @@ ARCHITECTURE Behavioral OF demo_low_level IS
           VGA_Y     : IN std_logic_vector (7 DOWNTO 0);
           VGA_HSYNC : IN std_logic;
           VGA_VSYNC : IN std_logic;
+          CALIBRATE : IN std_logic;
 
           -- External Memory Connections
           -- 0:0:PIXEL_BITS Format
@@ -172,22 +173,22 @@ ARCHITECTURE Behavioral OF demo_low_level IS
           DONE             : OUT std_logic);
   END COMPONENT;
 
-  SIGNAL rst_not, clk200mhz_buf, clk_int, clk_buf, sram_int_clk, clk_intbuf, we_b, we_b_next, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, cs_b_next, image_store_rst, smooth_rst, smooth_rst_reg, smooth_re, smooth_done, smooth_output_valid, manual_offset_enabled, cs_mem_read_valid : std_logic;
+  SIGNAL rst_not, clk200mhz_buf, clk_int, clk_buf, sram_int_clk, clk_intbuf, we_b, we_b_next, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, cs_b_next, image_store_rst, smooth_rst, smooth_rst_reg, smooth_re, smooth_done, smooth_output_valid, manual_offset_enabled, cs_mem_read_valid, vga_calibrate, cs_we_b: std_logic;
 
   SIGNAL memory_dump_done, memory_dump_rst, memory_dump_mem_out_valid, memory_dump_rst_reg : std_logic;
 
   SIGNAL image_store_mem_addr, mem_addr_next, image_store_mem_addr_fifo, image_display_mem_addr, memory_dump_mem_addr, mem_addr, smooth_addr, manual_offset, cs_mem_addr_split : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_write_value_next, mem_read_value, smooth_pixel_write, cs_mem_read, cs_mem_write_value                    : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_write_value_next, mem_read_value, smooth_pixel_write, cs_mem_read, cs_mem_write_value             : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
   TYPE   current_state IS (IMAGE_STORE, IMAGE_DISPLAY, SMOOTH, IDLE, MEM_DUMP_WRITE, MEM_DUMP_READ);
   SIGNAL cur_state, cur_state_next                                                                                                                                             : current_state := IDLE;
 
-  SIGNAL sram_addr_wire              : std_logic_vector(17 DOWNTO 0);
-  SIGNAL image_display_fifo_mem_addr : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL image_display_value_fifo    : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-  SIGNAL smooth_bw_b, bw_b,bw_b_next           : std_logic_vector(3 DOWNTO 0);
+  SIGNAL sram_addr_wire               : std_logic_vector(17 DOWNTO 0);
+  SIGNAL image_display_fifo_mem_addr  : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+  SIGNAL image_display_value_fifo     : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  SIGNAL smooth_bw_b, bw_b, bw_b_next : std_logic_vector(3 DOWNTO 0);
+  SIGNAL gpio_sw_reg0,gpio_sw_reg1 : std_logic_vector(4 DOWNTO 0);
+  SIGNAL gpio_dip_reg0, gpio_dip_reg1 : std_logic_vector(7 DOWNTO 0);
 
-  SIGNAL gpio_dip_reg0,gpio_dip_reg1 : std_logic_vector(7 DOWNTO 0);
-  
   -- Pixel Memory Controller Signals
   SIGNAL mem_read_valid : std_logic;
 
@@ -200,8 +201,8 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   SIGNAL clk_dvi_fb, dvi_pixel_clk, image_display_fifo_re, image_display_fifo_re_buf, image_display_fifo_empty, image_display_fifo_rst, image_display_fifo_we, dvi_h_wire, dvi_v_wire : std_logic;
   SIGNAL image_display_fifo_read_count0, image_display_fifo_write_count0, image_display_fifo_read_count1, image_display_fifo_write_count1                                             : std_logic_vector(8 DOWNTO 0);
 
---  ATTRIBUTE KEEP                                                                                                : string;
---  ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value : SIGNAL IS "true";
+  ATTRIBUTE KEEP                                                                                                : string;
+  ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value, cs_we_b : SIGNAL IS "true";
   
 BEGIN
 -------------------------------------------------------------------------------
@@ -320,22 +321,26 @@ BEGIN
       cs_mem_read        <= mem_read_value;
       cs_mem_read_valid  <= mem_read_valid;
       cs_mem_write_value <= mem_write_value;
+      cs_we_b <= we_b;
+      gpio_dip_reg0      <= GPIO_DIP;
+      gpio_dip_reg1      <= gpio_dip_reg0;
+      gpio_sw_reg0 <= gpio_sw;
+      gpio_sw_reg1 <= gpio_sw_reg0;
+      cs_mem_addr_split  <= mem_addr;
+
       IF rst_not = '1' THEN             -- synchronous reset (active high)
         cur_state     <= IDLE;
         manual_offset <= (OTHERS => '0');
       ELSE
-        gpio_dip_reg0 <= GPIO_DIP;
-        gpio_dip_reg1 <= gpio_dip_reg0;
-        cs_mem_addr_split <= mem_addr;
         -- cur_state_next is one CT behind cur_state
         cur_state_next <= cur_state;
         CASE cur_state IS
-          WHEN IDLE => --------------------------------------------------------
+          WHEN IDLE =>  --------------------------------------------------------
             memory_dump_rst_reg <= '1';
             image_store_rst     <= '1';
             smooth_rst_reg      <= '1';
             -- Switch states on button press
-            IF GPIO_SW = "10000" THEN
+            IF gpio_sw_reg1 = "10000" THEN
               -- Lower 6 bits select mode, upper bit selects image slot, next
               -- bit selects offset
               CASE gpio_dip_reg1(5 DOWNTO 0) IS
@@ -357,7 +362,7 @@ BEGIN
             mem_addr_next        <= (OTHERS => 'X');
             mem_write_value_next <= (OTHERS => 'X');
             
-          WHEN MEM_DUMP_WRITE => ----------------------------------------------
+          WHEN MEM_DUMP_WRITE =>  ----------------------------------------------
             memory_dump_rst_reg <= '0';
             IF memory_dump_done = '1' THEN
               cur_state <= IDLE;
@@ -366,9 +371,19 @@ BEGIN
             cs_b_next            <= NOT memory_dump_mem_out_valid;
             mem_addr_next        <= memory_dump_mem_addr;
             mem_write_value_next <= memory_dump_mem_addr(8 DOWNTO 0);
+            CASE memory_dump_mem_addr(1 DOWNTO 0) IS
+              WHEN "00" =>
+                bw_b_next <= "1110";
+              WHEN "01" =>
+                bw_b_next <= "1101";
+              WHEN "10" =>
+                bw_b_next <= "1011";
+              WHEN "11" =>
+                bw_b_next <= "0111";
+              WHEN OTHERS => NULL;
+            END CASE;
 
-
-          WHEN MEM_DUMP_READ => -----------------------------------------------
+          WHEN MEM_DUMP_READ =>  -----------------------------------------------
             memory_dump_rst_reg <= '0';
 
             IF memory_dump_done = '1' THEN
@@ -379,7 +394,7 @@ BEGIN
             mem_addr_next        <= memory_dump_mem_addr;
             mem_write_value_next <= (OTHERS => 'X');
 
-          WHEN IMAGE_STORE => -------------------------------------------------
+          WHEN IMAGE_STORE =>  -------------------------------------------------
             image_store_rst <= '0';
             IF image_store_done = '1'THEN
               cur_state <= IDLE;
@@ -391,10 +406,10 @@ BEGIN
               image_store_fifo_re <= '0';
             END IF;
 
-            we_b_next                  <= '0';
-            cs_b_next                  <= NOT image_store_fifo_re;
-            mem_addr_next <= image_store_mem_addr_fifo;
-            mem_write_value_next       <= image_store_mem_out_value_fifo;
+            we_b_next            <= '0';
+            cs_b_next            <= NOT image_store_fifo_re;
+            mem_addr_next        <= image_store_mem_addr_fifo;
+            mem_write_value_next <= image_store_mem_out_value_fifo;
             CASE image_store_mem_addr_fifo(1 DOWNTO 0) IS
               WHEN "00" =>
                 bw_b_next <= "1110";
@@ -407,7 +422,7 @@ BEGIN
               WHEN OTHERS => NULL;
             END CASE;
             
-          WHEN IMAGE_DISPLAY => -----------------------------------------------
+          WHEN IMAGE_DISPLAY =>  -----------------------------------------------
             -- If not empty then read a value, if it is empty when we try to
             -- read, then don't read from memory
             IF image_display_fifo_empty = '0' THEN
@@ -422,27 +437,14 @@ BEGIN
               image_display_fifo_re_buf <= '0';
             END IF;
 
-            IF GPIO_SW(4) /= '1' OR gpio_dip_reg1(5 DOWNTO 0) /= "001000" THEN
+            IF gpio_sw_reg1(4) /= '1' OR gpio_dip_reg1(5 DOWNTO 0) /= "001000" THEN
               cur_state <= IDLE;
             END IF;
-            
-            we_b_next                  <= '1';
-            cs_b_next                  <= NOT image_display_fifo_re_buf;
-            mem_addr_next <= image_display_fifo_mem_addr;
-            mem_write_value_next       <= (OTHERS => 'X');
-            CASE image_display_fifo_mem_addr(1 DOWNTO 0) IS
-              WHEN "00" =>
-                bw_b_next <= "1110";
-              WHEN "01" =>
-                bw_b_next <= "1101";
-              WHEN "10" =>
-                bw_b_next <= "1011";
-              WHEN "11" =>
-                bw_b_next <= "0111";
-              WHEN OTHERS => NULL;
-            END CASE;
-            
-          WHEN SMOOTH => ------------------------------------------------------
+
+            we_b_next            <= '1';
+            cs_b_next            <= NOT image_display_fifo_re_buf;
+            mem_addr_next        <= image_display_fifo_mem_addr;
+          WHEN SMOOTH =>  ------------------------------------------------------
             smooth_rst_reg <= '0';
             IF smooth_done = '1'THEN
               cur_state <= IDLE;
@@ -454,222 +456,225 @@ BEGIN
   END PROCESS;
 
   -- Multiplexer for memory IO
-  PROCESS (cur_state_next,smooth_re,smooth_output_valid,smooth_addr,smooth_pixel_write,smooth_bw_b,we_b_next,cs_b_next,bw_b_next,mem_addr_next,mem_write_value_next) IS
- --   PROCESS (clk_intbuf) IS
-    BEGIN  -- PROCESS
-      CASE cur_state_next IS
-        WHEN SMOOTH =>
-          we_b            <= smooth_re;
-          cs_b            <= NOT smooth_output_valid;
-          bw_b            <= smooth_bw_b;       
-          mem_addr        <= smooth_addr;
-          mem_write_value <= smooth_pixel_write;
+  PROCESS (cur_state_next, smooth_re, smooth_output_valid, smooth_addr, smooth_pixel_write, smooth_bw_b, we_b_next, cs_b_next, bw_b_next, mem_addr_next, mem_write_value_next) IS
+    --   PROCESS (clk_intbuf) IS
+  BEGIN  -- PROCESS
+    CASE cur_state_next IS
+      WHEN SMOOTH =>
+        we_b            <= smooth_re;
+        cs_b            <= NOT smooth_output_valid;
+        bw_b            <= smooth_bw_b;
+        mem_addr        <= smooth_addr;
+        mem_write_value <= smooth_pixel_write;
 
-        WHEN OTHERS =>
-          we_b            <= we_b_next;
-          cs_b            <= cs_b_next;
-          bw_b            <= bw_b_next;
-          mem_addr(19) <= gpio_dip_reg1(7);
-          mem_addr(18 DOWNTO 0)        <= mem_addr_next(18 DOWNTO 0);
-          mem_write_value <= mem_write_value_next;
-      END CASE;
-    END PROCESS;
+      WHEN OTHERS =>
+        we_b                  <= we_b_next;
+        cs_b                  <= cs_b_next;
+        bw_b                  <= bw_b_next;
+        mem_addr(19)          <= gpio_dip_reg1(7);
+        mem_addr(18 DOWNTO 0) <= mem_addr_next(18 DOWNTO 0);
+        mem_write_value       <= mem_write_value_next;
+    END CASE;
+  END PROCESS;
 
 
 -------------------------------------------------------------------------------
 -- Program Video In/Out Over I2C
-    i2c_video_programmer_i : i2c_video_programmer
-      PORT MAP (
-        CLK200Mhz => clk200mhz_buf,
-        RST       => rst_not,
-        I2C_SDA   => I2C_SDA,
-        I2C_SCL   => I2C_SCL);
+  i2c_video_programmer_i : i2c_video_programmer
+    PORT MAP (
+      CLK200Mhz => clk200mhz_buf,
+      RST       => rst_not,
+      I2C_SDA   => I2C_SDA,
+      I2C_SCL   => I2C_SCL);
 
+-- VGA Calibrate
+  vga_calibrate <= gpio_sw_reg1(1);
 -------------------------------------------------------------------------------  
 -- Image Store Stage
-    image_store_stage_i : image_store_stage
-      PORT MAP (
-        CLK              => VGA_PIXEL_CLK,
-        RST              => image_store_rst,
-        -- VGA Chip Connections
-        VGA_Y            => VGA_Y_GREEN,
-        VGA_HSYNC        => VGA_HSYNC,
-        VGA_VSYNC        => VGA_VSYNC,
-        -- External Memory Connections
-        -- 0:0:PIXEL_BITS Format
-        MEM_OUT_VALUE    => mem_out_value,
-        MEM_ADDR         => image_store_mem_addr,
-        MEM_OUTPUT_VALID => image_store_mem_output_valid,
-        DONE             => image_store_done);
+  image_store_stage_i : image_store_stage
+    PORT MAP (
+      CLK              => VGA_PIXEL_CLK,
+      RST              => rst_not,      --image_store_rst,
+      -- VGA Chip Connections
+      VGA_Y            => VGA_Y_GREEN,
+      VGA_HSYNC        => VGA_HSYNC,
+      VGA_VSYNC        => VGA_VSYNC,
+      CALIBRATE        => vga_calibrate,
+      -- External Memory Connections
+      -- 0:0:PIXEL_BITS Format
+      MEM_OUT_VALUE    => mem_out_value,
+      MEM_ADDR         => image_store_mem_addr,
+      MEM_OUTPUT_VALID => image_store_mem_output_valid,
+      DONE             => image_store_done);
 
 
-    -- Use FIFOs to buffer valid ADDR and Value signals on the VGA clock
-    -- domain to be used by the ZBT RAM domain
-    FIFO_DUALCLOCK_vgain : FIFO_DUALCLOCK_MACRO
-      GENERIC MAP (
-        DEVICE                  => "VIRTEX5",    -- Target Device: "VIRTEX5" 
-        DATA_WIDTH              => 29,  -- Valid values are 4, 9, 18, 36 or 72 (72 only valid when FIFO_SIZE="36Kb")
-        FIFO_SIZE               => "18Kb",  -- Target BRAM, "18Kb" or "36Kb" 
-        FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
-      PORT MAP (
-        DO      => image_store_fifo_do,    -- Output data
-        RDCOUNT => image_store_fifo_read_count,
-        WRCOUNT => image_store_fifo_write_count,
-        EMPTY   => image_store_fifo_empty,  -- Output empty
-        DI      => image_store_fifo_di,    -- Input data
-        RDCLK   => clk_intbuf,          -- Input read clock
-        RDEN    => image_store_fifo_re,    -- Input read enable
-        RST     => image_store_rst,     -- Input reset
-        WRCLK   => VGA_PIXEL_CLK,       -- Input write clock
-        WREN    => image_store_mem_output_valid  -- Input write enable
-        );
+  -- Use FIFOs to buffer valid ADDR and Value signals on the VGA clock
+  -- domain to be used by the ZBT RAM domain
+  FIFO_DUALCLOCK_vgain : FIFO_DUALCLOCK_MACRO
+    GENERIC MAP (
+      DEVICE                  => "VIRTEX5",    -- Target Device: "VIRTEX5" 
+      DATA_WIDTH              => 29,  -- Valid values are 4, 9, 18, 36 or 72 (72 only valid when FIFO_SIZE="36Kb")
+      FIFO_SIZE               => "18Kb",  -- Target BRAM, "18Kb" or "36Kb" 
+      FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
+    PORT MAP (
+      DO      => image_store_fifo_do,   -- Output data
+      RDCOUNT => image_store_fifo_read_count,
+      WRCOUNT => image_store_fifo_write_count,
+      EMPTY   => image_store_fifo_empty,  -- Output empty
+      DI      => image_store_fifo_di,   -- Input data
+      RDCLK   => clk_intbuf,            -- Input read clock
+      RDEN    => image_store_fifo_re,   -- Input read enable
+      RST     => image_store_rst,       -- Input reset
+      WRCLK   => VGA_PIXEL_CLK,         -- Input write clock
+      WREN    => image_store_mem_output_valid  -- Input write enable
+      );
 
-    -- Pack data into fifo in/out signals
-    image_store_fifo_di            <= mem_out_value&image_store_mem_addr;
-    image_store_mem_addr_fifo      <= image_store_fifo_do(19 DOWNTO 0);
-    image_store_mem_out_value_fifo <= image_store_fifo_do(28 DOWNTO 20);
+  -- Pack data into fifo in/out signals
+  image_store_fifo_di            <= mem_out_value&image_store_mem_addr;
+  image_store_mem_addr_fifo      <= image_store_fifo_do(19 DOWNTO 0);
+  image_store_mem_out_value_fifo <= image_store_fifo_do(28 DOWNTO 20);
 
 -------------------------------------------------------------------------------
 -- Image Display Stage
-    image_display_stage_i : image_display_stage
-      PORT MAP (
-        CLK           => dvi_pixel_clk,
-        RST           => rst_not,
-        MEM_IN_VALUE  => image_display_value_fifo,
-        MEM_ADDR      => image_display_mem_addr,
-        MEM_OUT_VALID => image_display_mem_output_valid,
-        DVI_D         => DVI_D,
-        DVI_H         => dvi_h_wire,
-        DVI_V         => dvi_v_wire,
-        DVI_DE        => DVI_DE,
-        DVI_XCLK_P    => DVI_XCLK_P,
-        DVI_XCLK_N    => DVI_XCLK_N,
-        DVI_RESET_B   => DVI_RESET_B);
-    DVI_H <= dvi_h_wire;
-    DVI_V <= dvi_v_wire;
+  image_display_stage_i : image_display_stage
+    PORT MAP (
+      CLK           => dvi_pixel_clk,
+      RST           => rst_not,
+      MEM_IN_VALUE  => image_display_value_fifo,
+      MEM_ADDR      => image_display_mem_addr,
+      MEM_OUT_VALID => image_display_mem_output_valid,
+      DVI_D         => DVI_D,
+      DVI_H         => dvi_h_wire,
+      DVI_V         => dvi_v_wire,
+      DVI_DE        => DVI_DE,
+      DVI_XCLK_P    => DVI_XCLK_P,
+      DVI_XCLK_N    => DVI_XCLK_N,
+      DVI_RESET_B   => DVI_RESET_B);
+  DVI_H <= dvi_h_wire;
+  DVI_V <= dvi_v_wire;
 
-    -- Reset Circuitry
-    PROCESS (rst_not, dvi_v_wire, dvi_h_wire, cur_state) IS
-    BEGIN  -- PROCESS
-      IF rst_not = '1' OR dvi_v_wire = '0' OR dvi_h_wire = '0' OR cur_state /= IMAGE_DISPLAY THEN
-        image_display_fifo_rst <= '1';
-      ELSE
-        image_display_fifo_rst <= '0';
-      END IF;
-    END PROCESS;
+  -- Reset Circuitry
+  PROCESS (rst_not, dvi_v_wire, dvi_h_wire, cur_state) IS
+  BEGIN  -- PROCESS
+    IF rst_not = '1' OR dvi_v_wire = '0' OR dvi_h_wire = '0' OR cur_state /= IMAGE_DISPLAY THEN
+      image_display_fifo_rst <= '1';
+    ELSE
+      image_display_fifo_rst <= '0';
+    END IF;
+  END PROCESS;
 
-    -- Pass address from the DVI clock region to the RAM
-    FIFO_DUALCLOCK_address : FIFO_DUALCLOCK_MACRO
-      GENERIC MAP (
-        DEVICE                  => "VIRTEX5",  -- Target Device: "VIRTEX5"
-        ALMOST_FULL_OFFSET      => X"0000",
-        ALMOST_EMPTY_OFFSET     => X"0001",  -- Sets the almost empty threshold
-        DATA_WIDTH              => 20,  -- Valid values are 4, 9, 18, 36 or 72 (72 only valid when FIFO_SIZE="36Kb")
-        FIFO_SIZE               => "18Kb",   -- Target BRAM, "18Kb" or "36Kb" 
-        FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
-      PORT MAP (
-        RDCOUNT => image_display_fifo_read_count0,
-        WRCOUNT => image_display_fifo_write_count0,
+  -- Pass address from the DVI clock region to the RAM
+  FIFO_DUALCLOCK_address : FIFO_DUALCLOCK_MACRO
+    GENERIC MAP (
+      DEVICE                  => "VIRTEX5",  -- Target Device: "VIRTEX5"
+      ALMOST_FULL_OFFSET      => X"0000",
+      ALMOST_EMPTY_OFFSET     => X"0001",    -- Sets the almost empty threshold
+      DATA_WIDTH              => 20,  -- Valid values are 4, 9, 18, 36 or 72 (72 only valid when FIFO_SIZE="36Kb")
+      FIFO_SIZE               => "18Kb",     -- Target BRAM, "18Kb" or "36Kb" 
+      FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
+    PORT MAP (
+      RDCOUNT => image_display_fifo_read_count0,
+      WRCOUNT => image_display_fifo_write_count0,
 
 
-        DO          => image_display_fifo_mem_addr,    -- Output data      
-        ALMOSTEMPTY => image_display_fifo_empty,       -- Output empty
-        DI          => image_display_mem_addr,         -- Input data
-        RDCLK       => clk_intbuf,                     -- Input read clock
-        RDEN        => image_display_fifo_re,          -- Input read enable
-        RST         => image_display_fifo_rst,         -- Input reset
-        WRCLK       => dvi_pixel_clk,                  -- Input write clock
-        WREN        => image_display_mem_output_valid  -- Input write enable
-        );
+      DO          => image_display_fifo_mem_addr,    -- Output data      
+      ALMOSTEMPTY => image_display_fifo_empty,       -- Output empty
+      DI          => image_display_mem_addr,         -- Input data
+      RDCLK       => clk_intbuf,                     -- Input read clock
+      RDEN        => image_display_fifo_re,          -- Input read enable
+      RST         => image_display_fifo_rst,         -- Input reset
+      WRCLK       => dvi_pixel_clk,                  -- Input write clock
+      WREN        => image_display_mem_output_valid  -- Input write enable
+      );
 
-    PROCESS (cur_state, mem_read_valid) IS
-    BEGIN  -- PROCESS
-      IF cur_state_next = IMAGE_DISPLAY AND mem_read_valid = '1' THEN
-        image_display_fifo_we <= '1';
-      ELSE
-        image_display_fifo_we <= '0';
-      END IF;
-    END PROCESS;
+  PROCESS (cur_state, mem_read_valid) IS
+  BEGIN  -- PROCESS
+    IF cur_state_next = IMAGE_DISPLAY AND mem_read_valid = '1' THEN
+      image_display_fifo_we <= '1';
+    ELSE
+      image_display_fifo_we <= '0';
+    END IF;
+  END PROCESS;
 
 -- Pass value back to the DVI clock region from the RAM
-    FIFO_DUALCLOCK_value : FIFO_DUALCLOCK_MACRO
-      GENERIC MAP (
-        DEVICE                  => "VIRTEX5",  -- Target Device: "VIRTEX5" 
-        DATA_WIDTH              => 9,  -- Valid values are 4, 9, 18, 36 or 72 (72 only valid when FIFO_SIZE="36Kb")
-        FIFO_SIZE               => "18Kb",  -- Target BRAM, "18Kb" or "36Kb" 
-        FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
-      PORT MAP (
-        RDCOUNT => image_display_fifo_read_count1,
-        WRCOUNT => image_display_fifo_write_count1,
-        RDEN    => '1',                 -- Input read enable
-        RST     => image_display_fifo_rst,  -- Input reset
+  FIFO_DUALCLOCK_value : FIFO_DUALCLOCK_MACRO
+    GENERIC MAP (
+      DEVICE                  => "VIRTEX5",  -- Target Device: "VIRTEX5" 
+      DATA_WIDTH              => 9,  -- Valid values are 4, 9, 18, 36 or 72 (72 only valid when FIFO_SIZE="36Kb")
+      FIFO_SIZE               => "18Kb",     -- Target BRAM, "18Kb" or "36Kb" 
+      FIRST_WORD_FALL_THROUGH => false)  -- Sets the FIFO FWFT to TRUE or FALSE
+    PORT MAP (
+      RDCOUNT => image_display_fifo_read_count1,
+      WRCOUNT => image_display_fifo_write_count1,
+      RDEN    => '1',                   -- Input read enable
+      RST     => image_display_fifo_rst,     -- Input reset
 
-        DO    => image_display_value_fifo,  -- Output data
-        DI    => mem_read_value,            -- Input data
-        RDCLK => dvi_pixel_clk,             -- Input read clock
-        WRCLK => clk_intbuf,                -- Input write clock
-        WREN  => image_display_fifo_we      -- Input write enable
-        );
+      DO    => image_display_value_fifo,  -- Output data
+      DI    => mem_read_value,            -- Input data
+      RDCLK => dvi_pixel_clk,             -- Input read clock
+      WRCLK => clk_intbuf,                -- Input write clock
+      WREN  => image_display_fifo_we      -- Input write enable
+      );
 
 -------------------------------------------------------------------------------
 -- Memory Dump:  A counter with a base offset that is used to output a range of
 -- memory values in sequential order.
-    PROCESS (clk_intbuf) IS
-    BEGIN  -- PROCESS
-      IF clk_intbuf'event AND clk_intbuf = '1' THEN  -- rising clock edge
-        IF rst_not = '1' OR memory_dump_rst_reg = '1' THEN
-          memory_dump_rst <= '1';
-        ELSE
-          memory_dump_rst <= '0';
-        END IF;
+  PROCESS (clk_intbuf) IS
+  BEGIN  -- PROCESS
+    IF clk_intbuf'event AND clk_intbuf = '1' THEN  -- rising clock edge
+      IF rst_not = '1' OR memory_dump_rst_reg = '1' THEN
+        memory_dump_rst <= '1';
+      ELSE
+        memory_dump_rst <= '0';
       END IF;
-    END PROCESS;
+    END IF;
+  END PROCESS;
 
-    memory_dump_i : memory_dump
-      PORT MAP (
-        CLK           => clk_intbuf,
-        RST           => memory_dump_rst,
-        MEM_ADDR      => memory_dump_mem_addr,
-        MEM_OUT_VALID => memory_dump_mem_out_valid,
-        DONE          => memory_dump_done);
+  memory_dump_i : memory_dump
+    PORT MAP (
+      CLK           => clk_intbuf,
+      RST           => memory_dump_rst,
+      MEM_ADDR      => memory_dump_mem_addr,
+      MEM_OUT_VALID => memory_dump_mem_out_valid,
+      DONE          => memory_dump_done);
 
 -------------------------------------------------------------------------------
 -- Pixel Memory Controller  
-    pixel_memory_controller_i : pixel_memory_controller
-      PORT MAP (
-        CLK              => clk_intbuf,
-        RST              => rst_not,
-        ADDR             => mem_addr,
-        WE_B             => we_b,
-        CS_B             => cs_b,
-        BW_B             => bw_b,
-        PIXEL_WRITE      => mem_write_value,
-        PIXEL_READ       => mem_read_value,
-        PIXEL_READ_VALID => mem_read_valid,
+  pixel_memory_controller_i : pixel_memory_controller
+    PORT MAP (
+      CLK              => clk_intbuf,
+      RST              => rst_not,
+      ADDR             => mem_addr,
+      WE_B             => we_b,
+      CS_B             => cs_b,
+      BW_B             => bw_b,
+      PIXEL_WRITE      => mem_write_value,
+      PIXEL_READ       => mem_read_value,
+      PIXEL_READ_VALID => mem_read_valid,
 
-        -- SRAM Connections
-        SRAM_ADDR => sram_addr_wire,    --SRAM_ADDR
-        SRAM_WE_B => SRAM_WE_B,
-        SRAM_BW_B => SRAM_BW_B,
-        SRAM_CS_B => SRAM_CS_B,
-        SRAM_OE_B => SRAM_OE_B,
-        SRAM_DATA => SRAM_DATA);
-    SRAM_ADDR <= sram_addr_wire;
+      -- SRAM Connections
+      SRAM_ADDR => sram_addr_wire,      --SRAM_ADDR
+      SRAM_WE_B => SRAM_WE_B,
+      SRAM_BW_B => SRAM_BW_B,
+      SRAM_CS_B => SRAM_CS_B,
+      SRAM_OE_B => SRAM_OE_B,
+      SRAM_DATA => SRAM_DATA);
+  SRAM_ADDR <= sram_addr_wire;
 
 -------------------------------------------------------------------------------
 -- Smooth Stage
-    smooth_rst <= smooth_rst_reg OR rst_not;
+  smooth_rst <= smooth_rst_reg OR rst_not;
 
-    smooth_stage_i : smooth_stage
-      PORT MAP (
-        CLK              => clk_intbuf,
-        RST              => smooth_rst,
-        LEVEL            => "000",
-        MEM_PIXEL_READ   => mem_read_value,
-        MEM_ADDR         => smooth_addr,
-        MEM_PIXEL_WRITE  => smooth_pixel_write,
-        MEM_RE           => smooth_re,
-        MEM_BW_B         => smooth_bw_b,
-        MEM_OUTPUT_VALID => smooth_output_valid,
-        DONE             => smooth_done);
-  END Behavioral;
+  smooth_stage_i : smooth_stage
+    PORT MAP (
+      CLK              => clk_intbuf,
+      RST              => smooth_rst,
+      LEVEL            => "000",
+      MEM_PIXEL_READ   => mem_read_value,
+      MEM_ADDR         => smooth_addr,
+      MEM_PIXEL_WRITE  => smooth_pixel_write,
+      MEM_RE           => smooth_re,
+      MEM_BW_B         => smooth_bw_b,
+      MEM_OUTPUT_VALID => smooth_output_valid,
+      DONE             => smooth_done);
+END Behavioral;

@@ -38,7 +38,7 @@ BEGIN
         mem_out_valid_reg <= '0';
         done_reg <= '0';
       ELSE
-        IF counter >= COUNT_LENGTH THEN
+        IF counter = COUNT_LENGTH THEN
           done_reg          <= '1';
           mem_out_valid_reg <= '0';
         ELSE

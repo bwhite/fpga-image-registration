@@ -15,6 +15,7 @@ ENTITY image_store_stage IS
         VGA_Y     : IN std_logic_vector (7 DOWNTO 0);
         VGA_HSYNC : IN std_logic;
         VGA_VSYNC : IN std_logic;
+        CALIBRATE : IN std_logic;
 
         -- External Memory Connections
         -- 0:0:PIXEL_BITS Format
@@ -28,27 +29,29 @@ ARCHITECTURE Behavioral OF image_store_stage IS
     GENERIC (
       HEIGHT      : integer := 480;
       WIDTH       : integer := 640;
-      H_BP        : integer := 117;
-      V_BP        : integer := 34;
+      H_BP        : integer := 125;
+      V_BP        : integer := 42;
       HCOUNT_BITS : integer := IMGSIZE_BITS+1;
       VCOUNT_BITS : integer := IMGSIZE_BITS+1;
       HEIGHT_BITS : integer := IMGSIZE_BITS;
       WIDTH_BITS  : integer := IMGSIZE_BITS;
-      DATA_DELAY  : integer := 1
+      DATA_DELAY  : integer := 0
       );
     PORT (CLK         : IN  std_logic;
           RST         : IN  std_logic;
           VSYNC       : IN  std_logic;
           HSYNC       : IN  std_logic;
+          CALIBRATE   : IN  std_logic;
+          VGA_Y       : IN  std_logic_vector (7 DOWNTO 0);
           X_COORD     : OUT unsigned(WIDTH_BITS-1 DOWNTO 0);
           Y_COORD     : OUT unsigned(HEIGHT_BITS-1 DOWNTO 0);
           PIXEL_COUNT : OUT unsigned(HEIGHT_BITS+WIDTH_BITS-1 DOWNTO 0);
           DATA_VALID  : OUT std_logic;
           DONE        : OUT std_logic);
   END COMPONENT;
-  SIGNAL vga_data_valid, vga_done : std_logic;
-  SIGNAL vga_data_valid_buf, vga_done_buf         : std_logic                           := '0';
-  SIGNAL mem_addr_reg, vga_pixel_count_wire       : unsigned(2*IMGSIZE_BITS-1 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL vga_data_valid, vga_done           : std_logic;
+  SIGNAL vga_data_valid_buf, vga_done_buf   : std_logic                           := '0';
+  SIGNAL mem_addr_reg, vga_pixel_count_wire : unsigned(2*IMGSIZE_BITS-1 DOWNTO 0) := (OTHERS => '0');
 BEGIN
 
   -- VGA Timing Decode
@@ -56,8 +59,8 @@ BEGIN
     GENERIC MAP (
       HEIGHT      => 480,
       WIDTH       => 640,
-      H_BP        => 117,
-      V_BP        => 34,
+      H_BP        => 125,
+      V_BP        => 42,
       HCOUNT_BITS => IMGSIZE_BITS+1,
       VCOUNT_BITS => IMGSIZE_BITS+1,
       HEIGHT_BITS => IMGSIZE_BITS,
@@ -68,6 +71,8 @@ BEGIN
       RST         => RST,
       VSYNC       => VGA_VSYNC,
       HSYNC       => VGA_HSYNC,
+      CALIBRATE   => CALIBRATE,
+      VGA_Y       => VGA_Y,
       DATA_VALID  => vga_data_valid,
       PIXEL_COUNT => vga_pixel_count_wire,
       DONE        => vga_done);

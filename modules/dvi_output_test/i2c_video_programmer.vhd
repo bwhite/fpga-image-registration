@@ -84,8 +84,14 @@ BEGIN
       WHEN "0111"                                        =>
         i2c_data <= std_logic_vector(to_unsigned(16#6036EC#, 24));
         -- END DVI OUT I2C Codes
+        -- START VGA IN I2C Codes
+      WHEN "1000"                                        =>
+        i2c_data <= std_logic_vector(to_unsigned(16#310498#, 24));
+--      WHEN "1001"                                        =>
+--        i2c_data <= std_logic_vector(to_unsigned(16#660D98#, 24));
+        -- END VGA IN I2C Codes
       WHEN OTHERS                                        =>
-        i2c_data <= (OTHERS                              => '0');
+        i2c_data <= (OTHERS                              => 'X');
 
     END CASE;
   END PROCESS;
@@ -136,7 +142,7 @@ BEGIN
 
       IF new_data = '1' AND received_data = '1' THEN
         new_data     <= '0';
-        IF data_count < 7 THEN          -- Prevents overflow
+        IF data_count < 8 THEN          -- Prevents overflow
           data_count <= data_count + 1;
         ELSE
           data_count <= (OTHERS => '0');

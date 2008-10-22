@@ -65,7 +65,7 @@ BEGIN
       VCOUNT_BITS => IMGSIZE_BITS+1,
       HEIGHT_BITS => IMGSIZE_BITS,
       WIDTH_BITS  => IMGSIZE_BITS,
-      DATA_DELAY  => 2)
+      DATA_DELAY  => 1)
     PORT MAP (
       CLK         => CLK,
       RST         => RST,

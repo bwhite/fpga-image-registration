@@ -202,7 +202,7 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   SIGNAL image_display_fifo_read_count0, image_display_fifo_write_count0, image_display_fifo_read_count1, image_display_fifo_write_count1                                             : std_logic_vector(8 DOWNTO 0);
 
   ATTRIBUTE KEEP                                                                                                : string;
-  ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value, cs_we_b : SIGNAL IS "true";
+ -- ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value, cs_we_b : SIGNAL IS "true";
   
 BEGIN
 -------------------------------------------------------------------------------

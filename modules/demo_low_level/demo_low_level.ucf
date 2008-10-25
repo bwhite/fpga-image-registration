@@ -191,7 +191,7 @@ NET "SRAM_OE_B" TNM = SRAM_OE;
 NET "SRAM_WE_B" TNM = SRAM_PORTS;
 
 # Clock to Pad(After) - The maximum time it can take for the data to be valid after the clock
-TIMEGRP "SRAM_PORTS" OFFSET = OUT 3300 ps AFTER "CLK_P";
+TIMEGRP "SRAM_PORTS" OFFSET = OUT 3290 ps AFTER "CLK_P";
 TIMEGRP "SRAM_OE" OFFSET = OUT 3250 ps AFTER "CLK_P";
 # Pad to Setup(Before) - The maximum time that the FPGA can require an external source to provide data before the clock (the FPGA's setup time).
 TIMEGRP "SRAM_DATA" OFFSET = IN 1900 ps BEFORE "CLK_P";

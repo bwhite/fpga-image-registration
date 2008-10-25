@@ -223,8 +223,8 @@ ARCHITECTURE Behavioral OF fetch_stage IS
   SIGNAL img_height, img_width, x_coord, y_coord  : std_logic_vector(IMGSIZE_BITS-1 DOWNTO 0);
   SIGNAL coord_gen_state                          : std_logic_vector(CONV_HEIGHT_BITS-1 DOWNTO 0);
   SIGNAL pattern_state_wire, pattern_state_buf                       : std_logic_vector(CONV_HEIGHT_BITS DOWNTO 0);
-  SIGNAL new_row_buf                              : std_logic_vector(4 DOWNTO 0)                := (OTHERS => '0');
-  SIGNAL done_buf                                 : std_logic_vector(6 DOWNTO 0)                := (OTHERS => '0');
+  SIGNAL new_row_buf                              : std_logic;
+  SIGNAL done_buf                                 : std_logic;
 
   -- 0:2*IMGSIZE_BITS:0 Format
   SIGNAL img0_mem_addr, img1_mem_addr, img0_offset, img1_offset, img_width_offset, img1_mem_addr_buf0, img1_mem_addr_buf1, initial_mem_addr : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
@@ -232,8 +232,10 @@ ARCHITECTURE Behavioral OF fetch_stage IS
   SIGNAL img0_addr_valid, img1_addr_valid, img1_output_valid, oob_x, oob_y, pixgen_clken, coord_gen_done, center_pixel_active, conv_buf_output_valid, coord_gen_new_row, mem_output_valid_wire : std_logic;
   SIGNAL mem_output_valid_buf                                                                                                                                                                   : std_logic;
   SIGNAL img1_output_valid_buf                                                                                                                                          : std_logic_vector(1 DOWNTO 0) := (OTHERS => '0');
-  SIGNAL mem_value_buf                                                                                                                                                                         : std_logic_vector(8 DOWNTO 0) := (OTHERS => '0');  --
+  SIGNAL mem_value_buf, mem_value_wire                                                                                                                                                                         : std_logic_vector(PIXEL_BITS-1 DOWNTO 0) := (OTHERS => '0');  --
+    SIGNAL mem_value_fake                                                                                                                                                                         : std_logic_vector(PIXEL_BITS-1 DOWNTO 0) := (OTHERS => '0');  --
                                         --TODO REMOVE
+  SIGNAL mem_addr_wire : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
 
 BEGIN
 -- Parameter ROM: Holds parameters that vary depending on the pyramid level.
@@ -356,36 +358,31 @@ BEGIN
 
 -- New Row Buffer: Buffer the NEW_ROW signal from the conv_pixel_ordering
   -- ?CT Delay
-  PROCESS (CLK) IS
-  BEGIN  -- PROCESS
-    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      IF RST = '1' THEN                 -- synchronous reset (active high)
-        new_row_buf <= (OTHERS => '0');
-      ELSE
-        FOR i IN 3 DOWNTO 0 LOOP
-          new_row_buf(i+1) <= new_row_buf(i);
-        END LOOP;  -- i
-        new_row_buf(0) <= coord_gen_new_row;
-      END IF;
-    END IF;
-  END PROCESS;
+  new_row_buffer : pipeline_bit_buffer
+    GENERIC MAP (
+      STAGES => 5)                      -- TODO Fix
+    PORT MAP (
+      CLK   => CLK,
+      SET   => '0',
+      RST   => RST,
+      CLKEN => '1',
+      DIN   => coord_gen_new_row,
+      DOUT  => new_row_buf);
 
+  
 -- Done Buffer: Buffer the DONE signal from the conv_pixel_ordering
-  DONE <= done_buf(6);
-                                        -- 5CT Delay
-  PROCESS (CLK) IS
-  BEGIN  -- PROCESS
-    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      IF RST = '1' THEN                 -- synchronous reset (active high)
-        done_buf <= (OTHERS => '0');
-      ELSE
-        FOR i IN 5 DOWNTO 0 LOOP
-          done_buf(i+1) <= done_buf(i);
-        END LOOP;  -- i
-        done_buf(0) <= coord_gen_done;
-      END IF;
-    END IF;
-  END PROCESS;
+  DONE <= done_buf;
+                                    -- 5CT Delay
+   done_buffer : pipeline_bit_buffer
+    GENERIC MAP (
+      STAGES => 7)                      -- TODO Fix
+    PORT MAP (
+      CLK   => CLK,
+      SET   => '0',
+      RST   => RST,
+      CLKEN => '1',
+      DIN   => coord_gen_done,
+      DOUT  => done_buf);
 
 -- Current Pixel Coord Check: Store current pixel coordinates (the center of the
 -- convolution).
@@ -486,10 +483,53 @@ BEGIN
               MEM_ADDROFF0  => img0_offset,
               MEM_ADDROFF1  => img1_offset,
               PATTERN_STATE => pattern_state_wire,
-              MEM_ADDR      => MEM_ADDR,
+              MEM_ADDR      => mem_addr_wire,
               OUTPUT_VALID  => mem_output_valid_wire,
               PIXGEN_CLKEN  => pixgen_clken);
+  MEM_ADDR <= mem_addr_wire;
   MEM_OUTPUT_VALID <= mem_output_valid_wire;
+
+-- TODO Fake memory device
+  -- Mem Input Valid Buffer: This is only intended for simulation when the
+-- memory input buffer is not present.
+  -- NOTE: For final use this will be removed
+  -- 2CT Delay
+    fake_mem_valid_buffer : pipeline_bit_buffer
+    GENERIC MAP (
+      STAGES => 4)                      -- TODO Fix
+    PORT MAP (
+      CLK   => CLK,
+      SET   => '0',
+      RST   => RST,
+      CLKEN => '1',
+      DIN   => mem_output_valid_wire,
+      DOUT  => mem_output_valid_buf);
+  
+  fake_mem_value_buffer : pipeline_buffer
+    GENERIC MAP (
+      WIDTH         => PIXEL_BITS,
+      STAGES        => 4,
+      DEFAULT_VALUE => 2#0#)
+    PORT MAP (
+      CLK   => CLK,
+      RST   => RST,
+      CLKEN => '1',
+      DIN   => mem_addr_wire(PIXEL_BITS-1 DOWNTO 0),
+      DOUT  => mem_value_fake);
+
+  -- Mem Value Register: Stores the incoming value into a register
+-- NOTE: THIS ABSOLUTELY MUST BE REMOVED WHEN USING A REAL MEMORY CONTROLLER AS
+-- IT WILL SKEW THE CTs BY 1. IT IS ONLY USED TO SIMPLIFY SIMULATION TIMING!!!
+  PROCESS (CLK) IS
+  BEGIN  -- PROCESS
+    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
+      IF RST = '1' THEN                 -- synchronous reset (active high)
+        mem_value_buf <= (OTHERS => '0');
+      ELSE
+        mem_value_buf <= MEM_VALUE;
+      END IF;
+    END IF;
+  END PROCESS;
 
 -- Pattern State Buffer: Buffer the pattern_state_wire signal so that it
 -- coincides with the resulting pixel value coming from the memory
@@ -506,35 +546,6 @@ BEGIN
       DIN   => pattern_state_wire,
       DOUT  => pattern_state_buf);
   
--- Mem Input Valid Buffer: This is only intended for simulation when the
--- memory input buffer is not present.
-  -- NOTE: For final use this will be removed
-  -- 2CT Delay
-    mem_valid_buffer : pipeline_bit_buffer
-    GENERIC MAP (
-      STAGES => 4)                      -- TODO Fix
-    PORT MAP (
-      CLK   => CLK,
-      SET   => '0',
-      RST   => RST,
-      CLKEN => '1',
-      DIN   => mem_output_valid_wire,
-      DOUT  => mem_output_valid_buf);
-
--- Mem Value Register: Stores the incoming value into a register
--- NOTE: THIS ABSOLUTELY MUST BE REMOVED WHEN USING A REAL MEMORY CONTROLLER AS
--- IT WILL SKEW THE CTs BY 1. IT IS ONLY USED TO SIMPLIFY SIMULATION TIMING!!!
-  PROCESS (CLK) IS
-  BEGIN  -- PROCESS
-    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      IF RST = '1' THEN                 -- synchronous reset (active high)
-        mem_value_buf <= (OTHERS => '0');
-      ELSE
-        mem_value_buf <= MEM_VALUE;
-      END IF;
-    END IF;
-  END PROCESS;
-
 -------------------------------------------------------------------------------
 -- 3x3 Convolution Buffer:  Buffer a 3x3 neighborhood, ignore values that
 -- result from memory writes (use the stage generated in the address selector)
@@ -548,8 +559,8 @@ BEGIN
       CLK          => CLK,
       RST          => RST,
       CLKEN        => mem_output_valid_buf, 
-      NEW_ROW      => new_row_buf(2),
-      MEM_VALUE    => mem_value_buf,           --MEM_VALUE
+      NEW_ROW      => new_row_buf,
+      MEM_VALUE    => mem_value_fake,           --MEM_VALUE
       OUTPUT_VALID => conv_buf_output_valid,
       IMG_0_1      => IMG0_0_1,
       IMG_1_0      => IMG0_1_0,
@@ -565,7 +576,7 @@ BEGIN
       CLK   => CLK,
       RST   => RST,
       CLKEN => '1',
-      DIN   => mem_value_buf,           --MEM_VALUE,
+      DIN   => mem_value_fake,           --MEM_VALUE,
       DOUT  => IMG1_1_1);
 
   FSCS_VALID <= conv_buf_output_valid;

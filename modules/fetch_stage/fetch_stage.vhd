@@ -56,6 +56,7 @@ ENTITY fetch_stage IS
         MEM_ADDR         : OUT std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
         MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
         MEM_OUTPUT_VALID : OUT std_logic;
+        MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
         -- IMG0 Neighborhood for spatial derivative computation (only output
         -- the union of the middle row pixels and the middle column pixels)
         -- 0:0:PIXEL_BITS Format
@@ -148,7 +149,8 @@ ARCHITECTURE Behavioral OF fetch_stage IS
           PIXEL_STATE   : IN  std_logic_vector(PIXSTATE_BITS-1 DOWNTO 0);
           MEM_ADDR0     : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
           MEM_ADDR1     : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-          MEM_ADDROFF  : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
+          MEM_ADDROFF   : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
+          MEM_BW_B      : OUT std_logic_vector(3 DOWNTO 0);
           PATTERN_STATE : OUT std_logic_vector (PIXSTATE_BITS DOWNTO 0);
           MEM_ADDR      : OUT std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
           MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
@@ -231,13 +233,13 @@ ARCHITECTURE Behavioral OF fetch_stage IS
   -- 0:2*IMGSIZE_BITS:0 Format
   SIGNAL img0_mem_addr, img1_mem_addr, img0_offset, img1_offset, img_width_offset, img1_mem_addr_buf0, img1_mem_addr_buf1, initial_mem_addr : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
 
-  SIGNAL img0_addr_valid, img1_addr_valid, img1_output_valid, oob_x, oob_y, pixgen_clken, coord_gen_done, center_pixel_active, conv_buf_output_valid, coord_gen_new_row, mem_output_valid_wire, clken_3x3_buf,clken_img1_buf : std_logic;
-  SIGNAL mem_output_valid_buf                                                                                                                                                                                 : std_logic;
-  SIGNAL img1_output_valid_buf                                                                                                                                                                                : std_logic_vector(1 DOWNTO 0)            := (OTHERS => '0');
-  SIGNAL mem_value_buf, mem_value_wire                                                                                                                                                                        : std_logic_vector(PIXEL_BITS-1 DOWNTO 0) := (OTHERS => '0');  --
-  SIGNAL mem_value_fake                                                                                                                                                                                       : std_logic_vector(PIXEL_BITS-1 DOWNTO 0) := (OTHERS => '0');  --
+  SIGNAL img0_addr_valid, img1_addr_valid, img1_output_valid, oob_x, oob_y, pixgen_clken, coord_gen_done, center_pixel_active, conv_buf_output_valid, coord_gen_new_row, mem_output_valid_wire, clken_3x3_buf, clken_img1_buf : std_logic;
+  SIGNAL mem_output_valid_buf                                                                                                                                                                                                 : std_logic;
+  SIGNAL img1_output_valid_buf                                                                                                                                                                                                : std_logic_vector(1 DOWNTO 0)            := (OTHERS => '0');
+  SIGNAL mem_value_buf, mem_value_wire                                                                                                                                                                                        : std_logic_vector(PIXEL_BITS-1 DOWNTO 0) := (OTHERS => '0');  --
+  SIGNAL mem_value_fake                                                                                                                                                                                                       : std_logic_vector(PIXEL_BITS-1 DOWNTO 0) := (OTHERS => '0');  --
                                         --TODO REMOVE
-  SIGNAL mem_addr_wire                                                                                                                                                                                        : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+  SIGNAL mem_addr_wire                                                                                                                                                                                                        : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
 
 BEGIN
 -- Parameter ROM: Holds parameters that vary depending on the pyramid level.
@@ -484,7 +486,8 @@ BEGIN
               PIXEL_STATE   => coord_gen_state,
               MEM_ADDR0     => img0_mem_addr,
               MEM_ADDR1     => img1_mem_addr,
-              MEM_ADDROFF  => img0_offset,
+              MEM_ADDROFF   => img0_offset,
+              MEM_BW_B      => MEM_BW_B,
               PATTERN_STATE => pattern_state_wire,
               MEM_ADDR      => mem_addr_wire,
               MEM_BW_B => MEM_BW_B,
@@ -560,10 +563,10 @@ BEGIN
 -- state will be pipelined to align the valid data with the pixel state.
   PROCESS (pattern_state_buf, mem_output_valid_buf) IS
   BEGIN  -- PROCESS
-    IF mem_output_valid_buf = '1' AND pattern_state_buf(0)='1' THEN  -- TODO fix for true memory version
-      clken_3x3_buf  <= '1';
+    IF mem_output_valid_buf = '1' AND pattern_state_buf(0) = '1' THEN  -- TODO fix for true memory version
+      clken_3x3_buf <= '1';
     ELSE
-      clken_3x3_buf  <= '0';
+      clken_3x3_buf <= '0';
     END IF;
   END PROCESS;
 
@@ -580,6 +583,6 @@ BEGIN
       IMG_1_1      => IMG0_1_1,
       IMG_1_2      => IMG0_1_2,
       IMG_2_1      => IMG0_2_1);
-  IMG1_1_1 <= mem_value_fake;
+  IMG1_1_1   <= mem_value_fake;
   FSCS_VALID <= conv_buf_output_valid;
 END Behavioral;

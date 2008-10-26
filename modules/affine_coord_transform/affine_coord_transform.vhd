@@ -67,12 +67,12 @@ BEGIN
   OUTPUT_VALID   <= valid_buf(3);
   PROCESS (xp_coord_reg, yp_coord_reg) IS
   BEGIN  -- PROCESS
-    IF xp_coord_reg(20+IMGSIZE_BITS DOWNTO 11+IMGSIZE_BITS) = (9 DOWNTO 0                     => '0') THEN
+    IF unsigned(xp_coord_reg(20+IMGSIZE_BITS DOWNTO 11+IMGSIZE_BITS)) = 0 THEN
       OVERFLOW_X <= '0';
     ELSE
       OVERFLOW_X <= '1';
     END IF;
-    IF yp_coord_reg(20+IMGSIZE_BITS DOWNTO 11+IMGSIZE_BITS) = (9 DOWNTO 0                     => '0') THEN
+    IF unsigned(yp_coord_reg(20+IMGSIZE_BITS DOWNTO 11+IMGSIZE_BITS)) = 0 THEN
       OVERFLOW_Y <= '0';
     ELSE
       OVERFLOW_Y <= '1';

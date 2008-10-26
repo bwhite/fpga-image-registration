@@ -54,6 +54,7 @@ ENTITY fetch_stage IS
         MEM_VALUE        : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
         MEM_INPUT_VALID  : IN  std_logic;
         MEM_ADDR         : OUT std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+        MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
         MEM_OUTPUT_VALID : OUT std_logic;
         -- IMG0 Neighborhood for spatial derivative computation (only output
         -- the union of the middle row pixels and the middle column pixels)
@@ -147,10 +148,10 @@ ARCHITECTURE Behavioral OF fetch_stage IS
           PIXEL_STATE   : IN  std_logic_vector(PIXSTATE_BITS-1 DOWNTO 0);
           MEM_ADDR0     : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
           MEM_ADDR1     : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-          MEM_ADDROFF0  : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-          MEM_ADDROFF1  : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
+          MEM_ADDROFF  : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
           PATTERN_STATE : OUT std_logic_vector (PIXSTATE_BITS DOWNTO 0);
           MEM_ADDR      : OUT std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
+          MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
           OUTPUT_VALID  : OUT std_logic;
           PIXGEN_CLKEN  : OUT std_logic);
   END COMPONENT;
@@ -483,10 +484,10 @@ BEGIN
               PIXEL_STATE   => coord_gen_state,
               MEM_ADDR0     => img0_mem_addr,
               MEM_ADDR1     => img1_mem_addr,
-              MEM_ADDROFF0  => img0_offset,
-              MEM_ADDROFF1  => img1_offset,
+              MEM_ADDROFF  => img0_offset,
               PATTERN_STATE => pattern_state_wire,
               MEM_ADDR      => mem_addr_wire,
+              MEM_BW_B => MEM_BW_B,
               OUTPUT_VALID  => mem_output_valid_wire,
               PIXGEN_CLKEN  => pixgen_clken);
   MEM_ADDR         <= mem_addr_wire;

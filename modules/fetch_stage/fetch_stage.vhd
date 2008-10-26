@@ -56,7 +56,6 @@ ENTITY fetch_stage IS
         MEM_ADDR         : OUT std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
         MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
         MEM_OUTPUT_VALID : OUT std_logic;
-        MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
         -- IMG0 Neighborhood for spatial derivative computation (only output
         -- the union of the middle row pixels and the middle column pixels)
         -- 0:0:PIXEL_BITS Format
@@ -150,10 +149,9 @@ ARCHITECTURE Behavioral OF fetch_stage IS
           MEM_ADDR0     : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
           MEM_ADDR1     : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
           MEM_ADDROFF   : IN  std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-          MEM_BW_B      : OUT std_logic_vector(3 DOWNTO 0);
           PATTERN_STATE : OUT std_logic_vector (PIXSTATE_BITS DOWNTO 0);
           MEM_ADDR      : OUT std_logic_vector(MEMADDR_BITS-1 DOWNTO 0);
-          MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
+          MEM_BW_B      : OUT std_logic_vector(3 DOWNTO 0);
           OUTPUT_VALID  : OUT std_logic;
           PIXGEN_CLKEN  : OUT std_logic);
   END COMPONENT;
@@ -231,7 +229,7 @@ ARCHITECTURE Behavioral OF fetch_stage IS
   SIGNAL done_buf                                                                   : std_logic;
 
   -- 0:2*IMGSIZE_BITS:0 Format
-  SIGNAL img0_mem_addr, img1_mem_addr, img0_offset, img1_offset, img_width_offset, img1_mem_addr_buf0, img1_mem_addr_buf1, initial_mem_addr : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+  SIGNAL img0_mem_addr, img1_mem_addr, img_offset, img_width_offset, img1_mem_addr_buf0, img1_mem_addr_buf1, initial_mem_addr : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
 
   SIGNAL img0_addr_valid, img1_addr_valid, img1_output_valid, oob_x, oob_y, pixgen_clken, coord_gen_done, center_pixel_active, conv_buf_output_valid, coord_gen_new_row, mem_output_valid_wire, clken_3x3_buf, clken_img1_buf : std_logic;
   SIGNAL mem_output_valid_buf                                                                                                                                                                                                 : std_logic;
@@ -260,8 +258,7 @@ BEGIN
           WHEN "000" =>                 -- 720x480
             y_coord_trans    <= int_to_stdlvec(10#480#, IMGSIZE_BITS+1);  -- 240
             x_coord_trans    <= int_to_stdlvec(10#720#, IMGSIZE_BITS+1);  -- 360
-            img0_offset      <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 0
-            img1_offset      <= int_to_stdlvec(10#345600#, 2*IMGSIZE_BITS);  -- 345,600
+            img_offset      <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 0
             img_height       <= int_to_stdlvec(10#480#, IMGSIZE_BITS);  -- 480
             img_width        <= int_to_stdlvec(10#720#, IMGSIZE_BITS);  -- 720
             img_width_offset <= int_to_stdlvec(10#1439#, 2*IMGSIZE_BITS);  -- 1439 (CONV_HEIGHT-1)*WIDTH-1
@@ -270,8 +267,7 @@ BEGIN
           WHEN "001" =>                 -- 360x240
             y_coord_trans    <= int_to_stdlvec(10#240#, IMGSIZE_BITS+1);  -- 120
             x_coord_trans    <= int_to_stdlvec(10#360#, IMGSIZE_BITS+1);  -- 180
-            img0_offset      <= int_to_stdlvec(10#691200#, 2*IMGSIZE_BITS);  -- 691,200
-            img1_offset      <= int_to_stdlvec(10#777600#, 2*IMGSIZE_BITS);  -- 777,600
+            img_offset      <= int_to_stdlvec(10#691200#, 2*IMGSIZE_BITS);  -- 691,200
             img_height       <= int_to_stdlvec(10#240#, IMGSIZE_BITS);  -- 240
             img_width        <= int_to_stdlvec(10#360#, IMGSIZE_BITS);  -- 360
             img_width_offset <= int_to_stdlvec(10#719#, 2*IMGSIZE_BITS);  -- 719
@@ -280,8 +276,7 @@ BEGIN
           WHEN "010" =>                 -- 180x120
             y_coord_trans    <= int_to_stdlvec(10#120#, IMGSIZE_BITS+1);  -- 60
             x_coord_trans    <= int_to_stdlvec(10#180#, IMGSIZE_BITS+1);  -- 90
-            img0_offset      <= int_to_stdlvec(10#864000#, 2*IMGSIZE_BITS);  -- 864,000
-            img1_offset      <= int_to_stdlvec(10#885600#, 2*IMGSIZE_BITS);  -- 885,600
+            img_offset      <= int_to_stdlvec(10#864000#, 2*IMGSIZE_BITS);  -- 864,000
             img_height       <= int_to_stdlvec(10#120#, IMGSIZE_BITS);  -- 120
             img_width        <= int_to_stdlvec(10#180#, IMGSIZE_BITS);  -- 180
             img_width_offset <= int_to_stdlvec(10#359#, 2*IMGSIZE_BITS);  -- 359
@@ -290,8 +285,7 @@ BEGIN
           WHEN "011" =>                 -- 90x60
             y_coord_trans    <= int_to_stdlvec(10#60#, IMGSIZE_BITS+1);   -- 30
             x_coord_trans    <= int_to_stdlvec(10#90#, IMGSIZE_BITS+1);   -- 45
-            img0_offset      <= int_to_stdlvec(10#907200#, 2*IMGSIZE_BITS);  -- 907,200
-            img1_offset      <= int_to_stdlvec(10#912600#, 2*IMGSIZE_BITS);  -- 912,600
+            img_offset      <= int_to_stdlvec(10#907200#, 2*IMGSIZE_BITS);  -- 907,200
             img_height       <= int_to_stdlvec(10#60#, IMGSIZE_BITS);     -- 60
             img_width        <= int_to_stdlvec(10#90#, IMGSIZE_BITS);     -- 90
             img_width_offset <= int_to_stdlvec(10#179#, 2*IMGSIZE_BITS);  -- 179
@@ -300,8 +294,7 @@ BEGIN
           WHEN "100" =>                 -- 45x30
             y_coord_trans    <= int_to_stdlvec(10#30#, IMGSIZE_BITS+1);  -- 15
             x_coord_trans    <= int_to_stdlvec(10#45#, IMGSIZE_BITS+1);  -- 22.5
-            img0_offset      <= int_to_stdlvec(10#918000#, 2*IMGSIZE_BITS);  -- 918,000
-            img1_offset      <= int_to_stdlvec(10#919350#, 2*IMGSIZE_BITS);  -- 919,350
+            img_offset      <= int_to_stdlvec(10#918000#, 2*IMGSIZE_BITS);  -- 918,000
             img_height       <= int_to_stdlvec(10#30#, IMGSIZE_BITS);    -- 30
             img_width        <= int_to_stdlvec(10#45#, IMGSIZE_BITS);    -- 45
             img_width_offset <= int_to_stdlvec(10#89#, 2*IMGSIZE_BITS);  -- 89
@@ -310,8 +303,7 @@ BEGIN
           WHEN "101" =>                 -- 5x5 TESTING ONLY!!!
             y_coord_trans    <= int_to_stdlvec(10#5#, IMGSIZE_BITS+1);  -- 2.5
             x_coord_trans    <= int_to_stdlvec(10#5#, IMGSIZE_BITS+1);  -- 2.5
-            img0_offset      <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 920,700
-            img1_offset      <= int_to_stdlvec(10#25#, 2*IMGSIZE_BITS);  -- 920,725
+            img_offset      <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 920,700
             img_height       <= int_to_stdlvec(10#5#, IMGSIZE_BITS);    -- 5
             img_width        <= int_to_stdlvec(10#5#, IMGSIZE_BITS);    -- 5
             img_width_offset <= int_to_stdlvec(10#9#, 2*IMGSIZE_BITS);  -- 9
@@ -319,18 +311,24 @@ BEGIN
           WHEN "110" =>                 -- 6x6 TESTING ONLY!!!
             y_coord_trans    <= int_to_stdlvec(10#6#, IMGSIZE_BITS+1);  -- 3
             x_coord_trans    <= int_to_stdlvec(10#6#, IMGSIZE_BITS+1);  -- 3
-            img0_offset      <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 920,700
-            img1_offset      <= int_to_stdlvec(10#36#, 2*IMGSIZE_BITS);  -- 920,725
+            img_offset      <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 920,700
             img_height       <= int_to_stdlvec(10#6#, IMGSIZE_BITS);    -- 6
             img_width        <= int_to_stdlvec(10#6#, IMGSIZE_BITS);    -- 6
             img_width_offset <= int_to_stdlvec(10#11#, 2*IMGSIZE_BITS);  -- 11
             initial_mem_addr <= int_to_stdlvec(10#7#, 2*IMGSIZE_BITS);  -- 7
+          WHEN "111" =>                 -- 8x8 TESTING ONLY!!!
+            y_coord_trans    <= int_to_stdlvec(10#8#, IMGSIZE_BITS+1);  -- 4
+            x_coord_trans    <= int_to_stdlvec(10#8#, IMGSIZE_BITS+1);  -- 4
+            img_offset      <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 920,700
+            img_height       <= int_to_stdlvec(10#8#, IMGSIZE_BITS);    -- 8
+            img_width        <= int_to_stdlvec(10#8#, IMGSIZE_BITS);    -- 8
+            img_width_offset <= int_to_stdlvec(10#15#, 2*IMGSIZE_BITS);  -- 15
+            initial_mem_addr <= int_to_stdlvec(10#9#, 2*IMGSIZE_BITS);  -- 8
 
           WHEN OTHERS =>
             y_coord_trans    <= (OTHERS => '0');
             x_coord_trans    <= (OTHERS => '0');
-            img0_offset      <= (OTHERS => '0');
-            img1_offset      <= (OTHERS => '0');
+            img_offset      <= (OTHERS => '0');
             img_height       <= (OTHERS => '0');
             img_width        <= (OTHERS => '0');
             img_width_offset <= (OTHERS => '0');
@@ -486,8 +484,7 @@ BEGIN
               PIXEL_STATE   => coord_gen_state,
               MEM_ADDR0     => img0_mem_addr,
               MEM_ADDR1     => img1_mem_addr,
-              MEM_ADDROFF   => img0_offset,
-              MEM_BW_B      => MEM_BW_B,
+              MEM_ADDROFF   => img_offset,
               PATTERN_STATE => pattern_state_wire,
               MEM_ADDR      => mem_addr_wire,
               MEM_BW_B => MEM_BW_B,

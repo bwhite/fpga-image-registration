@@ -18,13 +18,17 @@ temp_yd=zeros(length(dir_list)-1,2);
 % Pass 1, find out the final mosaic size
 for i=1:length(dir_list)-1
     im0=imread(strcat(directory,dir_list(i).name));
+    im1=imread(strcat(directory,dir_list(i+1).name));
+    if ndims(im0)==2
+       im0=repmat(im0,[1 1 3]);
+       im1=repmat(im1,[1 1 3]);
+    end
     if first_im
         first_im=0;
         max_x=size(im0,2);
         max_y=size(im0,1);
         orig_img=im0;
     end
-    im1=imread(strcat(directory,dir_list(i+1).name));
     H_prev=H_prev*homographies(i*3-2:i*3,:);
     H_im1_to_im0=inv(H_prev);
     H_im1_to_im0=H_im1_to_im0/H_im1_to_im0(9);

@@ -5,9 +5,9 @@ ssd_error=[];
 overlap_pct=[];
 homographies=[]; % 3Nx3 where N is the number of pairs run
 %% Initialize parameters
-iterations = [50 30 5 2];
+iterations = [50 50 30 5 2];
 levels=length(iterations);
-verbose=0;
+verbose=1;
 
 %% Query directory, remove non-images
 dir_list=dir(directory);
@@ -103,4 +103,3 @@ for i=1:(length(dir_list)-1)
     overlap_pct=[overlap_pct pct_overlap_pixels];
     homographies=[homographies;H_im0_to_im1];
 end
-disp(1)

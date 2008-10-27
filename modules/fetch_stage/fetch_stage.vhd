@@ -364,7 +364,7 @@ BEGIN
   -- ?CT Delay
   new_row_buffer : pipeline_bit_buffer
     GENERIC MAP (
-      STAGES => 5)                      -- TODO Fix
+      STAGES => 5)
     PORT MAP (
       CLK   => CLK,
       SET   => '0',
@@ -379,7 +379,7 @@ BEGIN
   -- 5CT Delay
   done_buffer : pipeline_bit_buffer
     GENERIC MAP (
-      STAGES => 6)                      -- TODO Fix
+      STAGES => 6)                      
     PORT MAP (
       CLK   => CLK,
       SET   => '0',
@@ -438,7 +438,7 @@ BEGIN
   x_coord_buffer : pipeline_buffer
     GENERIC MAP (
       WIDTH         => IMGSIZE_BITS+2,
-      STAGES        => 10,              -- TODO Fix
+      STAGES        => 10,              
       DEFAULT_VALUE => 2#0#)
     PORT MAP (
       CLK   => CLK,
@@ -450,7 +450,7 @@ BEGIN
   y_coord_buffer : pipeline_buffer
     GENERIC MAP (
       WIDTH         => IMGSIZE_BITS+2,
-      STAGES        => 10,              -- TODO Fix
+      STAGES        => 10,              
       DEFAULT_VALUE => 2#0#)
     PORT MAP (
       CLK   => CLK,
@@ -500,7 +500,7 @@ BEGIN
   -- 2CT Delay
   fake_mem_valid_buffer : pipeline_bit_buffer
     GENERIC MAP (
-      STAGES => 4)                      -- TODO Fix
+      STAGES => 4)                      
     PORT MAP (
       CLK   => CLK,
       SET   => '0',
@@ -541,7 +541,7 @@ BEGIN
   pattern_state_buffer : pipeline_buffer
     GENERIC MAP (
       WIDTH         => CONV_HEIGHT_BITS+1,
-      STAGES        => 4,               -- TODO Fix
+      STAGES        => 4,               
       DEFAULT_VALUE => 2#0#)
     PORT MAP (
       CLK   => CLK,

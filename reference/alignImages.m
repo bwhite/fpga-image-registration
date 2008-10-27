@@ -18,7 +18,7 @@ end
 levels=length(iterations);
 
 % Create Pyramids
-[fig1, fig2] = createpyramid(im1,im2, levels);
+[fig1, fig2] = createPyramid(im1,im2, levels);
 if ~exist('Minitial')
     Minitial = eye(3);
 else

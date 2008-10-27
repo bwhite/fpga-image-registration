@@ -1,5 +1,5 @@
 function M = estAffineIter2(im1,im2,numIters,M,verbose,level,method)
-
+[T,sx,sy] = compute_scale_transform(size(im1,1),size(im1,2)); % This is a constant for each image size
 % Each iteration warps the images according to the previous
 % estimate, and estimates the residual motion.
 blur_rad=1;
@@ -7,6 +7,7 @@ blur_rad=1;
 if method==1
     im1=conv2(im1,fspecial('gaussian',[3,3],blur_rad),'same'); % Smooth first
 end
+max_M=zeros(3,3);
 for iter=1:numIters
    imWarp2=warpProjective2(im2,M);
 %   if method==1
@@ -39,6 +40,11 @@ for iter=1:numIters
    end
    
    % Compute homography
-   deltaM=estAffine2(im1,imWarp2,method);
+   deltaM=estAffine2(im1,imWarp2,T,sx,sy,method);
    M=deltaM*M;
+   max_M=max(abs(M),max_M);
+end
+if verbose==1
+    disp(sprintf('Max |M| for level %d',level))
+    disp(max_M)
 end

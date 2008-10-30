@@ -19,7 +19,7 @@ function M = estAffine2(im1,im2,T,sx,sy,method)
 if method==0
 	[fx,fy,ft]=computeDerivatives2bra(im1,im2);
 else
-	[fx,fy,ft]=fp_derivative_computation_3x3_test(im1,im2);
+	[fx,fy,ft]=fp_derivative_computation_3x3_test(im1,im2,1);
 end
 
 % Create a mesh for the x and y values

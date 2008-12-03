@@ -7,3 +7,4 @@ Sy=2^-round(log2(height/4));
 % them to vary between 1 and 0)
 
 T=[1 0 -x_bar(1);0 1 -x_bar(2); 0 0 1];
+disp(sprintf('Sx:%f Sy:%f',Sx,Sy))

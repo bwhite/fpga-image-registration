@@ -1,6 +1,6 @@
 % This returns the A,b matrices where sum(Ai,i)*x=sum(bi,i), so if these
 % are input for each pixel 
-function [A,b]=fp_make_Ab_matrices(x,y,fx,fy,ft,sx,sy,sfx,sfy)
+function [A,b]=fp_make_Ab_matrices(x,y,fx,fy,ft,sx)
 
 % Original form
 %X=[1 x y 0 0 0; 0 0 0 1 x y];
@@ -115,19 +115,27 @@ b=zeros(6,1);
 %    neg_ft_t_x_t_fy(i)/x(i);
 %    neg_ft_t_y_t_fy(i)/y(i)];
 % end
-
+max_val=zeros(6,6);
+sx2=sx*sx;
 for i=1:length(fx_sqr)
-   A=A+[fx_sqr(i)*sfx,      x_t_fx_sqr(i)*sfx,      y_t_fx_sqr(i)*sfx,       fx_t_fy(i)*sfx,     x_t_fx_t_fy(i)*sfx,     y_t_fx_t_fy(i)*sfx;
-   x_t_fx_sqr(i)*sx*sfx,  x_sqr_t_fx_sqr(i)*sx*sfx,  x_t_y_t_fx_sqr(i)*sx*sfx,   x_t_fx_t_fy(i)*sx*sfx, x_sqr_t_fx_t_fy(i)*sx*sfx, x_t_y_t_fx_t_fy(i)*sx*sfx;
-   y_t_fx_sqr(i)*sy*sfx,  x_t_y_t_fx_sqr(i)*sy*sfx,  y_sqr_t_fx_sqr(i)*sy*sfx,   y_t_fx_t_fy(i)*sy*sfx, x_t_y_t_fx_t_fy(i)*sy*sfx, y_sqr_t_fx_t_fy(i)*sy*sfx;
-   fx_t_fy(i)*sfy,     x_t_fx_t_fy(i)*sfy,     y_t_fx_t_fy(i)*sfy,      fy_sqr(i)*sfy,      x_t_fy_sqr(i)*sfy,      y_t_fy_sqr(i)*sfy;
-   x_t_fx_t_fy(i)*sx*sfy, x_sqr_t_fx_t_fy(i)*sx*sfy, x_t_y_t_fx_t_fy(i)*sx*sfy,  x_t_fy_sqr(i)*sx*sfy,  x_sqr_t_fy_sqr(i)*sx*sfy,  x_t_y_t_fy_sqr(i)*sx*sfy;
-   y_t_fx_t_fy(i)*sy*sfy, x_t_y_t_fx_t_fy(i)*sy*sfy, y_sqr_t_fx_t_fy(i)*sy*sfy,  y_t_fy_sqr(i)*sy*sfy,  x_t_y_t_fy_sqr(i)*sy*sfy,  y_sqr_t_fy_sqr(i)*sy*sfy];
+   An=[fx_sqr(i)*sx,      x_t_fx_sqr(i)*sx,      y_t_fx_sqr(i)*sx,       fx_t_fy(i)*sx,     x_t_fx_t_fy(i)*sx,     y_t_fx_t_fy(i)*sx;
+   x_t_fx_sqr(i)*sx2,  x_sqr_t_fx_sqr(i)*sx2,  x_t_y_t_fx_sqr(i)*sx2,   x_t_fx_t_fy(i)*sx2, x_sqr_t_fx_t_fy(i)*sx2, x_t_y_t_fx_t_fy(i)*sx2;
+   y_t_fx_sqr(i)*sx2,  x_t_y_t_fx_sqr(i)*sx2,  y_sqr_t_fx_sqr(i)*sx2,   y_t_fx_t_fy(i)*sx2, x_t_y_t_fx_t_fy(i)*sx2, y_sqr_t_fx_t_fy(i)*sx2;
+   fx_t_fy(i)*sx,     x_t_fx_t_fy(i)*sx,     y_t_fx_t_fy(i)*sx,      fy_sqr(i)*sx,      x_t_fy_sqr(i)*sx,      y_t_fy_sqr(i)*sx;
+   x_t_fx_t_fy(i)*sx2, x_sqr_t_fx_t_fy(i)*sx2, x_t_y_t_fx_t_fy(i)*sx2,  x_t_fy_sqr(i)*sx2,  x_sqr_t_fy_sqr(i)*sx2,  x_t_y_t_fy_sqr(i)*sx2;
+   y_t_fx_t_fy(i)*sx2, x_t_y_t_fx_t_fy(i)*sx2, y_sqr_t_fx_t_fy(i)*sx2,  y_t_fy_sqr(i)*sx2,  x_t_y_t_fy_sqr(i)*sx2,  y_sqr_t_fy_sqr(i)*sx2];
 
-   b=b+[neg_ft_t_fx(i)*sfx;
-   neg_ft_x_t_fx(i)*sx*sfx;
-   neg_ft_t_y_t_fx(i)*sy*sfx;
-   neg_ft_t_fy(i)*sfy;
-   neg_ft_t_x_t_fy(i)*sx*sfy;
-   neg_ft_t_y_t_fy(i)*sy*sfy];
+   bn=[neg_ft_t_fx(i)*sx;
+   neg_ft_x_t_fx(i)*sx2;
+   neg_ft_t_y_t_fx(i)*sx2;
+   neg_ft_t_fy(i)*sx;
+   neg_ft_t_x_t_fy(i)*sx2;
+   neg_ft_t_y_t_fy(i)*sx2];
+
+   max_val=max(abs([An,max_val',bn])');
+
+   A=A+An;
+   b=b+bn;
 end
+disp('Max')
+disp(max_val)

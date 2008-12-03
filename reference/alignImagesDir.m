@@ -90,7 +90,7 @@ for i=1:(length(dir_list)-1)
     figure(202);
     imagesc(image1_warped);colormap 'gray'
     figure(203);
-    image_combined=normalize_image(blend_images(im0,image1_warped));
+    image_combined=normalize_image(blend_images(im0,image1_warped),0);
     image_blended=zeros([size(image1_warped) 3]);
     image_blended(1:size(im0,1),1:size(im0,2),1)=normalize_image(im0)*255;
     image_blended(1:size(image1_warped,1),1:size(image1_warped,2),2)=normalize_image(image1_warped)*255;

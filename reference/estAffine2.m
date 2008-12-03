@@ -19,7 +19,7 @@ function M = estAffine2(im1,im2,T,sx,sy,method)
 if method==0
 	[fx,fy,ft]=computeDerivatives2bra(im1,im2);
 else
-	[fx,fy,ft]=fp_derivative_computation_3x3_test(im1,im2,1);
+	[fx,fy,ft]=fp_derivative_computation_3x3_test(im1,im2,0);
 end
 
 % Create a mesh for the x and y values
@@ -46,17 +46,25 @@ ygrid=x_wave(2,:)';
 A=0;
 b=0;
 
+
+
 if method==0
+    max_val=zeros(6,6);
     for i=1:length(xgrid)
         X=[1 xgrid(i) ygrid(i) 0 0 0; 0 0 0 1 xgrid(i) ygrid(i)];
         DelI=[fx(i);fy(i)];
-        A=A+X'*DelI*DelI'*X;
-        b=b-X'*DelI*ft(i);
+        An=X'*DelI*DelI'*X;
+        bn=X'*DelI*ft(i);
+        max_val=max(abs([An,max_val',bn])');
+        A=A+An;
+        b=b-bn;
     end
+    
+    disp('Max')
+    disp(max_val)
 else
-		[A,b]=fp_make_Ab_matrices(xgrid,ygrid,fx,fy,ft,sx,sy,sfx,sfy);
+		[A,b]=fp_make_Ab_matrices(xgrid,ygrid,fx,fy,ft,sx);
 end
-
 % Solve overconstrained least squares solution
 p = A\b;
 

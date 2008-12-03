@@ -63,7 +63,7 @@ ARCHITECTURE Behavioral OF compute_stage IS
           DIN   : IN  std_logic;
           DOUT  : OUT std_logic);
   END COMPONENT;
-  
+  SIGNAL ix_reg,iy_reg,it_reg : std_logic_vector(PIXEL_BITS DOWNTO 0) := (OTHERS => '0');
 BEGIN
 
   done_buffer : pipeline_bit_buffer
@@ -111,14 +111,22 @@ BEGIN
       CLKEN => '1',
       DIN   => TRANS_Y_COORD,
       DOUT  => TRANS_Y_COORD_BUF);
-
+  IX <= ix_reg;
+  IY <= iy_reg;
+  IT <= it_reg;
   -- Compute differences
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      IX <= std_logic_vector(signed('0'&IMG0_1_2)-signed('0'&IMG0_1_0));
-      IY <= std_logic_vector(signed('0'&IMG0_2_1)-signed('0'&IMG0_0_1));
-      IT <= std_logic_vector(signed('0'&IMG1_1_1)-signed('0'&IMG0_1_1));
+      IF RST='1' THEN
+        ix_reg <= (OTHERS => '0');
+        iy_reg <= (OTHERS => '0');
+        it_reg <= (OTHERS => '0');
+      ELSE
+        ix_reg <= std_logic_vector(signed('0'&IMG0_1_2)-signed('0'&IMG0_1_0));
+        iy_reg <= std_logic_vector(signed('0'&IMG0_2_1)-signed('0'&IMG0_0_1));
+        it_reg <= std_logic_vector(signed('0'&IMG1_1_1)-signed('0'&IMG0_1_1));
+      END IF;
     END IF;
   END PROCESS;
 END Behavioral;

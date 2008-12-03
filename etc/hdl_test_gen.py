@@ -30,6 +30,7 @@ def baseconv(number,fromdigits,todigits):
         neg=0
 
     # make an integer out of the number
+    number=number.upper()
     x=long(0)
     for digit in str(number):
         try:
@@ -249,6 +250,8 @@ class hdl_test_gen(object):
                         except AttributeError:
                             try: # Try using default of decimal
                                 test[index][test_port_ind]=to_bin(test[index][test_port_ind],10,int(port[test_port_ind][1]))
+                            except IndexError:
+                                pass
                             except AttributeError:
                                 pass
                             except ValueError:

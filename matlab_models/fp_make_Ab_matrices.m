@@ -1,133 +1,122 @@
 % This returns the A,b matrices where sum(Ai,i)*x=sum(bi,i), so if these
 % are input for each pixel 
-function [A,b]=fp_make_Ab_matrices(x,y,fx,fy,ft,sx,sy,sfx,sfy)
-
-% Original form
-%X=[1 x y 0 0 0; 0 0 0 1 x y];
-%DelI=[fx;fy];
-%A=X'*DelI*DelI'*X;
-%b=-X'*DelI*ft;
-
-% Condensed form
-% A= [fx^2,    x*fx^2,    y*fx^2,       fx*fy,   x*fx*fy,   y*fx*fy;
-%     x*fx^2,  x^2*fx^2,  x*fx^2*y,     x*fx*fy, x^2*fx*fy, x*fx*fy*y;
-%     y*fx^2,  x*fx^2*y,  y^2*fx^2,     y*fx*fy, x*fx*fy*y, y^2*fx*fy;
-%     fx*fy,   x*fx*fy,   y*fx*fy,      fy^2,    x*fy^2,    y*fy^2;
-%     x*fx*fy, x^2*fx*fy, x*fx*fy*y,    x*fy^2,  x^2*fy^2,  x*fy^2*y;
-%     y*fx*fy, x*fx*fy*y, y^2*fx*fy,    y*fy^2,  x*fy^2*y,  y^2*fy^2];
-% b=[-ft*fx;
-%    -ft*x*fx;
-%    -ft*y*fx;
-%    -ft*fy;
-%    -ft*x*fy;
-%    -ft*y*fy];
-
-% Reduced form, neg means '-', _sqr means immediately previous term squared, ?_t_? means "? * ?"
-
-% These are required by the A/b matrix computations - 1st Tier of
-% multiplications
-% neg_ft=-ft;
-% fx_sqr=fx^2;
-% fy_sqr=fy^2;
-% x_sqr=x^2;
-% y_sqr=y^2;
-% fx_t_fy=fx*fy;
-% x_t_fx=x*fx;
-% y_t_fy=y*fy;
-% x_t_y=x*y;
-% 
-% % These use the previous multiplications - 2nd Tier of multiplications
-% x_t_fx_sqr=x*fx_sqr;
-% y_t_fy_sqr=y*fy_sqr;
-% 
-% % 3rd Tier
-% y_t_fx_sqr=y*fx_sqr;
-% x_t_fy_sqr=x*fy_sqr;
-% y_t_fx_t_fy=y*fx_t_fy;
-% x_t_fx_t_fy=x*fx_t_fy;
-% % Condensed form
-% A= [fx_sqr,      x_t_fx_sqr,      y_t_fx_sqr,       fx_t_fy,     x_t_fx_t_fy,     y_t_fx_t_fy;
-%     x_t_fx_sqr,  x_sqr*fx_sqr,    x_t_y*fx_sqr,   x_t_fx_t_fy,   x_sqr*fx_t_fy, x_t_fx*y_t_fy;
-%     y_t_fx_sqr,    x_t_y*fx_sqr,    y_sqr*fx_sqr,   y_t_fx_t_fy,   x_t_fx*y_t_fy, y_sqr*fx_t_fy;
-%     fx_t_fy,     x_t_fx_t_fy,       y_t_fx_t_fy,      fy_sqr,      x_t_fy_sqr,      y_t_fy_sqr;
-%     x_t_fx_t_fy,   x_sqr*fx_t_fy,   x_t_fx*y_t_fy,  x_t_fy_sqr,    x_sqr*fy_sqr,  x_t_fy_sqr*y;
-%     y_t_fx_t_fy,   x_t_fx*y_t_fy,   y_sqr*fx_t_fy,  y_t_fy_sqr,  x_t_y*fy_sqr,  y_sqr*fy_sqr];
-% b=[neg_ft*fx;
-%    neg_ft*x_t_fx;
-%    neg_ft*y*fx;
-%    neg_ft*fy;
-%    neg_ft*x*fy;
-%    neg_ft*y_t_fy];
-% 
-
-%% Reduced 2
-% Condensed form - 31 mult pipelined, 21 mult if done in 2 passes
-% Tier 1 - 10 Mul
-fx_sqr=fx.*fx;
-fx_t_fy=fx.*fy;
-fy_sqr=fy.*fy;
-x_sqr=x.*x;
-y_sqr=y.*y;
-x_t_y=x.*y;
-x_t_fx=x.*fx;
-y_t_fx=y.*fx;
-x_t_fy=x.*fy;
-y_t_fy=y.*fy;
-
-
-% Tier 2 - 21 Mul
-x_t_fx_sqr=x.*fx_sqr;
-y_t_fy_sqr=y.*fy_sqr;
-x_t_fx_t_fy=x.*fx_t_fy;
-y_t_fx_t_fy=y.*fx_t_fy;
-y_t_fx_sqr=y.*fx_sqr;
-x_t_fy_sqr=x.*fy_sqr;
-x_sqr_t_fx_sqr=x_sqr.*fx_sqr;
-x_t_y_t_fx_sqr=x_t_y.*fx_sqr;
-y_sqr_t_fx_sqr=y_sqr.*fx_sqr;
-x_sqr_t_fx_t_fy=x_sqr.*fx_t_fy;
-x_t_y_t_fx_t_fy=x_t_y.*fx_t_fy;
-x_t_y_t_fy_sqr=x_t_y.*fy_sqr;
-y_sqr_t_fx_t_fy=y_sqr.*fx_t_fy;
-y_sqr_t_fy_sqr=y_sqr.*fy_sqr;
-x_sqr_t_fy_sqr=x_sqr.*fy_sqr;
-
-neg_ft_t_fx=-ft.*fx;
-neg_ft_t_fy=-ft.*fy;
-neg_ft_x_t_fx=-ft.*x_t_fx;
-neg_ft_t_y_t_fx=-ft.*y_t_fx;
-neg_ft_t_x_t_fy=-ft.*x_t_fy;
-neg_ft_t_y_t_fy=-ft.*y_t_fy;
-A=zeros(6);
-b=zeros(6,1);
-% for i=1:length(fx_sqr)
-%    A=A+[fx_sqr(i),      x_t_fx_sqr(i),      y_t_fx_sqr(i),       fx_t_fy(i),     x_t_fx_t_fy(i),     y_t_fx_t_fy(i);
-%    x_t_fx_sqr(i),  x_sqr_t_fx_sqr(i),  x_t_y_t_fx_sqr(i),   x_t_fx_t_fy(i), x_sqr_t_fx_t_fy(i), x_t_y_t_fx_t_fy(i);
-%    y_t_fx_sqr(i),  x_t_y_t_fx_sqr(i),  y_sqr_t_fx_sqr(i),   y_t_fx_t_fy(i), x_t_y_t_fx_t_fy(i), y_sqr_t_fx_t_fy(i);
-%    fx_t_fy(i),     x_t_fx_t_fy(i),     y_t_fx_t_fy(i),      fy_sqr(i),      x_t_fy_sqr(i),      y_t_fy_sqr(i);
-%    x_t_fx_t_fy(i)/x(i), x_sqr_t_fx_t_fy(i)/x(i), x_t_y_t_fx_t_fy(i)/x(i),  x_t_fy_sqr(i)/x(i),  x_sqr_t_fy_sqr(i)/x(i),  x_t_y_t_fy_sqr(i)/x(i);
-%    y_t_fx_t_fy(i)/y(i), x_t_y_t_fx_t_fy(i)/y(i), y_sqr_t_fx_t_fy(i)/y(i),  y_t_fy_sqr(i)/y(i),  x_t_y_t_fy_sqr(i)/y(i),  y_sqr_t_fy_sqr(i)/y(i)];
-% 
-%    b=b+[neg_ft_t_fx(i);
-%    neg_ft_x_t_fx(i);
-%    neg_ft_t_y_t_fx(i);
-%    neg_ft_t_fy(i);
-%    neg_ft_t_x_t_fy(i)/x(i);
-%    neg_ft_t_y_t_fy(i)/y(i)];
-% end
-
-for i=1:length(fx_sqr)
-   A=A+[fx_sqr(i)*sfx,      x_t_fx_sqr(i)*sfx,      y_t_fx_sqr(i)*sfx,       fx_t_fy(i)*sfx,     x_t_fx_t_fy(i)*sfx,     y_t_fx_t_fy(i)*sfx;
-   x_t_fx_sqr(i)*sx*sfx,  x_sqr_t_fx_sqr(i)*sx*sfx,  x_t_y_t_fx_sqr(i)*sx*sfx,   x_t_fx_t_fy(i)*sx*sfx, x_sqr_t_fx_t_fy(i)*sx*sfx, x_t_y_t_fx_t_fy(i)*sx*sfx;
-   y_t_fx_sqr(i)*sy*sfx,  x_t_y_t_fx_sqr(i)*sy*sfx,  y_sqr_t_fx_sqr(i)*sy*sfx,   y_t_fx_t_fy(i)*sy*sfx, x_t_y_t_fx_t_fy(i)*sy*sfx, y_sqr_t_fx_t_fy(i)*sy*sfx;
-   fx_t_fy(i)*sfy,     x_t_fx_t_fy(i)*sfy,     y_t_fx_t_fy(i)*sfy,      fy_sqr(i)*sfy,      x_t_fy_sqr(i)*sfy,      y_t_fy_sqr(i)*sfy;
-   x_t_fx_t_fy(i)*sx*sfy, x_sqr_t_fx_t_fy(i)*sx*sfy, x_t_y_t_fx_t_fy(i)*sx*sfy,  x_t_fy_sqr(i)*sx*sfy,  x_sqr_t_fy_sqr(i)*sx*sfy,  x_t_y_t_fy_sqr(i)*sx*sfy;
-   y_t_fx_t_fy(i)*sy*sfy, x_t_y_t_fx_t_fy(i)*sy*sfy, y_sqr_t_fx_t_fy(i)*sy*sfy,  y_t_fy_sqr(i)*sy*sfy,  x_t_y_t_fy_sqr(i)*sy*sfy,  y_sqr_t_fy_sqr(i)*sy*sfy];
-
-   b=b+[neg_ft_t_fx(i)*sfx;
-   neg_ft_x_t_fx(i)*sx*sfx;
-   neg_ft_t_y_t_fx(i)*sy*sfx;
-   neg_ft_t_fy(i)*sfy;
-   neg_ft_t_x_t_fy(i)*sx*sfy;
-   neg_ft_t_y_t_fy(i)*sy*sfy];
+function [A,b]=fp_make_Ab_matrices(x,y,fx,fy,ft,sx)
+img_word=10;
+img_whole=0;
+coord_word=12;
+coord_whole=10;
+fixed=1;
+if fixed==1
+    fx=fi(fx,1,img_word,img_word-img_whole-1,'MaxProductWordLength',1024,'MaxSumWordLength',1024,'RoundMode','Round');
+    fy=fi(fy,1,img_word,img_word-img_whole-1,'MaxProductWordLength',1024,'MaxSumWordLength',1024,'RoundMode','Round');
+    ft=fi(ft,1,img_word,img_word-img_whole-1,'MaxProductWordLength',1024,'MaxSumWordLength',1024,'RoundMode','Round');
+    x=fi(x,1,coord_word,coord_word-coord_whole-1,'MaxProductWordLength',1024,'MaxSumWordLength',1024,'RoundMode','Round');
+    y=fi(y,1,coord_word,coord_word-coord_whole-1,'MaxProductWordLength',1024,'MaxSumWordLength',1024,'RoundMode','Round');
 end
+% Pass 1
+fx2=fx.*fx;
+fxft=fx.*ft;
+fxfy=fx.*fy;
+fy2=fy.*fy;
+fyft=fy.*ft;
+x2=x.*x;
+y2=y.*y;
+xy=x.*y;
+
+% Pass 2
+fx2_t_x=fx2.*x;
+fx2_t_y=fx2.*y;
+fx2_t_x2=fx2.*x2;
+fx2_t_y2=fx2.*y2;
+fx2_t_xy=fx2.*xy;
+
+fy2_t_x=fy2.*x;
+fy2_t_y=fy2.*y;
+fy2_t_x2=fy2.*x2;
+fy2_t_y2=fy2.*y2;
+fy2_t_xy=fy2.*xy;
+
+fxfy_t_x=fxfy.*x;
+fxfy_t_y=fxfy.*y;
+fxfy_t_x2=fxfy.*x2;
+fxfy_t_y2=fxfy.*y2;
+fxfy_t_xy=fxfy.*xy;
+
+fxft_t_x=fxft.*x;
+fyft_t_x=fyft.*x;
+fxft_t_y=fxft.*y;
+fyft_t_y=fyft.*y;
+if fixed==1
+   A=ns(zeros(6));
+   b=ns(zeros(6,1));
+else
+   A=zeros(6);
+   b=zeros(6,1);
+end
+% Overall FP format for each A matrix 1:11:20 (the summation will have to be larger)
+maxa=0;
+for i=1:length(fx2)
+    if fixed==1 
+        tA=[nc(fx2(i)), nc(fx2_t_x(i)), nc(fx2_t_y(i)), nc(fxfy(i)), nc(fxfy_t_x(i)), nc(fxfy_t_y(i));
+            sc(fx2_t_x(i),sx), sc(fx2_t_x2(i),sx), sc(fx2_t_xy(i),sx), sc(fxfy_t_x(i),sx), sc(fxfy_t_x2(i),sx), sc(fxfy_t_xy(i),sx);
+            sc(fx2_t_y(i),sx), sc(fx2_t_xy(i),sx), sc(fx2_t_y2(i),sx), sc(fxfy_t_y(i),sx), sc(fxfy_t_xy(i),sx), sc(fxfy_t_y2(i),sx);
+            nc(fxfy(i)), nc(fxfy_t_x(i)), nc(fxfy_t_y(i)), nc(fy2(i)), nc(fy2_t_x(i)), nc(fy2_t_y(i));
+            sc(fxfy_t_x(i),sx), sc(fxfy_t_x2(i),sx), sc(fxfy_t_xy(i),sx), sc(fy2_t_x(i),sx), sc(fy2_t_x2(i),sx), sc(fy2_t_xy(i),sx);
+            sc(fxfy_t_y(i),sx), sc(fxfy_t_xy(i),sx), sc(fxfy_t_y2(i),sx), sc(fy2_t_y(i),sx), sc(fy2_t_xy(i),sx), sc(fy2_t_y2(i),sx)];
+        tb=[nc(fxft(i));
+            sc(fxft_t_x(i),sx);
+            sc(fxft_t_y(i),sx);
+            nc(fyft(i));
+            sc(fyft_t_x(i),sx);
+            sc(fyft_t_y(i),sx)];
+        A=ns(A)+ns(tA);
+        b=ns(b)+ns(tb);
+    else
+        tA=[fx2(i), fx2_t_x(i), fx2_t_y(i), fxfy(i), fxfy_t_x(i), fxfy_t_y(i);
+            fx2_t_x(i), fx2_t_x2(i), fx2_t_xy(i), fxfy_t_x(i), fxfy_t_x2(i), fxfy_t_xy(i);
+            fx2_t_y(i), fx2_t_xy(i), fx2_t_y2(i), fxfy_t_y(i), fxfy_t_xy(i), fxfy_t_y2(i);
+            fxfy(i), fxfy_t_x(i), fxfy_t_y(i), fy2(i), fy2_t_x(i), fy2_t_y(i);
+            fxfy_t_x(i), fxfy_t_x2(i), fxfy_t_xy(i), fy2_t_x(i), fy2_t_x2(i), fy2_t_xy(i);
+            fxfy_t_y(i), fxfy_t_xy(i), fxfy_t_y2(i), fy2_t_y(i), fy2_t_xy(i), fy2_t_y2(i)];
+        tb=[fxft(i);
+            fxft_t_x(i);
+            fxft_t_y(i);
+            fyft(i);
+            fyft_t_x(i);
+            fyft_t_y(i)];
+        A=A+tA;
+        b=b+tb;
+    end
+   if fixed==0
+       maxa=max(abs([maxa;tA(:);tb(:)]));
+   end
+end
+if fixed==1
+    b=double(-b);
+    A=double(A);
+else
+    disp(sprintf('MAXta:%f',maxa))
+    disp(sprintf('MAXA:%f',max([A(:);b(:)])))
+    b=-b;
+end
+
+function val=sc(x,sx)
+% Overall FP format for each A matrix 1:11:20 (the summation will have to
+% be larger)
+coord_word=32;
+coord_whole=11;
+val=fi(bitsra(x,sx),1,coord_word,coord_word-coord_whole-1,'MaxProductWordLength',1024,'MaxSumWordLength',1024,'RoundMode','Round','SumMode','KeepLSB');
+
+function val=nc(x)
+% Overall FP format for each A matrix 1:11:20 (the summation will have to
+% be larger)
+coord_word=32;
+coord_whole=11;
+val=fi(x,1,coord_word,coord_word-coord_whole-1,'MaxProductWordLength',1024,'MaxSumWordLength',1024,'RoundMode','Round','SumMode','KeepLSB');
+
+function val=ns(x)
+% Overall FP format for each A matrix 1:11:20 (the summation will have to
+% be larger)
+coord_word=48;
+coord_whole=27;
+val=fi(x,1,coord_word,coord_word-coord_whole-1,'MaxProductWordLength',1024,'MaxSumWordLength',1024,'RoundMode','Round','SumMode','KeepLSB','SumWordLength',48);

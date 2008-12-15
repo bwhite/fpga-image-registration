@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity signed_norm_mult is
   generic (
     FRAC_BITS : integer := 26;
-    DELAY     : integer := 3);
+    DELAY     : integer := 4);
   port (CLK      : in  std_logic;
         RST      : in  std_logic;
         VALID_IN : in  std_logic;

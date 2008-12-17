@@ -4,10 +4,10 @@ use IEEE.NUMERIC_STD.all;
 
 entity gauss_elim is
   generic (
-    INPUT_WHOLE     : integer := 4;
-    INPUT_FRAC      : integer := 14;
-    OUTPUT_WHOLE    : integer := 4;
-    OUTPUT_FRAC     : integer := 14;
+    INPUT_WHOLE     : integer := 1;
+    INPUT_FRAC      : integer := 32;
+    OUTPUT_WHOLE    : integer := 1;
+    OUTPUT_FRAC     : integer := 32;
     INV_PIVOT_WHOLE : integer := 4;
     INV_PIVOT_FRAC  : integer := 14;
     PIVOT_ROW_WHOLE : integer := 4;

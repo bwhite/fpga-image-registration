@@ -4,7 +4,6 @@ function [tA,tb]=fp_make_Ab_matrix(x,y,fx,fy,ft,sx,verbose)
 if ~exist('verbose')
     verbose=0;
 end
-verbose=1;
 coord_word=12;
 coord_whole=10;
 img_word=10;

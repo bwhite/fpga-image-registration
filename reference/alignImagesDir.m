@@ -6,7 +6,7 @@ overlap_pct=[];
 homographies=[]; % 3Nx3 where N is the number of pairs run
 %% Initialize parameters
 %iterations = [50 50 30 5 2];
-iterations = [1 1 1 1 1];
+iterations = [15 5 2 1 1];
 
 levels=length(iterations);
 verbose=1;

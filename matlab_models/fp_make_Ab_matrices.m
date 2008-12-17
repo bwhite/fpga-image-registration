@@ -2,48 +2,48 @@
 % are input for each pixel 
 function [A,b]=fp_make_Ab_matrices(x,y,fx,fy,ft,sx)
 
-fixed=1;
+fixed=0;
 if fixed==1
    A=ns(zeros(6));
    b=ns(zeros(6,1));
 else
     % Normalize the coordinates by the nearest power of 2
-    x=nc(x*2^(-sx));
-    y=nc(y*2^(-sx));
+    x=x*2^(-sx);
+    y=y*2^(-sx);
 
     % Pass 1
-    fx2=nc(fx.*fx);
-    fxft=nc(fx.*ft);
-    fxfy=nc(fx.*fy);
-    fy2=nc(fy.*fy);
-    fyft=nc(fy.*ft);
-    x2=nc(x.*x);
-    y2=nc(y.*y);
-    xy=nc(x.*y);
+    fx2=fx.*fx;
+    fxft=fx.*ft;
+    fxfy=fx.*fy;
+    fy2=fy.*fy;
+    fyft=fy.*ft;
+    x2=x.*x;
+    y2=y.*y;
+    xy=x.*y;
 
     % Pass 2
-    fx2_t_x=nc(fx2.*x);
-    fx2_t_y=nc(fx2.*y);
-    fx2_t_x2=nc(fx2.*x2);
-    fx2_t_y2=nc(fx2.*y2);
-    fx2_t_xy=nc(fx2.*xy);
+    fx2_t_x=fx2.*x;
+    fx2_t_y=fx2.*y;
+    fx2_t_x2=fx2.*x2;
+    fx2_t_y2=fx2.*y2;
+    fx2_t_xy=fx2.*xy;
 
-    fy2_t_x=nc(fy2.*x);
-    fy2_t_y=nc(fy2.*y);
-    fy2_t_x2=nc(fy2.*x2);
-    fy2_t_y2=nc(fy2.*y2);
-    fy2_t_xy=nc(fy2.*xy);
+    fy2_t_x=fy2.*x;
+    fy2_t_y=fy2.*y;
+    fy2_t_x2=fy2.*x2;
+    fy2_t_y2=fy2.*y2;
+    fy2_t_xy=fy2.*xy;
 
-    fxfy_t_x=nc(fxfy.*x);
-    fxfy_t_y=nc(fxfy.*y);
-    fxfy_t_x2=nc(fxfy.*x2);
-    fxfy_t_y2=nc(fxfy.*y2);
-    fxfy_t_xy=nc(fxfy.*xy);
+    fxfy_t_x=fxfy.*x;
+    fxfy_t_y=fxfy.*y;
+    fxfy_t_x2=fxfy.*x2;
+    fxfy_t_y2=fxfy.*y2;
+    fxfy_t_xy=fxfy.*xy;
 
-    fxft_t_x=nc(fxft.*x);
-    fyft_t_x=nc(fyft.*x);
-    fxft_t_y=nc(fxft.*y);
-    fyft_t_y=nc(fyft.*y);
+    fxft_t_x=fxft.*x;
+    fyft_t_x=fyft.*x;
+    fxft_t_y=fxft.*y;
+    fyft_t_y=fyft.*y;
     sf=2^-sx;
    A=zeros(6);
    b=zeros(6,1);
@@ -88,10 +88,12 @@ if fixed==1
     disp('Max Row Values')
     disp(maxA)
 else
-    disp('Max Row Values')
+    %disp('Max Row Values')
     disp(maxA)
-    disp(sprintf('MAXta:%f',maxa))
-    disp(sprintf('MAXA:%f',max([A(:);b(:)])))
+    cl=clock();
+    save(sprintf('%f-%f-%f.mat',cl(4),cl(5),cl(6)),'A','b');
+    %disp(sprintf('MAXta:%f',maxa))
+    %disp(sprintf('MAXA:%f',max([A(:);b(:)])))
     b=-b;
 end
 disp('A')

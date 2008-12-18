@@ -13,7 +13,7 @@ end
 N=size(aug,1);x=fp(zeros(N,1),div_whole,div_frac);
 % Forward Pass
 for i=1:(N-1) % Pivot iter
-    pivot_row0=zeros(1,size(aug,2));
+    pivot_row0=fp(zeros(1,size(aug,2)),input_whole,input_frac);
     for col_iter=1:size(aug,2)
         % TODO Force to 1 when necessary
         pivot_row0(col_iter)=fp_gauss_elim_divider(aug(i,col_iter),aug(i,i));
@@ -40,9 +40,10 @@ for i=N:-1:1
     end
     x(i)=fp_gauss_elim_divider(diff_ab,aug(i,i));
 end
+disp(1)
 
 function out=fp(val,whole,frac)
-out=fi(val,1,1+whole+frac,frac,'MaxProductWordLength',(1+whole+frac)*2,'MaxSumWordLength',(1+whole+frac)+3,'RoundMode','Floor');
+out=fi(val,1,1+whole+frac,frac,'MaxProductWordLength',(1+whole+frac)*2,'SumWordLength',(1+whole+frac),'RoundMode','Floor','SumMode','KeepLSB');
 
 function out=fpt(whole,frac)
 out=numerictype('Signed',true,'WordLength',whole+frac+1,'FractionLength',frac);

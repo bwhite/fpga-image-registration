@@ -4,7 +4,8 @@ dir_list=dir_list(3:length(dir_list)); % Remove . and ..
 max_error=0;
 tot_error=0;
 warning off fi:underflow
-fipref('DataTypeOverride','ScaledDoubles','LoggingMode','on');
+%fipref('DataTypeOverride','ScaledDoubles','LoggingMode','on');
+fipref('DataTypeOverride','ForceOFF','LoggingMode','on');
 aug=[];
 for f=1:length(dir_list)
     load(strcat(directory,'/',dir_list(f).name));

@@ -33,19 +33,24 @@ architecture Behavioral of div1_test is
   end component;
   signal quotient_wire  : std_logic_vector(QUOTIENT_BITS-1 downto 0);
   signal frac_wire      : std_logic_vector(FRACTION_BITS-1 downto 0);
-  signal divide_by_zero,valid_wire : std_logic;
+  signal divide_by_zero,valid_wire,valid_out_wire : std_logic;
 begin
   c(QUOTIENT_BITS-1 downto FRACTION_BITS) <= quotient_wire(QUOTIENT_BITS-FRACTION_BITS-1 downto 0);
   c(FRACTION_BITS-1 downto 0)             <= frac_wire;
   process (quotient_wire,divide_by_zero)
   begin  -- process
-    if divide_by_zero = '0' and (quotient_wire(QUOTIENT_BITS-1 downto QUOTIENT_BITS-FRACTION_BITS-1) = (QUOTIENT_BITS-1 downto QUOTIENT_BITS-FRACTION_BITS-1 => '0') or quotient_wire(QUOTIENT_BITS-1 downto QUOTIENT_BITS-FRACTION_BITS-1) = (QUOTIENT_BITS-1 downto QUOTIENT_BITS-FRACTION_BITS-1 => '1')) then
+    -- and (quotient_wire(QUOTIENT_BITS-1 downto QUOTIENT_BITS-FRACTION_BITS-1) = (QUOTIENT_BITS-1 downto QUOTIENT_BITS-FRACTION_BITS-1 => '0') or quotient_wire(QUOTIENT_BITS-1 downto QUOTIENT_BITS-FRACTION_BITS-1) = (QUOTIENT_BITS-1 downto QUOTIENT_BITS-FRACTION_BITS-1 => '1')) 
+    if divide_by_zero = '0' then
       oob <= '0';
     else
       oob <= '1';
     end if;
   end process;
+  
   valid_wire <= VALID_IN and (not RST);
+  VALID_OUT <= valid_out_wire;
+  
+  
   div : div1
     port map (
       CLK            => CLK,
@@ -53,7 +58,7 @@ begin
       DIVIDEND       => A,
       DIVISOR        => B,
 --      RFD        => RFD,
-      RDY            => VALID_OUT,
+      RDY            => valid_out_wire,
       divide_by_zero => divide_by_zero,
       QUOTIENT       => quotient_wire,
       FRACTIONAL     => frac_wire);

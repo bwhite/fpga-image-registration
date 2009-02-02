@@ -88,12 +88,12 @@ tb=[sc(fxft,sx);
     sc(fyft_t_y,sx)];
 
 if verbose
-    outstr=sprintf('TO:{1');
+    outstr=sprintf('TO:{1,0');
     ap=tA';
     for i=1:36
         outstr=strcat(outstr,sprintf(',16#%s#',hex(ap(i))));
     end
-    disp(strcat(outstr,',0}'))
+    disp(strcat(outstr,'}'))
 end
 
 function val=sc(x,sx)

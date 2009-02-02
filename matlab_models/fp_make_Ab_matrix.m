@@ -17,7 +17,7 @@ x=fi(x,1,coord_word,coord_word-coord_whole-1,'MaxProductWordLength',1024,'MaxSum
 y=fi(y,1,coord_word,coord_word-coord_whole-1,'MaxProductWordLength',1024,'MaxSumWordLength',1024,'RoundMode','Round');
 sc_fi=fi(sx,0,4,0);
 if verbose
-    disp(sprintf('TI:{16#%s#,16#%s#,16#%s#,16#%s#,16#%s#,16#%s#,1}',hex(sc_fi),hex(x),hex(y),hex(fx),hex(fy),hex(ft)))
+    disp(sprintf('TI:{16#%s#,16#%s#,16#%s#,16#%s#,16#%s#,16#%s#,1,0}',hex(sc_fi),hex(x),hex(y),hex(fx),hex(fy),hex(ft)))
 end
 
 new_coord_word=27+coord_word;
@@ -93,7 +93,7 @@ if verbose
     for i=1:36
         outstr=strcat(outstr,sprintf(',16#%s#',hex(ap(i))));
     end
-    disp(strcat(outstr,'}'))
+    disp(strcat(outstr,',0}'))
 end
 
 function val=sc(x,sx)

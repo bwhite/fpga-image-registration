@@ -20,6 +20,8 @@ entity make_a_b_matrices is
         FY          : in std_logic_vector(PIXEL_BITS downto 0);
         FT          : in std_logic_vector(PIXEL_BITS downto 0);
         VALID_IN    : in std_logic;
+        DONE : in std_logic;
+        DONE_BUF : out std_logic;
 
         VALID_OUT : out std_logic;
 
@@ -102,6 +104,16 @@ architecture Behavioral of make_a_b_matrices is
           DOUT  : out std_logic_vector(WIDTH-1 downto 0));
   end component;
 
+    component pipeline_bit_buffer is
+    generic (
+      STAGES : integer := 1);
+    port (CLK   : in  std_logic;
+          RST   : in  std_logic;
+          SET   : in  std_logic;
+          CLKEN : in  std_logic;
+          DIN   : in  std_logic;
+          DOUT  : out std_logic);
+  end component;
 
   component right_shifter is
     generic (
@@ -189,6 +201,17 @@ begin
   end process;
 
 
+  done_buffer : pipeline_bit_buffer
+    generic map (
+      STAGES => 12)              
+    port map (
+      CLK   => CLK,
+      SET   => '0',
+      RST   => RST,
+      CLKEN => '1',
+      DIN   => DONE,
+      DOUT  => DONE_BUF);
+  
 -------------------------------------------------------------------------------
 -- Pass 1 Multiply
   --fx2=fx*fx

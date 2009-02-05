@@ -32,7 +32,7 @@ end unscale_h_matrix;
 architecture Behavioral of unscale_h_matrix is
   signal h_0_0_reg, h_0_1_reg, h_0_2_reg, h_1_0_reg, h_1_1_reg, h_1_2_reg : signed(WHOLE_BITS+FRAC_BITS-1 downto 0) := (others => '0');
   signal h0_buf,h1_buf,h2_buf,h3_buf,h4_buf,h5_buf,xb_buf,yb_buf : signed(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal h0_t_xb,h3_t_xb,h1_t_yb,h4_t_yb : signed(WHOLE_BITS+FRAC_BITS-1 downto 0);
+  signal h0_t_xb,h3_t_xb,h1_t_yb,h4_t_yb : signed(2*(WHOLE_BITS+FRAC_BITS)-1 downto 0);
   signal valid_reg0,valid_reg1 : std_logic := '0';
 begin
   process (CLK)
@@ -49,9 +49,9 @@ begin
                 valid_reg1 <= '0';
       else
         -- inv(T)*X*T
-        -- [                 h0,                 h1, h0*xb+h1*yb+h2-xb]
-        -- [                 h3,                 h4, h3*xb+h4*yb+h5-yb]
-        -- [                  0,                  0,                  1]
+        --[ h0, h1, h2 + xb - h0*xb - h1*yb]
+        --[ h3, h4, h5 + yb - h3*xb - h4*yb]
+        --[  0,  0,                       1]
 
         -- Stage 1, finish multipliers
         h0_buf <= signed(H_0_0_I);
@@ -74,11 +74,11 @@ begin
         -- Combine the values in the unscaled matrix
         h_0_0_reg <= h0_buf;
         h_0_1_reg <= h1_buf;
-        h_0_2_reg <= h0_t_xb+h1_t_yb+h2_buf-xb_buf;
+        h_0_2_reg <= h2_buf+xb_buf-h0_t_xb(WHOLE_BITS+2*FRAC_BITS-1 downto FRAC_BITS)-h1_t_yb(WHOLE_BITS+2*FRAC_BITS-1 downto FRAC_BITS);
         h_1_0_reg <= h3_buf;
         h_1_1_reg <= h4_buf;
-        h_1_2_reg <= h3_t_xb+h4_t_yb+h5_buf-yb_buf;
-        valid_reg1 <= valid_reg1;
+        h_1_2_reg <= h5_buf+yb_buf-h3_t_xb(WHOLE_BITS+2*FRAC_BITS-1 downto FRAC_BITS)-h4_t_yb(WHOLE_BITS+2*FRAC_BITS-1 downto FRAC_BITS);
+        valid_reg1 <= valid_reg0;
       end if;
     end if;
   end process;

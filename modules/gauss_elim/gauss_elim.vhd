@@ -107,7 +107,7 @@ architecture Behavioral of gauss_elim is
   signal pivot_row0                                                                                                               : pivot_row_type;
   signal new_aug, aug_i, aug_j, aug_j_delay0, aug_j_delay1, aug_j_delay2, aug_j_delay3, aug_j_delay4                              : aug_row_type;
   signal new_aug_delay0, new_aug_delay1, new_aug_delay2, new_aug_delay3, new_aug_delay4                                           : mult_aug_row_type;
-  signal aug_j_i, aug_i_j, aug_i_i                                                                                                : signed(WHOLE_BITS+FRAC_BITS-1 downto 0);
+  signal aug_j_i, aug_i_j, aug_i_i,aug_j_i_buf                                                                                                : signed(WHOLE_BITS+FRAC_BITS-1 downto 0);
   signal fp_mk_inv_done, fp_mk_pivot_done, fp_elim_col_done, bp_row_mult_done, bp_row_mult_sum_done, bp_diff_ab_done, bp_div_done : std_logic;
 
 
@@ -337,19 +337,18 @@ begin
             cur_j_delay5 <= cur_j_delay4;
 
             cur_j <= cur_j+1;
-
+            aug_j_i_buf <= aug_j_i;
             -- Store the new eliminated column value in the aug matrix
 
             -- Multiply the pivot row by the current value to be eliminated (aug_j_i)
             for j in 6 downto 0 loop
               -- 1:2*WHOLE_BITS-1:2*FRAC_BITS
-              new_aug_delay0(j) <= aug_j_i * pivot_row0(j);
+              new_aug_delay0(j) <= aug_j_i_buf * pivot_row0(j);
             end loop;  -- j
 
             new_aug_delay1 <= new_aug_delay0;
             new_aug_delay2 <= new_aug_delay1;
             new_aug_delay3 <= new_aug_delay2;
-            new_aug_delay4 <= new_aug_delay3;
             aug_j_delay0   <= aug_j;
             aug_j_delay1   <= aug_j_delay0;
             aug_j_delay2   <= aug_j_delay1;
@@ -359,7 +358,7 @@ begin
             -- TODO: Due to numerical errors, we will force these zeros later
             for j in 6 downto 0 loop
               -- TODO Check for overflow
-              new_aug(j) <= new_aug_delay4(j)(2*FRAC_BITS+WHOLE_BITS-1 downto FRAC_BITS) - aug_j_delay4(j);
+              new_aug(j) <= new_aug_delay3(j)(2*FRAC_BITS+WHOLE_BITS-1 downto FRAC_BITS) - aug_j_delay4(j);
             end loop;  -- j
 
             -- Store the new row back in the aug matrix

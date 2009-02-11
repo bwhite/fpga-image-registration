@@ -449,7 +449,7 @@ architecture Behavioral of registration_stage is
 -- Homographies
   signal h_0_0_ma, h_0_1_ma, h_0_2_ma, h_1_0_ma, h_1_1_ma, h_1_2_ma : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
 
-  signal x_0, x_1, x_2, x_3, x_4, x_5, x_6, x_7, x_8                : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
+  signal x_0, x_1, x_2, x_3, x_4, x_5                : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
   signal img0_0_1, img0_1_0, img0_1_1, img0_1_2, img0_2_1, img1_1_1 : std_logic_vector(PIXEL_BITS-1 downto 0);
   signal x_f, y_f, x_cs, y_cs                                       : std_logic_vector(IMGSIZE_BITS+1 downto 0);
   signal ix,iy,it : std_logic_vector(PIXEL_BITS downto 0);
@@ -474,7 +474,7 @@ architecture Behavioral of registration_stage is
 
 -- Done/Valid
   signal done_f, done_cs, done_mab, done_sab                         : std_logic;
-  signal valid_f, valid_cs, valid_mab, valid_sab, valid_ge, valid_sa, valid_ma : std_logic;
+  signal valid_f, valid_cs, valid_mab, valid_sab, valid_ge, valid_ma : std_logic;
 begin
 -- Advisory Stage (Control which pyramid level/iteration we are on)
 -- TODO Make a state machine (IDLE,SUMMING,SOLVING)
@@ -714,7 +714,7 @@ begin
   gauss_elim_i : gauss_elim
     port map (CLK        => CLK,
               RST        => RST,
-              INPUT_LOAD => '1',        -- TODO THIS MUST BE CHANGED!!!
+              INPUT_LOAD => done_sab,
                                         -- 1:7:19
               A_0_0      => a_0_0_s,
               A_0_1      => a_0_1_s,

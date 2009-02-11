@@ -11,8 +11,7 @@ entity sum_a_b_matrices is
         RST : in std_logic;
 
         INPUT_VALID : in std_logic;
-
-        OUTPUT_VALID : out std_logic;
+        DONE : in std_logic;
         -- 1:0:26
         A_0_0        : in  std_logic_vector(FRAC_BITS_IN downto 0);
         A_0_1        : in  std_logic_vector(FRAC_BITS_IN downto 0);
@@ -64,7 +63,8 @@ entity sum_a_b_matrices is
         B_5 : in std_logic_vector(FRAC_BITS_IN downto 0);
 
 
-
+        DONE_BUF : out std_logic;
+        OUTPUT_VALID : out std_logic;
         -- A Matrix Outputs (6x6)
         -- 1:WHOLE_BITS_OUT-1:FRAC_BITS_OUT
         A_0_0_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
@@ -126,6 +126,7 @@ architecture Behavioral of sum_a_b_matrices is
 
   signal b_0_reg, b_1_reg, b_2_reg, b_3_reg, b_4_reg, b_5_reg : signed(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 0) := (others => '0');
   signal valid_reg                                            : std_logic                                      := '0';
+  signal done_reg                                            : std_logic                                      := '0';
 begin
   process (CLK)
   begin  -- process
@@ -180,7 +181,9 @@ begin
         b_4_reg   <= (others => '0');
         b_5_reg   <= (others => '0');
         valid_reg <= '0';
+        done_reg <= '0';
       else
+        done_reg <= DONE;
         valid_reg <= INPUT_VALID;
         if INPUT_VALID = '1' then
           a_0_0_reg <= a_0_0_reg + signed((WHOLE_BITS_OUT-2 downto 0 => A_0_0(FRAC_BITS_IN))&A_0_0);
@@ -286,5 +289,5 @@ begin
   B_3_S <= std_logic_vector(b_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
   B_4_S <= std_logic_vector(b_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
   B_5_S <= std_logic_vector(b_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-
+  DONE_BUF <= done_reg;
 end Behavioral;

@@ -201,7 +201,7 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   SIGNAL memory_dump_done, memory_dump_rst, memory_dump_mem_out_valid, memory_dump_rst_reg : std_logic;
 
   SIGNAL image_store_mem_addr, mem_addr_next, image_store_mem_addr_fifo, image_display_mem_addr, memory_dump_mem_addr, mem_addr, smooth_addr, compute_affine_addr, manual_offset, cs_mem_addr_split : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_write_value_next, mem_read_value, smooth_pixel_write, compute_affine_pixel_write, cs_mem_read, cs_mem_write_value      : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_write_value_next, mem_read_value, smooth_pixel_write, cs_mem_read, cs_mem_write_value      : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
   TYPE   current_state IS (IMAGE_STORE, IMAGE_DISPLAY, SMOOTH, IDLE, MEM_DUMP_WRITE, MEM_DUMP_READ, COMPUTE_AFFINE);
   SIGNAL cur_state, cur_state_next                                                                                                                                                                  : current_state := IDLE;
 
@@ -228,7 +228,7 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   SIGNAL h_0_0, h_0_1, h_0_2, h_1_0, h_1_1, h_1_2 : std_logic_vector(29 DOWNTO 0);
   
   ATTRIBUTE KEEP : string;
-  -- ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value, cs_we_b : SIGNAL IS "true";
+  ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value, cs_we_b, h_0_0, h_0_1, h_0_2, h_1_0, h_1_1, h_1_2 : SIGNAL IS "true";
   
 BEGIN
 -------------------------------------------------------------------------------
@@ -504,11 +504,11 @@ BEGIN
         mem_write_value <= smooth_pixel_write;
 
       WHEN COMPUTE_AFFINE =>
-        we_b            <= compute_affine_re;
+        we_b            <= '1';
         cs_b            <= NOT compute_affine_output_valid;
         bw_b            <= compute_affine_bw_b;
         mem_addr        <= compute_affine_addr;
-        mem_write_value <= compute_affine_pixel_write;
+        mem_write_value <= (PIXEL_BITS-1 DOWNTO 0 => '0');
 
       WHEN OTHERS =>
         we_b                  <= we_b_next;

@@ -224,6 +224,9 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   SIGNAL clk_dvi_fb, dvi_pixel_clk, image_display_fifo_re, image_display_fifo_re_buf, image_display_fifo_empty, image_display_fifo_rst, image_display_fifo_we, dvi_h_wire, dvi_v_wire : std_logic;
   SIGNAL image_display_fifo_read_count0, image_display_fifo_write_count0, image_display_fifo_read_count1, image_display_fifo_write_count1                                             : std_logic_vector(8 DOWNTO 0);
 
+  -- Homographies
+  SIGNAL h_0_0, h_0_1, h_0_2, h_1_0, h_1_1, h_1_2 : std_logic_vector(29 DOWNTO 0);
+  
   ATTRIBUTE KEEP : string;
   -- ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value, cs_we_b : SIGNAL IS "true";
   
@@ -721,21 +724,21 @@ BEGIN
 -------------------------------------------------------------------------------
 -- Compute Affine
   compute_affine_rst <= compute_affine_rst_reg OR rst_not;
---  registration_controller_i : registration_controller PORT MAP(
---    CLK              => clk_intbuf,
---    RST              => compute_affine_rst,
+  registration_controller_i : registration_controller PORT MAP(
+    CLK              => clk_intbuf,
+    RST              => compute_affine_rst,
     
---    MEM_VALUE        => mem_read_value,
---    MEM_INPUT_VALID  => mem_read_valid,
---    MEM_ADDR         => compute_affine_addr,
---    MEM_BW_B         => compute_affine_bw_b,
---    MEM_OUTPUT_VALID => compute_affine_output_valid,
---    H_0_0_O          => ,
---    H_0_1_O          => ,
---    H_0_2_O          => ,
---    H_1_0_O          => ,
---    H_1_1_O          => ,
---    H_1_2_O          => ,
---    OUTPUT_VALID     => compute_affine_done
---    );
+    MEM_VALUE        => mem_read_value,
+    MEM_INPUT_VALID  => mem_read_valid,
+    MEM_ADDR         => compute_affine_addr,
+    MEM_BW_B         => compute_affine_bw_b,
+    MEM_OUTPUT_VALID => compute_affine_output_valid,
+    H_0_0_O          => h_0_0,
+    H_0_1_O          => h_0_1,
+    H_0_2_O          => h_0_2,
+    H_1_0_O          => h_1_0,
+    H_1_1_O          => h_1_1,
+    H_1_2_O          => h_1_2,
+    OUTPUT_VALID     => compute_affine_done
+    );
 END Behavioral;

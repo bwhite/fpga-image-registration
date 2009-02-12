@@ -173,19 +173,19 @@ ARCHITECTURE Behavioral OF demo_low_level IS
           DONE             : OUT std_logic);
   END COMPONENT;
 
-  SIGNAL rst_not, clk200mhz_buf, clk_int, clk_buf, sram_int_clk, clk_intbuf, we_b, we_b_next, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, cs_b_next, image_store_rst, smooth_rst, smooth_rst_reg, smooth_re, smooth_done, smooth_output_valid, manual_offset_enabled, cs_mem_read_valid, vga_calibrate, cs_we_b: std_logic;
+  SIGNAL rst_not, clk200mhz_buf, clk_int, clk_buf, sram_int_clk, clk_intbuf, we_b, we_b_next, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, cs_b_next, image_store_rst, smooth_rst, smooth_rst_reg, compute_affine_rst_reg, compute_affine_rst, compute_affine_done, smooth_re, compute_affine_re, smooth_done, smooth_output_valid, compute_affine_output_valid, manual_offset_enabled, cs_mem_read_valid, vga_calibrate, cs_we_b: std_logic;
 
   SIGNAL memory_dump_done, memory_dump_rst, memory_dump_mem_out_valid, memory_dump_rst_reg : std_logic;
 
-  SIGNAL image_store_mem_addr, mem_addr_next, image_store_mem_addr_fifo, image_display_mem_addr, memory_dump_mem_addr, mem_addr, smooth_addr, manual_offset, cs_mem_addr_split : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_write_value_next, mem_read_value, smooth_pixel_write, cs_mem_read, cs_mem_write_value             : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-  TYPE   current_state IS (IMAGE_STORE, IMAGE_DISPLAY, SMOOTH, IDLE, MEM_DUMP_WRITE, MEM_DUMP_READ);
+  SIGNAL image_store_mem_addr, mem_addr_next, image_store_mem_addr_fifo, image_display_mem_addr, memory_dump_mem_addr, mem_addr, smooth_addr, compute_affine_addr, manual_offset, cs_mem_addr_split : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_write_value_next, mem_read_value, smooth_pixel_write, compute_affine_pixel_write, cs_mem_read, cs_mem_write_value             : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  TYPE   current_state IS (IMAGE_STORE, IMAGE_DISPLAY, SMOOTH, IDLE, MEM_DUMP_WRITE, MEM_DUMP_READ, COMPUTE_AFFINE);
   SIGNAL cur_state, cur_state_next                                                                                                                                             : current_state := IDLE;
 
   SIGNAL sram_addr_wire               : std_logic_vector(17 DOWNTO 0);
   SIGNAL image_display_fifo_mem_addr  : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
   SIGNAL image_display_value_fifo     : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-  SIGNAL smooth_bw_b, bw_b, bw_b_next : std_logic_vector(3 DOWNTO 0);
+  SIGNAL smooth_bw_b, compute_affine_bw_b, bw_b, bw_b_next : std_logic_vector(3 DOWNTO 0);
   SIGNAL gpio_sw_reg0,gpio_sw_reg1 : std_logic_vector(4 DOWNTO 0);
   SIGNAL gpio_dip_reg0, gpio_dip_reg1 : std_logic_vector(7 DOWNTO 0);
 
@@ -340,6 +340,7 @@ BEGIN
             memory_dump_rst_reg <= '1';
             image_store_rst     <= '1';
             smooth_rst_reg      <= '1';
+            compute_affine_rst_reg      <= '1';
             -- Switch states on button press
             IF gpio_sw_reg1 = "10000" THEN
               -- Lower 6 bits select mode, upper bit selects image slot, next
@@ -355,6 +356,8 @@ BEGIN
                   cur_state <= IMAGE_DISPLAY;
                 WHEN "010000" =>
                   cur_state <= SMOOTH;
+                WHEN "011000" =>
+                  cur_state <= COMPUTE_AFFINE;
                 WHEN OTHERS => NULL;
               END CASE;
             END IF;
@@ -450,6 +453,12 @@ BEGIN
             IF smooth_done = '1'THEN
               cur_state <= IDLE;
             END IF;
+
+          WHEN COMPUTE_AFFINE =>  ------------------------------------------------------
+            compute_affine_rst_reg <= '0';
+            IF compute_affine_done = '1'THEN
+              cur_state <= IDLE;
+            END IF;
           WHEN OTHERS => NULL;
         END CASE;
       END IF;
@@ -467,6 +476,13 @@ BEGIN
         bw_b            <= smooth_bw_b;
         mem_addr        <= smooth_addr;
         mem_write_value <= smooth_pixel_write;
+
+      WHEN COMPUTE_AFFINE =>
+        we_b            <= compute_affine_re;
+        cs_b            <= NOT compute_affine_output_valid;
+        bw_b            <= compute_affine_bw_b;
+        mem_addr        <= compute_affine_addr;
+        mem_write_value <= compute_affine_pixel_write;
 
       WHEN OTHERS =>
         we_b                  <= we_b_next;
@@ -678,4 +694,9 @@ BEGIN
       MEM_BW_B         => smooth_bw_b,
       MEM_OUTPUT_VALID => smooth_output_valid,
       DONE             => smooth_done);
+
+-------------------------------------------------------------------------------
+-- Compute Affine
+  compute_affine_rst <= compute_affine_rst_reg OR rst_not;
+  
 END Behavioral;

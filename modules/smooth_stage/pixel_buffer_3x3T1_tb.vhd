@@ -114,7 +114,7 @@ BEGIN
           WHEN "0101" =>
             uut_mem_value <= "000000110";
             uut_clken <= '1';
-            IF uut_output_valid /= '0' OR uut_img_0_0 /= "000000000" OR uut_img_1_0 /= "000000000" OR uut_img_2_0 /= "000000000" OR uut_img_0_1 /= "000000001" OR uut_img_1_1 /= "000000010" OR uut_img_2_1 /= "000000011" OR uut_img_0_2 /= "000000100" THEN
+            IF uut_output_valid /= '0' OR uut_img_0_0 /= "000000000" OR uut_img_1_0 /= "000000000" OR uut_img_2_0 /= "000000000" OR uut_img_0_1 /= "000000001" OR uut_img_1_1 /= "000000010" OR uut_img_2_1 /= "000000011" OR uut_img_0_2 /= "000000100" OR uut_img_1_2 /= "000000010" OR uut_img_2_2 /= "000000011" THEN
               FAIL <= '1';
               FAIL_NUM <= "0011";
               state <= "1111";
@@ -125,7 +125,7 @@ BEGIN
           WHEN "0110" =>
             uut_mem_value <= "000000111";
             uut_clken <= '1';
-            IF uut_output_valid /= '0' OR uut_img_0_0 /= "000000000" OR uut_img_1_0 /= "000000000" OR uut_img_2_0 /= "000000000" OR uut_img_0_1 /= "000000001" OR uut_img_1_1 /= "000000010" OR uut_img_2_1 /= "000000011" OR uut_img_0_2 /= "000000100" OR uut_img_1_2 /= "000000101" THEN
+            IF uut_output_valid /= '0' OR uut_img_0_0 /= "000000000" OR uut_img_1_0 /= "000000000" OR uut_img_2_0 /= "000000000" OR uut_img_0_1 /= "000000001" OR uut_img_1_1 /= "000000010" OR uut_img_2_1 /= "000000011" OR uut_img_0_2 /= "000000100" OR uut_img_1_2 /= "000000101" OR uut_img_2_2 /= "000000011" THEN
               FAIL <= '1';
               FAIL_NUM <= "0100";
               state <= "1111";
@@ -147,7 +147,7 @@ BEGIN
           WHEN "1000" =>
             uut_mem_value <= "000001001";
             uut_clken <= '1';
-            IF uut_output_valid /= '0' OR uut_img_0_0 /= "000000001" OR uut_img_1_0 /= "000000010" OR uut_img_2_0 /= "000000011" OR uut_img_0_1 /= "000000100" OR uut_img_1_1 /= "000000101" OR uut_img_2_1 /= "000000110" OR uut_img_0_2 /= "000000111" THEN
+            IF uut_output_valid /= '0' OR uut_img_0_0 /= "000000001" OR uut_img_1_0 /= "000000010" OR uut_img_2_0 /= "000000011" OR uut_img_0_1 /= "000000100" OR uut_img_1_1 /= "000000101" OR uut_img_2_1 /= "000000110" OR uut_img_0_2 /= "000000111" OR uut_img_1_2 /= "000000101" OR uut_img_2_2 /= "000000110" THEN
               FAIL <= '1';
               FAIL_NUM <= "0110";
               state <= "1111";
@@ -158,7 +158,7 @@ BEGIN
           WHEN "1001" =>
             uut_mem_value <= "000000000";
             uut_clken <= '0';
-            IF uut_output_valid /= '0' OR uut_img_0_0 /= "000000001" OR uut_img_1_0 /= "000000010" OR uut_img_2_0 /= "000000011" OR uut_img_0_1 /= "000000100" OR uut_img_1_1 /= "000000101" OR uut_img_2_1 /= "000000110" OR uut_img_0_2 /= "000000111" OR uut_img_1_2 /= "000001000" THEN
+            IF uut_output_valid /= '0' OR uut_img_0_0 /= "000000001" OR uut_img_1_0 /= "000000010" OR uut_img_2_0 /= "000000011" OR uut_img_0_1 /= "000000100" OR uut_img_1_1 /= "000000101" OR uut_img_2_1 /= "000000110" OR uut_img_0_2 /= "000000111" OR uut_img_1_2 /= "000001000" OR uut_img_2_2 /= "000000110" THEN
               FAIL <= '1';
               FAIL_NUM <= "0111";
               state <= "1111";
@@ -191,7 +191,7 @@ BEGIN
           WHEN "1100" =>
             uut_mem_value <= "000001100";
             uut_clken <= '1';
-            IF uut_output_valid /= '0' OR uut_img_0_0 /= "000000100" OR uut_img_1_0 /= "000000101" OR uut_img_2_0 /= "000000110" OR uut_img_0_1 /= "000000111" OR uut_img_1_1 /= "000001000" OR uut_img_2_1 /= "000001001" OR uut_img_0_2 /= "000001010" THEN
+            IF uut_output_valid /= '0' OR uut_img_0_0 /= "000000100" OR uut_img_1_0 /= "000000101" OR uut_img_2_0 /= "000000110" OR uut_img_0_1 /= "000000111" OR uut_img_1_1 /= "000001000" OR uut_img_2_1 /= "000001001" OR uut_img_0_2 /= "000001010" OR uut_img_1_2 /= "000001000" OR uut_img_2_2 /= "000001001" THEN
               FAIL <= '1';
               FAIL_NUM <= "1010";
               state <= "1111";
@@ -200,7 +200,7 @@ BEGIN
             END IF;
             uut_rst <= '0';
           WHEN "1101" =>
-            IF uut_output_valid /= '0' OR uut_img_0_0 /= "000000100" OR uut_img_1_0 /= "000000101" OR uut_img_2_0 /= "000000110" OR uut_img_0_1 /= "000000111" OR uut_img_1_1 /= "000001000" OR uut_img_2_1 /= "000001001" OR uut_img_0_2 /= "000001010" OR uut_img_1_2 /= "000001011" THEN
+            IF uut_output_valid /= '0' OR uut_img_0_0 /= "000000100" OR uut_img_1_0 /= "000000101" OR uut_img_2_0 /= "000000110" OR uut_img_0_1 /= "000000111" OR uut_img_1_1 /= "000001000" OR uut_img_2_1 /= "000001001" OR uut_img_0_2 /= "000001010" OR uut_img_1_2 /= "000001011" OR uut_img_2_2 /= "000001001" THEN
               FAIL <= '1';
               FAIL_NUM <= "1011";
               state <= "1111";

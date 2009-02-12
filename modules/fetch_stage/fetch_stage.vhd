@@ -264,6 +264,7 @@ BEGIN
             img_width_offset <= int_to_stdlvec(10#1439#, 2*IMGSIZE_BITS);  -- 1439 (CONV_HEIGHT-1)*WIDTH-1
             initial_mem_addr <= int_to_stdlvec(10#721#, 2*IMGSIZE_BITS);  -- 721 WIDTH+1
 
+            
           WHEN "001" =>                 -- 360x240
             y_coord_trans    <= int_to_stdlvec(10#240#, IMGSIZE_BITS+1);  -- 120
             x_coord_trans    <= int_to_stdlvec(10#360#, IMGSIZE_BITS+1);  -- 180
@@ -316,14 +317,15 @@ BEGIN
             img_width        <= int_to_stdlvec(10#6#, IMGSIZE_BITS);    -- 6
             img_width_offset <= int_to_stdlvec(10#11#, 2*IMGSIZE_BITS);  -- 11
             initial_mem_addr <= int_to_stdlvec(10#7#, 2*IMGSIZE_BITS);  -- 7
-          WHEN "111" =>                 -- 8x8 TESTING ONLY!!!
-            y_coord_trans    <= int_to_stdlvec(10#8#, IMGSIZE_BITS+1);  -- 4
-            x_coord_trans    <= int_to_stdlvec(10#8#, IMGSIZE_BITS+1);  -- 4
-            img_offset      <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 920,700
-            img_height       <= int_to_stdlvec(10#8#, IMGSIZE_BITS);    -- 8
-            img_width        <= int_to_stdlvec(10#8#, IMGSIZE_BITS);    -- 8
-            img_width_offset <= int_to_stdlvec(10#15#, 2*IMGSIZE_BITS);  -- 15
-            initial_mem_addr <= int_to_stdlvec(10#9#, 2*IMGSIZE_BITS);  -- 8
+            
+          WHEN "111" =>                 -- 640x480
+            y_coord_trans    <= int_to_stdlvec(10#480#, IMGSIZE_BITS+1);  -- 240
+            x_coord_trans    <= int_to_stdlvec(10#640#, IMGSIZE_BITS+1);  -- 320
+            img_offset      <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 0
+            img_height       <= int_to_stdlvec(10#480#, IMGSIZE_BITS);  -- 480
+            img_width        <= int_to_stdlvec(10#640#, IMGSIZE_BITS);  -- 640
+            img_width_offset <= int_to_stdlvec(10#1279#, 2*IMGSIZE_BITS);  -- 1279 (CONV_HEIGHT-1)*WIDTH-1
+            initial_mem_addr <= int_to_stdlvec(10#641#, 2*IMGSIZE_BITS);  --641 WIDTH+1
 
           WHEN OTHERS =>
             y_coord_trans    <= (OTHERS => '0');

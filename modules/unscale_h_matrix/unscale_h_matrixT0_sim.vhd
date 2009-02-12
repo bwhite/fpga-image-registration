@@ -10,12 +10,12 @@ ARCHITECTURE behavior OF unscale_h_matrixT0_sim IS
     RST : IN STD_LOGIC;
     DONE : OUT STD_LOGIC;
     FAIL : OUT STD_LOGIC;
-    FAIL_NUM : OUT STD_LOGIC_VECTOR(6 DOWNTO 0));
+    FAIL_NUM : OUT STD_LOGIC_VECTOR(5 DOWNTO 0));
   END COMPONENT;
   SIGNAL CLK : STD_LOGIC := '0';
   SIGNAL RST : STD_LOGIC := '1';
   SIGNAL done, fail : STD_LOGIC;
-  SIGNAL fail_num : STD_LOGIC_VECTOR(6 DOWNTO 0);
+  SIGNAL fail_num : STD_LOGIC_VECTOR(5 DOWNTO 0);
 BEGIN
   uut :  unscale_h_matrixT0_tb PORT MAP (
     CLK => clk,

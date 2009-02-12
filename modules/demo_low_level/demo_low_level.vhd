@@ -246,8 +246,9 @@ BEGIN
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
                                         --   an integer from 0 to 15
-      DFS_FREQUENCY_MODE    => "HIGH",  -- LOW or HIGH frequency mode for frequency synthesis
-      DLL_FREQUENCY_MODE    => "HIGH",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
+      CLKIN_DIVIDE_BY_2 =>      true,
+      DFS_FREQUENCY_MODE    => "LOW",  -- LOW or HIGH frequency mode for frequency synthesis
+      DLL_FREQUENCY_MODE    => "LOW",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
       DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
       FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0" 
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
@@ -268,21 +269,21 @@ BEGIN
   -- Buffer and Deskew SRAM CLK
   DCM_BASE_sram : DCM_BASE
     GENERIC MAP (
-      CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
+      CLKIN_PERIOD          => 10.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
       DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
                                         --   an integer from 0 to 15
-      DFS_FREQUENCY_MODE    => "HIGH",  -- LOW or HIGH frequency mode for frequency synthesis
-      DLL_FREQUENCY_MODE    => "HIGH",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
+      DFS_FREQUENCY_MODE    => "LOW",  -- LOW or HIGH frequency mode for frequency synthesis
+      DLL_FREQUENCY_MODE    => "LOW",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
       DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
       FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0" 
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
     PORT MAP (
       CLK0  => sram_int_clk,            -- 0 degree DCM CLK output
       CLKFB => SRAM_CLK_FB,             -- DCM clock feedback
-      CLKIN => clk_buf,              -- Clock input (from IBUFG, BUFG or DCM)
+      CLKIN => clk_intbuf,              -- Clock input (from IBUFG, BUFG or DCM)
       RST   => rst_not                  -- DCM asynchronous reset input
       );
 

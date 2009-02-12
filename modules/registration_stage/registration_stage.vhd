@@ -1,9 +1,9 @@
-library IEEE;
-use IEEE.STD_LOGIC_1164.all;
-use ieee.numeric_std.all;
+LIBRARY IEEE;
+USE IEEE.STD_LOGIC_1164.ALL;
+USE ieee.numeric_std.ALL;
 
-entity registration_stage is
-  generic (
+ENTITY registration_stage IS
+  GENERIC (
     CONV_HEIGHT  : integer := 3;
     IMGSIZE_BITS : integer := 10;
     PIXEL_BITS   : integer := 9;
@@ -11,477 +11,477 @@ entity registration_stage is
     WHOLE_BITS       : integer := 8;
     FRAC_BITS        : integer := 19;
     CONV_HEIGHT_BITS : integer := 2);
-  port (CLK              : in  std_logic;
-        RST              : in  std_logic;
-        LEVEL            : in  std_logic_vector(2 downto 0);
-        COORD_SHIFT      : in  std_logic_vector(3 downto 0);
-        COORD_TRANS      : in  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
+  PORT (CLK              : IN  std_logic;
+        RST              : IN  std_logic;
+        LEVEL            : IN  std_logic_vector(2 DOWNTO 0);
+        COORD_SHIFT      : IN  std_logic_vector(3 DOWNTO 0);
+        -- 1:IMGSIZE_BITS:1 Format
+        COORD_TRANS      : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
         -- Rotation and Non-Isotropic Scale
         -- 1:6:11 Format
-        H_0_0            : in  std_logic_vector(17 downto 0);
-        H_0_1            : in  std_logic_vector(17 downto 0);
-        H_1_0            : in  std_logic_vector(17 downto 0);
-        H_1_1            : in  std_logic_vector(17 downto 0);
+        H_0_0            : IN  std_logic_vector(17 DOWNTO 0);
+        H_0_1            : IN  std_logic_vector(17 DOWNTO 0);
+        H_1_0            : IN  std_logic_vector(17 DOWNTO 0);
+        H_1_1            : IN  std_logic_vector(17 DOWNTO 0);
         -- Translation
         -- 1:10:11 Format 
-        H_0_2            : in  std_logic_vector(21 downto 0);
-        H_1_2            : in  std_logic_vector(21 downto 0);
+        H_0_2            : IN  std_logic_vector(21 DOWNTO 0);
+        H_1_2            : IN  std_logic_vector(21 DOWNTO 0);
         -- Memory Connections
-        MEM_VALUE        : in  std_logic_vector(PIXEL_BITS-1 downto 0);
-        MEM_INPUT_VALID  : in  std_logic;
-        MEM_ADDR         : out std_logic_vector(2*IMGSIZE_BITS-1 downto 0);
-        MEM_BW_B         : out std_logic_vector(3 downto 0);
-        MEM_OUTPUT_VALID : out std_logic;
+        MEM_VALUE        : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+        MEM_INPUT_VALID  : IN  std_logic;
+        MEM_ADDR         : OUT std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+        MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
+        MEM_OUTPUT_VALID : OUT std_logic;
 
-        -- 1:7:9 Format 
-        H_0_0_O      : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-        H_0_1_O      : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-        H_1_0_O      : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-        H_1_1_O      : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-        H_0_2_O      : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-        H_1_2_O      : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-        OUTPUT_VALID : out std_logic
+        -- 1:10:9 Format 
+        H_0_0_O      : OUT std_logic_vector(29 DOWNTO 0);
+        H_0_1_O      : OUT std_logic_vector(29 DOWNTO 0);
+        H_1_0_O      : OUT std_logic_vector(29 DOWNTO 0);
+        H_1_1_O      : OUT std_logic_vector(29 DOWNTO 0);
+        H_0_2_O      : OUT std_logic_vector(29 DOWNTO 0);
+        H_1_2_O      : OUT std_logic_vector(29 DOWNTO 0);
+        OUTPUT_VALID : OUT std_logic
         );
-end registration_stage;
+END registration_stage;
 
-architecture Behavioral of registration_stage is
-  component fetch_stage is
-    generic (
+ARCHITECTURE Behavioral OF registration_stage IS
+  COMPONENT fetch_stage IS
+    GENERIC (
       CONV_HEIGHT      : integer := 3;
       IMGSIZE_BITS     : integer := 10;
       PIXEL_BITS       : integer := 9;
       CONV_HEIGHT_BITS : integer := 2);
-    port (CLK              : in  std_logic;  -- NOTE: The clock should not be gated
+    PORT (CLK              : IN  std_logic;  -- NOTE: The clock should not be gated
                                         -- as the timing in this module depends
                                         -- on the timing of an external RAM
-          RST              : in  std_logic;
-          LEVEL            : in  std_logic_vector(2 downto 0);
+          RST              : IN  std_logic;
+          LEVEL            : IN  std_logic_vector(2 DOWNTO 0);
           -- Affine Homography elements IMG2_VEC=H*IMG1_VEC
           -- Rotation and Non-Isotropic Scale
           -- 1:6:11 Format
-          H_0_0            : in  std_logic_vector(17 downto 0);
-          H_0_1            : in  std_logic_vector(17 downto 0);
-          H_1_0            : in  std_logic_vector(17 downto 0);
-          H_1_1            : in  std_logic_vector(17 downto 0);
+          H_0_0            : IN  std_logic_vector(17 DOWNTO 0);
+          H_0_1            : IN  std_logic_vector(17 DOWNTO 0);
+          H_1_0            : IN  std_logic_vector(17 DOWNTO 0);
+          H_1_1            : IN  std_logic_vector(17 DOWNTO 0);
           -- Translation
           -- 1:10:11 Format 
-          H_0_2            : in  std_logic_vector(21 downto 0);
-          H_1_2            : in  std_logic_vector(21 downto 0);
+          H_0_2            : IN  std_logic_vector(21 DOWNTO 0);
+          H_1_2            : IN  std_logic_vector(21 DOWNTO 0);
           -- External Memory Connections
           -- 0:0:PIXEL_BITS Format
-          MEM_VALUE        : in  std_logic_vector(PIXEL_BITS-1 downto 0);
-          MEM_INPUT_VALID  : in  std_logic;
-          MEM_ADDR         : out std_logic_vector(2*IMGSIZE_BITS-1 downto 0);
-          MEM_BW_B         : out std_logic_vector(3 downto 0);
-          MEM_OUTPUT_VALID : out std_logic;
+          MEM_VALUE        : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          MEM_INPUT_VALID  : IN  std_logic;
+          MEM_ADDR         : OUT std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+          MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
+          MEM_OUTPUT_VALID : OUT std_logic;
           -- IMG0 Neighborhood for spatial derivative computation (only output
           -- the union of the middle row pixels and the middle column pixels)
           -- 0:0:PIXEL_BITS Format
-          IMG0_0_1         : out std_logic_vector(PIXEL_BITS-1 downto 0);
-          IMG0_1_0         : out std_logic_vector(PIXEL_BITS-1 downto 0);
-          IMG0_1_1         : out std_logic_vector(PIXEL_BITS-1 downto 0);
-          IMG0_1_2         : out std_logic_vector(PIXEL_BITS-1 downto 0);
-          IMG0_2_1         : out std_logic_vector(PIXEL_BITS-1 downto 0);
+          IMG0_0_1         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG0_1_0         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG0_1_1         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG0_1_2         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG0_2_1         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
           -- IMG1 Center pixel value for temporal derivative computation
-          IMG1_1_1         : out std_logic_vector(PIXEL_BITS-1 downto 0);
+          IMG1_1_1         : OUT std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
           -- Offset pixel coordinates for A/b matrix computation (offset to
           -- increase numerical accuracy, corrected later in the pipeline)
           -- 1:IMGSIZE_BITS:1 Format
-          TRANS_X_COORD    : out std_logic_vector(IMGSIZE_BITS+1 downto 0);
-          TRANS_Y_COORD    : out std_logic_vector(IMGSIZE_BITS+1 downto 0);
+          TRANS_X_COORD    : OUT std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+          TRANS_Y_COORD    : OUT std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
 
-          FSCS_VALID : out std_logic;
-          DONE       : out std_logic);
-  end component;
+          FSCS_VALID : OUT std_logic;
+          DONE       : OUT std_logic);
+  END COMPONENT;
 
-  component compute_stage is
-    generic (
+  COMPONENT compute_stage IS
+    GENERIC (
       IMGSIZE_BITS : integer := 10;
       PIXEL_BITS   : integer := 9);
-    port (CLK           : in std_logic;
-          RST           : in std_logic;
+    PORT (CLK           : IN std_logic;
+          RST           : IN std_logic;
           -- IMG0 Neighborhood for spatial derivative computation (only output
           -- the union of the middle row pixels and the middle column pixels)
           -- 0:0:PIXEL_BITS Format
-          IMG0_0_1      : in std_logic_vector(PIXEL_BITS-1 downto 0);
-          IMG0_1_0      : in std_logic_vector(PIXEL_BITS-1 downto 0);
-          IMG0_1_1      : in std_logic_vector(PIXEL_BITS-1 downto 0);
-          IMG0_1_2      : in std_logic_vector(PIXEL_BITS-1 downto 0);
-          IMG0_2_1      : in std_logic_vector(PIXEL_BITS-1 downto 0);
+          IMG0_0_1      : IN std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG0_1_0      : IN std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG0_1_1      : IN std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG0_1_2      : IN std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          IMG0_2_1      : IN std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
           -- IMG1 Center pixel value for temporal derivative computation
-          IMG1_1_1      : in std_logic_vector(PIXEL_BITS-1 downto 0);
+          IMG1_1_1      : IN std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
           -- Offset pixel coordinates for A/b matrix computation (offset to
           -- increase numerical accuracy, corrected later in the pipeline)
           -- 1:IMGSIZE_BITS:1 Format
-          TRANS_X_COORD : in std_logic_vector(IMGSIZE_BITS+1 downto 0);
-          TRANS_Y_COORD : in std_logic_vector(IMGSIZE_BITS+1 downto 0);
+          TRANS_X_COORD : IN std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+          TRANS_Y_COORD : IN std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
 
-          FSCS_VALID : in std_logic;
-          DONE       : in std_logic;
+          FSCS_VALID : IN std_logic;
+          DONE       : IN std_logic;
 
           -- 1:0:PIXEL_BITS Format
-          IX                : out std_logic_vector(PIXEL_BITS downto 0);
-          IY                : out std_logic_vector(PIXEL_BITS downto 0);
-          IT                : out std_logic_vector(PIXEL_BITS downto 0);
+          IX                : OUT std_logic_vector(PIXEL_BITS DOWNTO 0);
+          IY                : OUT std_logic_vector(PIXEL_BITS DOWNTO 0);
+          IT                : OUT std_logic_vector(PIXEL_BITS DOWNTO 0);
           -- 1:IMGSIZE_BITS:1 Format
-          TRANS_X_COORD_BUF : out std_logic_vector(IMGSIZE_BITS+1 downto 0);
-          TRANS_Y_COORD_BUF : out std_logic_vector(IMGSIZE_BITS+1 downto 0);
+          TRANS_X_COORD_BUF : OUT std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+          TRANS_Y_COORD_BUF : OUT std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
 
-          DONE_BUF   : out std_logic;
-          CSSS_VALID : out std_logic);
-  end component;
+          DONE_BUF   : OUT std_logic;
+          CSSS_VALID : OUT std_logic);
+  END COMPONENT;
 
-  component make_a_b_matrices is
-    generic (
+  COMPONENT make_a_b_matrices IS
+    GENERIC (
       IMGSIZE_BITS : integer := 11;
       PIXEL_BITS   : integer := 9;
       FRAC_BITS    : integer := 26;
       DELAY        : integer := 4);
-    port (CLK : in std_logic;
+    PORT (CLK : IN std_logic;
 
-          RST         : in  std_logic;
-          COORD_SHIFT : in  std_logic_vector(3 downto 0);
+          RST         : IN  std_logic;
+          COORD_SHIFT : IN  std_logic_vector(3 DOWNTO 0);
           -- 1:IMGSIZE_BITS-1:1 Format
-          X           : in  std_logic_vector(IMGSIZE_BITS downto 0);
-          Y           : in  std_logic_vector(IMGSIZE_BITS downto 0);
+          X           : IN  std_logic_vector(IMGSIZE_BITS DOWNTO 0);
+          Y           : IN  std_logic_vector(IMGSIZE_BITS DOWNTO 0);
           -- 1:0:PIXEL_BITS Format
-          FX          : in  std_logic_vector(PIXEL_BITS downto 0);
-          FY          : in  std_logic_vector(PIXEL_BITS downto 0);
-          FT          : in  std_logic_vector(PIXEL_BITS downto 0);
-          VALID_IN    : in  std_logic;
-          DONE        : in  std_logic;
-          DONE_BUF    : out std_logic;
-          VALID_OUT   : out std_logic;
+          FX          : IN  std_logic_vector(PIXEL_BITS DOWNTO 0);
+          FY          : IN  std_logic_vector(PIXEL_BITS DOWNTO 0);
+          FT          : IN  std_logic_vector(PIXEL_BITS DOWNTO 0);
+          VALID_IN    : IN  std_logic;
+          DONE        : IN  std_logic;
+          DONE_BUF    : OUT std_logic;
+          VALID_OUT   : OUT std_logic;
           -- 1:0:26
-          A_0_0       : out std_logic_vector(FRAC_BITS downto 0);
-          A_0_1       : out std_logic_vector(FRAC_BITS downto 0);
-          A_0_2       : out std_logic_vector(FRAC_BITS downto 0);
-          A_0_3       : out std_logic_vector(FRAC_BITS downto 0);
-          A_0_4       : out std_logic_vector(FRAC_BITS downto 0);
-          A_0_5       : out std_logic_vector(FRAC_BITS downto 0);
+          A_0_0       : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_0_1       : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_0_2       : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_0_3       : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_0_4       : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_0_5       : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
 
-          A_1_0 : out std_logic_vector(FRAC_BITS downto 0);
-          A_1_1 : out std_logic_vector(FRAC_BITS downto 0);
-          A_1_2 : out std_logic_vector(FRAC_BITS downto 0);
-          A_1_3 : out std_logic_vector(FRAC_BITS downto 0);
-          A_1_4 : out std_logic_vector(FRAC_BITS downto 0);
-          A_1_5 : out std_logic_vector(FRAC_BITS downto 0);
+          A_1_0 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_1_1 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_1_2 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_1_3 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_1_4 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_1_5 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
 
-          A_2_0 : out std_logic_vector(FRAC_BITS downto 0);
-          A_2_1 : out std_logic_vector(FRAC_BITS downto 0);
-          A_2_2 : out std_logic_vector(FRAC_BITS downto 0);
-          A_2_3 : out std_logic_vector(FRAC_BITS downto 0);
-          A_2_4 : out std_logic_vector(FRAC_BITS downto 0);
-          A_2_5 : out std_logic_vector(FRAC_BITS downto 0);
+          A_2_0 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_2_1 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_2_2 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_2_3 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_2_4 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_2_5 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
 
-          A_3_0 : out std_logic_vector(FRAC_BITS downto 0);
-          A_3_1 : out std_logic_vector(FRAC_BITS downto 0);
-          A_3_2 : out std_logic_vector(FRAC_BITS downto 0);
-          A_3_3 : out std_logic_vector(FRAC_BITS downto 0);
-          A_3_4 : out std_logic_vector(FRAC_BITS downto 0);
-          A_3_5 : out std_logic_vector(FRAC_BITS downto 0);
+          A_3_0 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_3_1 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_3_2 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_3_3 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_3_4 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_3_5 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
 
-          A_4_0 : out std_logic_vector(FRAC_BITS downto 0);
-          A_4_1 : out std_logic_vector(FRAC_BITS downto 0);
-          A_4_2 : out std_logic_vector(FRAC_BITS downto 0);
-          A_4_3 : out std_logic_vector(FRAC_BITS downto 0);
-          A_4_4 : out std_logic_vector(FRAC_BITS downto 0);
-          A_4_5 : out std_logic_vector(FRAC_BITS downto 0);
+          A_4_0 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_4_1 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_4_2 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_4_3 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_4_4 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_4_5 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
 
-          A_5_0 : out std_logic_vector(FRAC_BITS downto 0);
-          A_5_1 : out std_logic_vector(FRAC_BITS downto 0);
-          A_5_2 : out std_logic_vector(FRAC_BITS downto 0);
-          A_5_3 : out std_logic_vector(FRAC_BITS downto 0);
-          A_5_4 : out std_logic_vector(FRAC_BITS downto 0);
-          A_5_5 : out std_logic_vector(FRAC_BITS downto 0);
+          A_5_0 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_5_1 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_5_2 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_5_3 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_5_4 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          A_5_5 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
 
-          B_0 : out std_logic_vector(FRAC_BITS downto 0);
-          B_1 : out std_logic_vector(FRAC_BITS downto 0);
-          B_2 : out std_logic_vector(FRAC_BITS downto 0);
-          B_3 : out std_logic_vector(FRAC_BITS downto 0);
-          B_4 : out std_logic_vector(FRAC_BITS downto 0);
-          B_5 : out std_logic_vector(FRAC_BITS downto 0)
+          B_0 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          B_1 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          B_2 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          B_3 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          B_4 : OUT std_logic_vector(FRAC_BITS DOWNTO 0);
+          B_5 : OUT std_logic_vector(FRAC_BITS DOWNTO 0)
           );
-  end component;
+  END COMPONENT;
 
-  component sum_a_b_matrices is
-    generic (
+  COMPONENT sum_a_b_matrices IS
+    GENERIC (
       FRAC_BITS_IN   : integer := 26;
       FRAC_BITS_OUT  : integer := 19;
       WHOLE_BITS_OUT : integer := 8);
-    port (CLK : in std_logic;
-          RST : in std_logic;
+    PORT (CLK : IN std_logic;
+          RST : IN std_logic;
 
-          INPUT_VALID  : in  std_logic;
-          DONE         : in  std_logic;
-          DONE_BUF     : out std_logic;
-          OUTPUT_VALID : out std_logic;
+          INPUT_VALID  : IN  std_logic;
+          DONE         : IN  std_logic;
+          DONE_BUF     : OUT std_logic;
+          OUTPUT_VALID : OUT std_logic;
           -- 1:0:26
-          A_0_0        : in  std_logic_vector(FRAC_BITS_IN downto 0);
-          A_0_1        : in  std_logic_vector(FRAC_BITS_IN downto 0);
-          A_0_2        : in  std_logic_vector(FRAC_BITS_IN downto 0);
-          A_0_3        : in  std_logic_vector(FRAC_BITS_IN downto 0);
-          A_0_4        : in  std_logic_vector(FRAC_BITS_IN downto 0);
-          A_0_5        : in  std_logic_vector(FRAC_BITS_IN downto 0);
+          A_0_0        : IN  std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_0_1        : IN  std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_0_2        : IN  std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_0_3        : IN  std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_0_4        : IN  std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_0_5        : IN  std_logic_vector(FRAC_BITS_IN DOWNTO 0);
 
-          A_1_0 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_1_1 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_1_2 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_1_3 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_1_4 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_1_5 : in std_logic_vector(FRAC_BITS_IN downto 0);
+          A_1_0 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_1_1 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_1_2 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_1_3 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_1_4 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_1_5 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
 
-          A_2_0 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_2_1 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_2_2 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_2_3 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_2_4 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_2_5 : in std_logic_vector(FRAC_BITS_IN downto 0);
+          A_2_0 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_2_1 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_2_2 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_2_3 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_2_4 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_2_5 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
 
-          A_3_0 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_3_1 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_3_2 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_3_3 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_3_4 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_3_5 : in std_logic_vector(FRAC_BITS_IN downto 0);
+          A_3_0 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_3_1 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_3_2 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_3_3 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_3_4 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_3_5 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
 
-          A_4_0 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_4_1 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_4_2 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_4_3 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_4_4 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_4_5 : in std_logic_vector(FRAC_BITS_IN downto 0);
+          A_4_0 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_4_1 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_4_2 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_4_3 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_4_4 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_4_5 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
 
-          A_5_0 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_5_1 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_5_2 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_5_3 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_5_4 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          A_5_5 : in std_logic_vector(FRAC_BITS_IN downto 0);
+          A_5_0 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_5_1 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_5_2 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_5_3 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_5_4 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          A_5_5 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
 
-          B_0 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          B_1 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          B_2 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          B_3 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          B_4 : in std_logic_vector(FRAC_BITS_IN downto 0);
-          B_5 : in std_logic_vector(FRAC_BITS_IN downto 0);
+          B_0 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          B_1 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          B_2 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          B_3 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          B_4 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
+          B_5 : IN std_logic_vector(FRAC_BITS_IN DOWNTO 0);
 
 
 
           -- A Matrix Outputs (6x6)
           -- 1:WHOLE_BITS_OUT-1:FRAC_BITS_OUT
-          A_0_0_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_0_1_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_0_2_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_0_3_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_0_4_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_0_5_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
+          A_0_0_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_0_1_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_0_2_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_0_3_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_0_4_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_0_5_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
 
-          A_1_0_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_1_1_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_1_2_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_1_3_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_1_4_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_1_5_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
+          A_1_0_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_1_1_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_1_2_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_1_3_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_1_4_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_1_5_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
 
-          A_2_0_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_2_1_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_2_2_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_2_3_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_2_4_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_2_5_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
+          A_2_0_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_2_1_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_2_2_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_2_3_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_2_4_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_2_5_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
 
-          A_3_0_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_3_1_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_3_2_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_3_3_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_3_4_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_3_5_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
+          A_3_0_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_3_1_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_3_2_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_3_3_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_3_4_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_3_5_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
 
-          A_4_0_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_4_1_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_4_2_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_4_3_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_4_4_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_4_5_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
+          A_4_0_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_4_1_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_4_2_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_4_3_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_4_4_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_4_5_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
 
-          A_5_0_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_5_1_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_5_2_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_5_3_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_5_4_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          A_5_5_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
+          A_5_0_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_5_1_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_5_2_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_5_3_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_5_4_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          A_5_5_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
 
           -- b Vector Outputs (6x1)
-          B_0_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          B_1_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          B_2_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          B_3_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          B_4_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
-          B_5_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0)
+          B_0_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          B_1_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          B_2_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          B_3_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          B_4_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0);
+          B_5_S : OUT std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 DOWNTO 0)
           );
-  end component;
+  END COMPONENT;
 
-  component gauss_elim is
-    generic (
+  COMPONENT gauss_elim IS
+    GENERIC (
       WHOLE_BITS : integer := 8;
       FRAC_BITS  : integer := 19
       );
-    port (CLK        : in std_logic;
-          RST        : in std_logic;
-          INPUT_LOAD : in std_logic;
+    PORT (CLK        : IN std_logic;
+          RST        : IN std_logic;
+          INPUT_LOAD : IN std_logic;
 
           -- A Matrix Inputs (6x6)
           -- 1:WHOLE_BITS-1:FRAC_BITS
-          A_0_0 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_0_1 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_0_2 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_0_3 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_0_4 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_0_5 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
+          A_0_0 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_0_1 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_0_2 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_0_3 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_0_4 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_0_5 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
 
-          A_1_0 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_1_1 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_1_2 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_1_3 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_1_4 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_1_5 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
+          A_1_0 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_1_1 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_1_2 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_1_3 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_1_4 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_1_5 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
 
-          A_2_0 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_2_1 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_2_2 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_2_3 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_2_4 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_2_5 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
+          A_2_0 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_2_1 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_2_2 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_2_3 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_2_4 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_2_5 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
 
-          A_3_0 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_3_1 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_3_2 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_3_3 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_3_4 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_3_5 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
+          A_3_0 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_3_1 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_3_2 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_3_3 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_3_4 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_3_5 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
 
-          A_4_0 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_4_1 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_4_2 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_4_3 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_4_4 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_4_5 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
+          A_4_0 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_4_1 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_4_2 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_4_3 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_4_4 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_4_5 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
 
-          A_5_0 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_5_1 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_5_2 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_5_3 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_5_4 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          A_5_5 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
+          A_5_0 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_5_1 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_5_2 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_5_3 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_5_4 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          A_5_5 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
 
           -- b Vector Inputs (6x1)
-          B_0 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          B_1 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          B_2 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          B_3 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          B_4 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          B_5 : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
+          B_0 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          B_1 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          B_2 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          B_3 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          B_4 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          B_5 : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
 
           -- x Vector Outputs (6x1)
-          X_0 : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          X_1 : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          X_2 : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          X_3 : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          X_4 : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          X_5 : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
+          X_0 : OUT std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          X_1 : OUT std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          X_2 : OUT std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          X_3 : OUT std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          X_4 : OUT std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          X_5 : OUT std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
 
-          OUTPUT_VALID : out std_logic
+          OUTPUT_VALID : OUT std_logic
           );
-  end component;
+  END COMPONENT;
 
-  component make_affine_homography is
-    generic (
+  COMPONENT make_affine_homography IS
+    GENERIC (
       WHOLE_BITS : integer := 8;
       FRAC_BITS  : integer := 19
       );
-    port (CLK         : in std_logic;
-          RST         : in std_logic;
-          INPUT_VALID : in std_logic;
-          X_0         : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          X_1         : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          X_2         : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          X_3         : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          X_4         : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          X_5         : in std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
+    PORT (CLK         : IN std_logic;
+          RST         : IN std_logic;
+          INPUT_VALID : IN std_logic;
+          X_0         : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          X_1         : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          X_2         : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          X_3         : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          X_4         : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          X_5         : IN std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
 
-          OUTPUT_VALID : out std_logic;
-          H_0_0        : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_0_1        : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_0_2        : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_1_0        : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_1_1        : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_1_2        : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0)
+          OUTPUT_VALID : OUT std_logic;
+          H_0_0        : OUT std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_0_1        : OUT std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_0_2        : OUT std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_1_0        : OUT std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_1_1        : OUT std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_1_2        : OUT std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0)
           );
-  end component;
+  END COMPONENT;
 
-  component unscale_h_matrix is
-    generic (
-      WHOLE_BITS : integer := 8;
-      FRAC_BITS  : integer := 19
+  COMPONENT unscale_h_matrix IS
+    GENERIC (
+      WHOLE_BITS   : integer := 8;
+      FRAC_BITS    : integer := 19;
+      IMGSIZE_BITS : integer := 10
       );
-    port (CLK          : in  std_logic;
-          RST          : in  std_logic;
-          H_0_0_I      : in  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_0_1_I      : in  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_0_2_I      : in  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_1_0_I      : in  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_1_1_I      : in  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_1_2_I      : in  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          -- The X and Y shift values
-          XB           : in  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          YB           : in  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          INPUT_VALID  : in  std_logic;
-          OUTPUT_VALID : out std_logic;
-
-          H_0_0 : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_0_1 : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_0_2 : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_1_0 : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_1_1 : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-          H_1_2 : out std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0));
-  end component;
+    PORT (CLK          : IN  std_logic;
+          RST          : IN  std_logic;
+          H_0_0_I      : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_0_1_I      : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_0_2_I      : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_1_0_I      : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_1_1_I      : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_1_2_I      : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          -- 1:IMGSIZE_BITS:1 Format
+          COORD_TRANS  : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+          INPUT_VALID  : IN  std_logic;
+          OUTPUT_VALID : OUT std_logic;
+          H_0_0        : OUT std_logic_vector(29 DOWNTO 0);
+          H_0_1        : OUT std_logic_vector(29 DOWNTO 0);
+          H_0_2        : OUT std_logic_vector(29 DOWNTO 0);
+          H_1_0        : OUT std_logic_vector(29 DOWNTO 0);
+          H_1_1        : OUT std_logic_vector(29 DOWNTO 0);
+          H_1_2        : OUT std_logic_vector(29 DOWNTO 0));
+  END COMPONENT;
 -- Homographies
-  signal h_0_0_ma, h_0_1_ma, h_0_2_ma, h_1_0_ma, h_1_1_ma, h_1_2_ma : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
+  SIGNAL h_0_0_ma, h_0_1_ma, h_0_2_ma, h_1_0_ma, h_1_1_ma, h_1_2_ma : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
 
-  signal x_0, x_1, x_2, x_3, x_4, x_5                : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal img0_0_1, img0_1_0, img0_1_1, img0_1_2, img0_2_1, img1_1_1 : std_logic_vector(PIXEL_BITS-1 downto 0);
-  signal x_f, y_f, x_cs, y_cs                                       : std_logic_vector(IMGSIZE_BITS+1 downto 0);
-  signal ix,iy,it : std_logic_vector(PIXEL_BITS downto 0);
+  SIGNAL x_0, x_1, x_2, x_3, x_4, x_5                               : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL img0_0_1, img0_1_0, img0_1_1, img0_1_2, img0_2_1, img1_1_1 : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  SIGNAL x_f, y_f, x_cs, y_cs                                       : std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+  SIGNAL ix, iy, it                                                 : std_logic_vector(PIXEL_BITS DOWNTO 0);
 
 -- A/b matrices
-  signal a_0_0, a_1_0, a_2_0, a_3_0, a_4_0, a_5_0 : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal a_0_1, a_1_1, a_2_1, a_3_1, a_4_1, a_5_1 : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal a_0_2, a_1_2, a_2_2, a_3_2, a_4_2, a_5_2 : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal a_0_3, a_1_3, a_2_3, a_3_3, a_4_3, a_5_3 : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal a_0_4, a_1_4, a_2_4, a_3_4, a_4_4, a_5_4 : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal a_0_5, a_1_5, a_2_5, a_3_5, a_4_5, a_5_5 : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal b_0, b_1, b_2, b_3, b_4, b_5             : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
+  SIGNAL a_0_0, a_1_0, a_2_0, a_3_0, a_4_0, a_5_0 : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL a_0_1, a_1_1, a_2_1, a_3_1, a_4_1, a_5_1 : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL a_0_2, a_1_2, a_2_2, a_3_2, a_4_2, a_5_2 : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL a_0_3, a_1_3, a_2_3, a_3_3, a_4_3, a_5_3 : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL a_0_4, a_1_4, a_2_4, a_3_4, a_4_4, a_5_4 : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL a_0_5, a_1_5, a_2_5, a_3_5, a_4_5, a_5_5 : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL b_0, b_1, b_2, b_3, b_4, b_5             : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
 
-  signal a_0_0_s, a_1_0_s, a_2_0_s, a_3_0_s, a_4_0_s, a_5_0_s : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal a_0_1_s, a_1_1_s, a_2_1_s, a_3_1_s, a_4_1_s, a_5_1_s : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal a_0_2_s, a_1_2_s, a_2_2_s, a_3_2_s, a_4_2_s, a_5_2_s : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal a_0_3_s, a_1_3_s, a_2_3_s, a_3_3_s, a_4_3_s, a_5_3_s : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal a_0_4_s, a_1_4_s, a_2_4_s, a_3_4_s, a_4_4_s, a_5_4_s : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal a_0_5_s, a_1_5_s, a_2_5_s, a_3_5_s, a_4_5_s, a_5_5_s : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal b_0_s, b_1_s, b_2_s, b_3_s, b_4_s, b_5_s             : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
+  SIGNAL a_0_0_s, a_1_0_s, a_2_0_s, a_3_0_s, a_4_0_s, a_5_0_s : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL a_0_1_s, a_1_1_s, a_2_1_s, a_3_1_s, a_4_1_s, a_5_1_s : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL a_0_2_s, a_1_2_s, a_2_2_s, a_3_2_s, a_4_2_s, a_5_2_s : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL a_0_3_s, a_1_3_s, a_2_3_s, a_3_3_s, a_4_3_s, a_5_3_s : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL a_0_4_s, a_1_4_s, a_2_4_s, a_3_4_s, a_4_4_s, a_5_4_s : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL a_0_5_s, a_1_5_s, a_2_5_s, a_3_5_s, a_4_5_s, a_5_5_s : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL b_0_s, b_1_s, b_2_s, b_3_s, b_4_s, b_5_s             : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
 
 
 -- Done/Valid
-  signal done_f, done_cs, done_mab, done_sab                         : std_logic;
-  signal valid_f, valid_cs, valid_mab, valid_sab, valid_ge, valid_ma : std_logic;
-begin
+  SIGNAL done_f, done_cs, done_mab, done_sab                         : std_logic;
+  SIGNAL valid_f, valid_cs, valid_mab, valid_sab, valid_ge, valid_ma : std_logic;
+BEGIN
 -- Advisory Stage (Control which pyramid level/iteration we are on)
 -- TODO Make a state machine (IDLE,SUMMING,SOLVING)
 
   -- Fetch Stage (Read memory to get convolution neighborhoods)
   fetch_stage_i : fetch_stage
-    port map (
+    PORT MAP (
       CLK              => CLK,
       RST              => RST,
       LEVEL            => LEVEL,
@@ -512,7 +512,7 @@ begin
 
 -- Compute Stage (Compute derivatives)
   compute_stage_i : compute_stage
-    port map (CLK      => CLK,
+    PORT MAP (CLK      => CLK,
               RST      => RST,
               IMG0_0_1 => img0_0_1,
               IMG0_1_0 => img0_1_0,
@@ -536,7 +536,7 @@ begin
 
 -- Make A/b matrices
   make_a_b_matrices_i : make_a_b_matrices
-    port map (CLK         => CLK,
+    PORT MAP (CLK         => CLK,
               RST         => RST,
               COORD_SHIFT => COORD_SHIFT,
               X           => x_cs,
@@ -603,7 +603,7 @@ begin
   -- INTERNAL: 1:7:26
   -- OUT: 1:7:19
   sum_a_b_matrices_i : sum_a_b_matrices
-    port map (CLK         => CLK,
+    PORT MAP (CLK         => CLK,
               RST         => RST,
               INPUT_VALID => valid_mab,
               DONE        => done_mab,
@@ -712,7 +712,7 @@ begin
 -- Solve stage (Solve summed A/b matrices using gaussian elimination)
   -- TODO Make the GE INPUT_LOAD signal hook up to the state machine
   gauss_elim_i : gauss_elim
-    port map (CLK        => CLK,
+    PORT MAP (CLK        => CLK,
               RST        => RST,
               INPUT_LOAD => done_sab,
                                         -- 1:7:19
@@ -776,7 +776,7 @@ begin
 -- Add diag([1,1,0]) to produce the homography between iterations
 -- M=[p(2) p(3) p(1);p(5) p(6) p(4); 0 0 1];
   make_affine_homography_i : make_affine_homography
-    port map (CLK          => CLK,
+    PORT MAP (CLK          => CLK,
               RST          => RST,
               INPUT_VALID  => valid_ge,
               X_0          => x_0,
@@ -802,7 +802,7 @@ begin
 -- [                 h3,                 h4, -h3*xb-h4*yb+h5+yb]
 -- [                  0,                  0,                  1]
   unscale_h_matrix_i : unscale_h_matrix
-    port map (CLK          => CLK,
+    PORT MAP (CLK          => CLK,
               RST          => RST,
               H_0_0_I      => h_0_0_ma,
               H_0_1_I      => h_0_1_ma,
@@ -810,8 +810,7 @@ begin
               H_1_0_I      => h_1_0_ma,
               H_1_1_I      => h_1_1_ma,
               H_1_2_I      => h_1_2_ma,
-              XB           => COORD_TRANS,
-              YB           => COORD_TRANS,
+              COORD_TRANS  => COORD_TRANS,
               INPUT_VALID  => valid_ma,
               -- Output
               OUTPUT_VALID => OUTPUT_VALID,
@@ -829,5 +828,5 @@ begin
 -- [              0,              0,              1]
 --TODO Finish
 
-end Behavioral;
+END Behavioral;
 

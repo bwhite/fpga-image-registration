@@ -136,6 +136,9 @@ begin
   process (CLK)
   begin  -- process
     if CLK'event and CLK = '1' then     -- rising clock edge
+      if RST = '1' then                 -- synchronous reset (active high)
+        valid_in_reg <= '0';
+      else
       -- NOTE: This assumes that the shift will include all data bits in the
       -- new fractional area of x/y_reg, if not then errors will occur.  Ensure
       -- that the correct COORD_SHIFT is used for the correct range of X/Y values!
@@ -198,6 +201,7 @@ begin
       ft_reg(FRAC_BITS-PIXEL_BITS-1 downto 0)       <= (others => '0');
       ft_reg(FRAC_BITS downto FRAC_BITS-PIXEL_BITS) <= FT;
     end if;
+  END if;
   end process;
 
 

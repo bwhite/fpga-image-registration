@@ -228,7 +228,7 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   SIGNAL h_0_0, h_0_1, h_0_2, h_1_0, h_1_1, h_1_2 : std_logic_vector(29 DOWNTO 0);
   
   ATTRIBUTE KEEP : string;
-  ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value, cs_we_b, h_0_0, h_0_1, h_0_2, h_1_0, h_1_1, h_1_2 : SIGNAL IS "true";
+  ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value, cs_we_b, h_0_0, h_0_1, h_0_2, h_1_0, h_1_1, h_1_2, compute_affine_done : SIGNAL IS "true";
   
 BEGIN
 -------------------------------------------------------------------------------

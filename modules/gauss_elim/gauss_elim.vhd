@@ -207,6 +207,7 @@ begin
       -- Initial initialization of the 
       if RST = '1' then                 -- synchronous reset (active low)
         state <= IDLE;
+        done_reg <= '0';
       else
         case state is
           when ERR =>

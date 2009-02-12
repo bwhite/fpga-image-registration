@@ -309,14 +309,14 @@ BEGIN
             img_width        <= int_to_stdlvec(10#5#, IMGSIZE_BITS);    -- 5
             img_width_offset <= int_to_stdlvec(10#9#, 2*IMGSIZE_BITS);  -- 9
             initial_mem_addr <= int_to_stdlvec(10#6#, 2*IMGSIZE_BITS);  -- 6
-          WHEN "110" =>                 -- 3x3 TESTING ONLY!!!
-            y_coord_trans    <= int_to_stdlvec(10#3#, IMGSIZE_BITS+1);  -- 1.5
-            x_coord_trans    <= int_to_stdlvec(10#3#, IMGSIZE_BITS+1);  -- 1.5
+          WHEN "110" =>                 -- 6x6 TESTING ONLY!!!
+            y_coord_trans    <= int_to_stdlvec(10#6#, IMGSIZE_BITS+1);  -- 3
+            x_coord_trans    <= int_to_stdlvec(10#6#, IMGSIZE_BITS+1);  -- 3
             img_offset      <= int_to_stdlvec(10#0#, 2*IMGSIZE_BITS);  -- 920,700
-            img_height       <= int_to_stdlvec(10#3#, IMGSIZE_BITS);    -- 6
-            img_width        <= int_to_stdlvec(10#3#, IMGSIZE_BITS);    -- 6
-            img_width_offset <= int_to_stdlvec(10#5#, 2*IMGSIZE_BITS);  -- 11
-            initial_mem_addr <= int_to_stdlvec(10#4#, 2*IMGSIZE_BITS);  -- 7
+            img_height       <= int_to_stdlvec(10#6#, IMGSIZE_BITS);    -- 6
+            img_width        <= int_to_stdlvec(10#6#, IMGSIZE_BITS);    -- 6
+            img_width_offset <= int_to_stdlvec(10#11#, 2*IMGSIZE_BITS);  -- 11
+            initial_mem_addr <= int_to_stdlvec(10#7#, 2*IMGSIZE_BITS);  -- 7
             
           WHEN "111" =>                 -- 640x480
             y_coord_trans    <= int_to_stdlvec(10#480#, IMGSIZE_BITS+1);  -- 240
@@ -500,42 +500,42 @@ BEGIN
 -- memory input buffer is not present.
   -- NOTE: For final use this will be removed
   -- 2CT Delay
---  fake_mem_valid_buffer : pipeline_bit_buffer
---    GENERIC MAP (
---      STAGES => 4)                      
---    PORT MAP (
---      CLK   => CLK,
---      SET   => '0',
---      RST   => RST,
---      CLKEN => '1',
---      DIN   => mem_output_valid_wire,
---      DOUT  => mem_output_valid_buf);
+  fake_mem_valid_buffer : pipeline_bit_buffer
+    GENERIC MAP (
+      STAGES => 4)                      
+    PORT MAP (
+      CLK   => CLK,
+      SET   => '0',
+      RST   => RST,
+      CLKEN => '1',
+      DIN   => mem_output_valid_wire,
+      DOUT  => mem_output_valid_buf);
 
---  fake_mem_value_buffer : pipeline_buffer
---    GENERIC MAP (
---      WIDTH         => PIXEL_BITS,
---      STAGES        => 4,
---      DEFAULT_VALUE => 2#0#)
---    PORT MAP (
---      CLK   => CLK,
---      RST   => RST,
---      CLKEN => '1',
---      DIN   => mem_addr_wire(PIXEL_BITS-1 DOWNTO 0),
---      DOUT  => mem_value_fake);
+  fake_mem_value_buffer : pipeline_buffer
+    GENERIC MAP (
+      WIDTH         => PIXEL_BITS,
+      STAGES        => 4,
+      DEFAULT_VALUE => 2#0#)
+    PORT MAP (
+      CLK   => CLK,
+      RST   => RST,
+      CLKEN => '1',
+      DIN   => mem_addr_wire(PIXEL_BITS-1 DOWNTO 0),
+      DOUT  => mem_value_fake);
 
---  -- Mem Value Register: Stores the incoming value into a register
----- NOTE: THIS ABSOLUTELY MUST BE REMOVED WHEN USING A REAL MEMORY CONTROLLER AS
----- IT WILL SKEW THE CTs BY 1. IT IS ONLY USED TO SIMPLIFY SIMULATION TIMING!!!
---  PROCESS (CLK) IS
---  BEGIN  -- PROCESS
---    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
---      IF RST = '1' THEN                 -- synchronous reset (active high)
---        mem_value_buf <= (OTHERS => '0');
---      ELSE
---        mem_value_buf <= MEM_VALUE;
---      END IF;
---    END IF;
---  END PROCESS;
+  -- Mem Value Register: Stores the incoming value into a register
+-- NOTE: THIS ABSOLUTELY MUST BE REMOVED WHEN USING A REAL MEMORY CONTROLLER AS
+-- IT WILL SKEW THE CTs BY 1. IT IS ONLY USED TO SIMPLIFY SIMULATION TIMING!!!
+  PROCESS (CLK) IS
+  BEGIN  -- PROCESS
+    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
+      IF RST = '1' THEN                 -- synchronous reset (active high)
+        mem_value_buf <= (OTHERS => '0');
+      ELSE
+        mem_value_buf <= MEM_VALUE;
+      END IF;
+    END IF;
+  END PROCESS;
 
 -- Pattern State Buffer: Buffer the pattern_state_wire signal so that it
 -- coincides with the resulting pixel value coming from the memory
@@ -560,9 +560,9 @@ BEGIN
 -- pixel values. Note that since there is a delay between when the read
 -- command is asserted and when the valid data is available, the cur pixel
 -- state will be pipelined to align the valid data with the pixel state.
-  PROCESS (pattern_state_buf, mem_output_valid_wire) IS
+  PROCESS (pattern_state_buf, mem_output_valid_buf) IS
   BEGIN  -- PROCESS
-    IF mem_output_valid_wire = '1' AND pattern_state_buf(0) = '1' THEN  -- TODO fix for true memory version
+    IF mem_output_valid_buf = '1' AND pattern_state_buf(0) = '1' THEN  -- TODO fix for true memory version
       clken_3x3_buf <= '1';
     ELSE
       clken_3x3_buf <= '0';
@@ -575,13 +575,13 @@ BEGIN
       RST          => RST,
       CLKEN        => clken_3x3_buf,
       NEW_ROW      => new_row_buf,
-      MEM_VALUE    => MEM_VALUE,
+      MEM_VALUE    => mem_value_fake,   --MEM_VALUE
       OUTPUT_VALID => conv_buf_output_valid,
       IMG_0_1      => IMG0_0_1,
       IMG_1_0      => IMG0_1_0,
       IMG_1_1      => IMG0_1_1,
       IMG_1_2      => IMG0_1_2,
       IMG_2_1      => IMG0_2_1);
-  IMG1_1_1   <= MEM_VALUE;
+  IMG1_1_1   <= mem_value_fake;
   FSCS_VALID <= conv_buf_output_valid;
 END Behavioral;

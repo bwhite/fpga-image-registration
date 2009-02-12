@@ -100,8 +100,8 @@ BEGIN
         -- Select which mem address to use, and add the proper offset to it
         IF addr_select_img0 = '1' THEN
           -- Add an offset to the input address, set the read flag, and pass on
-          -- the validity of the address
-          mem_address_reg <= '0'&(unsigned(IMG_MEM_ADDR(18 DOWNTO 0))+unsigned(MEM_ADDROFF(18 DOWNTO 0)));
+          -- the validity of the address.  IMG1
+          mem_address_reg <= '1'&(unsigned(IMG_MEM_ADDR(18 DOWNTO 0))+unsigned(MEM_ADDROFF(18 DOWNTO 0)));
           -- Precomputes the byte write values as it is hard to meet timing
           -- when this is done later (this is redundant given the address).
           -- This assumes that the MEM_ADDROFF%4==0 (as it doesn't consider the
@@ -120,7 +120,7 @@ BEGIN
           output_valid_reg <= IMG_ADDR_VALID;
           mem_re_reg       <= '1';
         ELSE
-          mem_address_reg <= '1'&(unsigned(img_mem_addr_buf(18 DOWNTO 0))+unsigned(MEM_ADDROFF(18 DOWNTO 0)));  -- IMG1
+          mem_address_reg <= '0'&(unsigned(img_mem_addr_buf(18 DOWNTO 0))+unsigned(MEM_ADDROFF(18 DOWNTO 0)));  -- IMG0
           -- Same situation as above
           CASE img_mem_addr_buf(1 DOWNTO 0) IS
             WHEN "00" =>

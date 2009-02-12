@@ -347,15 +347,15 @@ BEGIN
 -------------------------------------------------------------------------------
 -- FAKE Memory: This is just for testing, it delays the LSBs of the address for
 -- 4 CTs.
-  pipebuf_fake_memory : pipeline_buffer
-    GENERIC MAP (
-      WIDTH         => PIXEL_BITS,
-      STAGES        => 4,
-      DEFAULT_VALUE => 2#0#)
-    PORT MAP (
-      CLK   => CLK,
-      RST   => RST,
-      CLKEN => '1',
-      DIN   => mem_addr_wire(8 DOWNTO 0),
-      DOUT  => fake_memory_input); 
+--  pipebuf_fake_memory : pipeline_buffer
+--    GENERIC MAP (
+--      WIDTH         => PIXEL_BITS,
+--      STAGES        => 4,
+--      DEFAULT_VALUE => 2#0#)
+--    PORT MAP (
+--      CLK   => CLK,
+--      RST   => RST,
+--      CLKEN => '1',
+--      DIN   => mem_addr_wire(8 DOWNTO 0),
+--      DOUT  => fake_memory_input); 
 END Behavioral;

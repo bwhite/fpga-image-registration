@@ -173,21 +173,44 @@ ARCHITECTURE Behavioral OF demo_low_level IS
           DONE             : OUT std_logic);
   END COMPONENT;
 
-  SIGNAL rst_not, clk200mhz_buf, clk_int, clk_buf, sram_int_clk, clk_intbuf, we_b, we_b_next, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, cs_b_next, image_store_rst, smooth_rst, smooth_rst_reg, compute_affine_rst_reg, compute_affine_rst, compute_affine_done, smooth_re, compute_affine_re, smooth_done, smooth_output_valid, compute_affine_output_valid, manual_offset_enabled, cs_mem_read_valid, vga_calibrate, cs_we_b: std_logic;
+  COMPONENT registration_controller IS
+    GENERIC (
+      IMGSIZE_BITS : integer := 10;
+      PIXEL_BITS   : integer := 9);
+    PORT (CLK              : IN  std_logic;
+          RST              : IN  std_logic;
+          -- Memory Connections
+          MEM_VALUE        : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+          MEM_INPUT_VALID  : IN  std_logic;
+          MEM_ADDR         : OUT std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+          MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
+          MEM_OUTPUT_VALID : OUT std_logic;
+
+          H_0_0_O      : OUT std_logic_vector(29 DOWNTO 0);
+          H_0_1_O      : OUT std_logic_vector(29 DOWNTO 0);
+          H_0_2_O      : OUT std_logic_vector(29 DOWNTO 0);
+          H_1_0_O      : OUT std_logic_vector(29 DOWNTO 0);
+          H_1_1_O      : OUT std_logic_vector(29 DOWNTO 0);
+          H_1_2_O      : OUT std_logic_vector(29 DOWNTO 0);
+          OUTPUT_VALID : OUT std_logic
+          );
+  END COMPONENT;
+
+  SIGNAL rst_not, clk200mhz_buf, clk_int, clk_buf, sram_int_clk, clk_intbuf, we_b, we_b_next, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, cs_b_next, image_store_rst, smooth_rst, smooth_rst_reg, compute_affine_rst_reg, compute_affine_rst, compute_affine_done, smooth_re, compute_affine_re, smooth_done, smooth_output_valid, compute_affine_output_valid, manual_offset_enabled, cs_mem_read_valid, vga_calibrate, cs_we_b : std_logic;
 
   SIGNAL memory_dump_done, memory_dump_rst, memory_dump_mem_out_valid, memory_dump_rst_reg : std_logic;
 
   SIGNAL image_store_mem_addr, mem_addr_next, image_store_mem_addr_fifo, image_display_mem_addr, memory_dump_mem_addr, mem_addr, smooth_addr, compute_affine_addr, manual_offset, cs_mem_addr_split : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_write_value_next, mem_read_value, smooth_pixel_write, compute_affine_pixel_write, cs_mem_read, cs_mem_write_value             : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_write_value_next, mem_read_value, smooth_pixel_write, compute_affine_pixel_write, cs_mem_read, cs_mem_write_value      : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
   TYPE   current_state IS (IMAGE_STORE, IMAGE_DISPLAY, SMOOTH, IDLE, MEM_DUMP_WRITE, MEM_DUMP_READ, COMPUTE_AFFINE);
-  SIGNAL cur_state, cur_state_next                                                                                                                                             : current_state := IDLE;
+  SIGNAL cur_state, cur_state_next                                                                                                                                                                  : current_state := IDLE;
 
-  SIGNAL sram_addr_wire               : std_logic_vector(17 DOWNTO 0);
-  SIGNAL image_display_fifo_mem_addr  : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL image_display_value_fifo     : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  SIGNAL sram_addr_wire                                    : std_logic_vector(17 DOWNTO 0);
+  SIGNAL image_display_fifo_mem_addr                       : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
+  SIGNAL image_display_value_fifo                          : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
   SIGNAL smooth_bw_b, compute_affine_bw_b, bw_b, bw_b_next : std_logic_vector(3 DOWNTO 0);
-  SIGNAL gpio_sw_reg0,gpio_sw_reg1 : std_logic_vector(4 DOWNTO 0);
-  SIGNAL gpio_dip_reg0, gpio_dip_reg1 : std_logic_vector(7 DOWNTO 0);
+  SIGNAL gpio_sw_reg0, gpio_sw_reg1                        : std_logic_vector(4 DOWNTO 0);
+  SIGNAL gpio_dip_reg0, gpio_dip_reg1                      : std_logic_vector(7 DOWNTO 0);
 
   -- Pixel Memory Controller Signals
   SIGNAL mem_read_valid : std_logic;
@@ -201,8 +224,8 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   SIGNAL clk_dvi_fb, dvi_pixel_clk, image_display_fifo_re, image_display_fifo_re_buf, image_display_fifo_empty, image_display_fifo_rst, image_display_fifo_we, dvi_h_wire, dvi_v_wire : std_logic;
   SIGNAL image_display_fifo_read_count0, image_display_fifo_write_count0, image_display_fifo_read_count1, image_display_fifo_write_count1                                             : std_logic_vector(8 DOWNTO 0);
 
-  ATTRIBUTE KEEP                                                                                                : string;
- -- ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value, cs_we_b : SIGNAL IS "true";
+  ATTRIBUTE KEEP : string;
+  -- ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value, cs_we_b : SIGNAL IS "true";
   
 BEGIN
 -------------------------------------------------------------------------------
@@ -246,7 +269,7 @@ BEGIN
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
                                         --   an integer from 0 to 15
-      CLKIN_DIVIDE_BY_2 =>      true,
+      CLKIN_DIVIDE_BY_2     => true,
       DFS_FREQUENCY_MODE    => "LOW",  -- LOW or HIGH frequency mode for frequency synthesis
       DLL_FREQUENCY_MODE    => "LOW",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
       DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
@@ -271,7 +294,7 @@ BEGIN
     GENERIC MAP (
       CLKIN_PERIOD          => 10.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
-      DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
+      DCM_AUTOCALIBRATION   => true,  -- DCM calibrartion circuitry TRUE/FALSE
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
                                         --   an integer from 0 to 15
@@ -283,7 +306,7 @@ BEGIN
     PORT MAP (
       CLK0  => sram_int_clk,            -- 0 degree DCM CLK output
       CLKFB => SRAM_CLK_FB,             -- DCM clock feedback
-      CLKIN => clk_intbuf,              -- Clock input (from IBUFG, BUFG or DCM)
+      CLKIN => clk_intbuf,            -- Clock input (from IBUFG, BUFG or DCM)
       RST   => rst_not                  -- DCM asynchronous reset input
       );
 
@@ -322,11 +345,11 @@ BEGIN
       cs_mem_read        <= mem_read_value;
       cs_mem_read_valid  <= mem_read_valid;
       cs_mem_write_value <= mem_write_value;
-      cs_we_b <= we_b;
+      cs_we_b            <= we_b;
       gpio_dip_reg0      <= GPIO_DIP;
       gpio_dip_reg1      <= gpio_dip_reg0;
-      gpio_sw_reg0 <= gpio_sw;
-      gpio_sw_reg1 <= gpio_sw_reg0;
+      gpio_sw_reg0       <= gpio_sw;
+      gpio_sw_reg1       <= gpio_sw_reg0;
       cs_mem_addr_split  <= mem_addr;
 
       IF rst_not = '1' THEN             -- synchronous reset (active high)
@@ -337,10 +360,10 @@ BEGIN
         cur_state_next <= cur_state;
         CASE cur_state IS
           WHEN IDLE =>  --------------------------------------------------------
-            memory_dump_rst_reg <= '1';
-            image_store_rst     <= '1';
-            smooth_rst_reg      <= '1';
-            compute_affine_rst_reg      <= '1';
+            memory_dump_rst_reg    <= '1';
+            image_store_rst        <= '1';
+            smooth_rst_reg         <= '1';
+            compute_affine_rst_reg <= '1';
             -- Switch states on button press
             IF gpio_sw_reg1 = "10000" THEN
               -- Lower 6 bits select mode, upper bit selects image slot, next
@@ -445,9 +468,9 @@ BEGIN
               cur_state <= IDLE;
             END IF;
 
-            we_b_next            <= '1';
-            cs_b_next            <= NOT image_display_fifo_re_buf;
-            mem_addr_next        <= image_display_fifo_mem_addr;
+            we_b_next     <= '1';
+            cs_b_next     <= NOT image_display_fifo_re_buf;
+            mem_addr_next <= image_display_fifo_mem_addr;
           WHEN SMOOTH =>  ------------------------------------------------------
             smooth_rst_reg <= '0';
             IF smooth_done = '1'THEN
@@ -698,5 +721,21 @@ BEGIN
 -------------------------------------------------------------------------------
 -- Compute Affine
   compute_affine_rst <= compute_affine_rst_reg OR rst_not;
-  
+--  registration_controller_i : registration_controller PORT MAP(
+--    CLK              => clk_intbuf,
+--    RST              => compute_affine_rst,
+    
+--    MEM_VALUE        => mem_read_value,
+--    MEM_INPUT_VALID  => mem_read_valid,
+--    MEM_ADDR         => compute_affine_addr,
+--    MEM_BW_B         => compute_affine_bw_b,
+--    MEM_OUTPUT_VALID => compute_affine_output_valid,
+--    H_0_0_O          => ,
+--    H_0_1_O          => ,
+--    H_0_2_O          => ,
+--    H_1_0_O          => ,
+--    H_1_1_O          => ,
+--    H_1_2_O          => ,
+--    OUTPUT_VALID     => compute_affine_done
+--    );
 END Behavioral;

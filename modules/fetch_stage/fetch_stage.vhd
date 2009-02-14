@@ -381,7 +381,7 @@ BEGIN
   -- 5CT Delay
   done_buffer : pipeline_bit_buffer
     GENERIC MAP (
-      STAGES => 6)                      
+      STAGES => 5)                      
     PORT MAP (
       CLK   => CLK,
       SET   => '0',
@@ -432,8 +432,13 @@ BEGIN
   PROCESS (CLK) IS
   BEGIN  -- PROCESS
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      x_coord_shifted <= std_logic_vector(signed('0'&x_coord&'0')-signed('0'&x_coord_trans));
-      y_coord_shifted <= std_logic_vector(signed('0'&y_coord&'0')-signed('0'&y_coord_trans));
+      IF RST='1' THEN
+        x_coord_shifted <= (OTHERS => '0');
+        y_coord_shifted <= (OTHERS => '0');
+      else
+        x_coord_shifted <= std_logic_vector(signed('0'&x_coord&'0')-signed('0'&x_coord_trans));
+        y_coord_shifted <= std_logic_vector(signed('0'&y_coord&'0')-signed('0'&y_coord_trans));
+      END IF;
     END IF;
   END PROCESS;
 
@@ -499,43 +504,43 @@ BEGIN
   -- Mem Input Valid Buffer: This is only intended for simulation when the
 -- memory input buffer is not present.
   -- NOTE: For final use this will be removed
-  -- 2CT Delay
-  fake_mem_valid_buffer : pipeline_bit_buffer
-    GENERIC MAP (
-      STAGES => 4)                      
-    PORT MAP (
-      CLK   => CLK,
-      SET   => '0',
-      RST   => RST,
-      CLKEN => '1',
-      DIN   => mem_output_valid_wire,
-      DOUT  => mem_output_valid_buf);
+  -- 4CT Delay
+--  fake_mem_valid_buffer : pipeline_bit_buffer
+--    GENERIC MAP (
+--      STAGES => 4)                      
+--    PORT MAP (
+--      CLK   => CLK,
+--      SET   => '0',
+--      RST   => RST,
+--      CLKEN => '1',
+--      DIN   => mem_output_valid_wire,
+--      DOUT  => mem_output_valid_buf);
 
-  fake_mem_value_buffer : pipeline_buffer
-    GENERIC MAP (
-      WIDTH         => PIXEL_BITS,
-      STAGES        => 4,
-      DEFAULT_VALUE => 2#0#)
-    PORT MAP (
-      CLK   => CLK,
-      RST   => RST,
-      CLKEN => '1',
-      DIN   => mem_addr_wire(PIXEL_BITS-1 DOWNTO 0),
-      DOUT  => mem_value_fake);
+--  fake_mem_value_buffer : pipeline_buffer
+--    GENERIC MAP (
+--      WIDTH         => PIXEL_BITS,
+--      STAGES        => 4,
+--      DEFAULT_VALUE => 2#0#)
+--    PORT MAP (
+--      CLK   => CLK,
+--      RST   => RST,
+--      CLKEN => '1',
+--      DIN   => mem_addr_wire(PIXEL_BITS-1 DOWNTO 0),
+--      DOUT  => mem_value_fake);
 
   -- Mem Value Register: Stores the incoming value into a register
 -- NOTE: THIS ABSOLUTELY MUST BE REMOVED WHEN USING A REAL MEMORY CONTROLLER AS
 -- IT WILL SKEW THE CTs BY 1. IT IS ONLY USED TO SIMPLIFY SIMULATION TIMING!!!
-  PROCESS (CLK) IS
-  BEGIN  -- PROCESS
-    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
-      IF RST = '1' THEN                 -- synchronous reset (active high)
-        mem_value_buf <= (OTHERS => '0');
-      ELSE
-        mem_value_buf <= MEM_VALUE;
-      END IF;
-    END IF;
-  END PROCESS;
+--  PROCESS (CLK) IS
+--  BEGIN  -- PROCESS
+--    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
+--      IF RST = '1' THEN                 -- synchronous reset (active high)
+--        mem_value_buf <= (OTHERS => '0');
+--      ELSE
+--        mem_value_buf <= MEM_VALUE;
+--      END IF;
+--    END IF;
+--  END PROCESS;
 
 -- Pattern State Buffer: Buffer the pattern_state_wire signal so that it
 -- coincides with the resulting pixel value coming from the memory
@@ -544,7 +549,7 @@ BEGIN
     GENERIC MAP (
       WIDTH         => CONV_HEIGHT_BITS+1,
       STAGES        => 4,               
-      DEFAULT_VALUE => 2#0#)
+      DEFAULT_VALUE => 2#1#)
     PORT MAP (
       CLK   => CLK,
       RST   => RST,
@@ -560,14 +565,15 @@ BEGIN
 -- pixel values. Note that since there is a delay between when the read
 -- command is asserted and when the valid data is available, the cur pixel
 -- state will be pipelined to align the valid data with the pixel state.
-  PROCESS (pattern_state_buf, mem_output_valid_buf) IS
-  BEGIN  -- PROCESS
-    IF mem_output_valid_buf = '1' AND pattern_state_buf(0) = '1' THEN  -- TODO fix for true memory version
-      clken_3x3_buf <= '1';
-    ELSE
-      clken_3x3_buf <= '0';
-    END IF;
-  END PROCESS;
+--  PROCESS (pattern_state_buf) IS
+--  BEGIN  -- PROCESS
+--    IF pattern_state_buf(0) = '1' THEN  -- TODO fix for true memory version
+--      clken_3x3_buf <= '1';
+--    ELSE
+--      clken_3x3_buf <= '0';
+--    END IF;
+--  END PROCESS;
+  clken_3x3_buf <= pattern_state_buf(0);
 
   pixel_buffer_3x3_i : pixel_buffer_3x3
     PORT MAP (
@@ -575,13 +581,13 @@ BEGIN
       RST          => RST,
       CLKEN        => clken_3x3_buf,
       NEW_ROW      => new_row_buf,
-      MEM_VALUE    => mem_value_fake,   --MEM_VALUE
+      MEM_VALUE    => MEM_VALUE,
       OUTPUT_VALID => conv_buf_output_valid,
       IMG_0_1      => IMG0_0_1,
       IMG_1_0      => IMG0_1_0,
       IMG_1_1      => IMG0_1_1,
       IMG_1_2      => IMG0_1_2,
       IMG_2_1      => IMG0_2_1);
-  IMG1_1_1   <= mem_value_fake;
+  IMG1_1_1   <= MEM_VALUE;
   FSCS_VALID <= conv_buf_output_valid;
 END Behavioral;

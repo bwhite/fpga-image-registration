@@ -6,13 +6,13 @@ ENTITY smooth_conv_3x3 IS
   GENERIC (
     PIXEL_BITS  : integer := 9;
     KERNEL_BITS : integer := 16;
-    SMOOTH_0_0  : integer := 16#0#;     -- TODO This does NO smoothing, should
+ --   SMOOTH_0_0  : integer := 16#0#;     -- TODO This does NO smoothing, should
                                         -- not change anything
-    SMOOTH_0_1  : integer := 16#0#;  
-    SMOOTH_1_1  : integer := 16#ffff#); 
---    SMOOTH_0_0  : integer := 16#133B#;   -- Corners
---    SMOOTH_0_1  : integer := 16#1FB4#;   -- Up/Down/Left/Right of center
---    SMOOTH_1_1  : integer := 16#3444#);  -- Center
+--    SMOOTH_0_1  : integer := 16#0#;  
+--    SMOOTH_1_1  : integer := 16#ffff#); 
+    SMOOTH_0_0  : integer := 16#133B#;   -- Corners
+    SMOOTH_0_1  : integer := 16#1FB4#;   -- Up/Down/Left/Right of center
+    SMOOTH_1_1  : integer := 16#3444#);  -- Center
   PORT (CLK          : IN  std_logic;
         RST          : IN  std_logic;
         INPUT_VALID  : IN  std_logic;

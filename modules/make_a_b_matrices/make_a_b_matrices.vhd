@@ -764,7 +764,7 @@ begin
     port map (
       CLK         => CLK,
       COORD_SHIFT => coord_shift2,
-      DIN         => fyft,
+      DIN         => fyft_reg2,
       DOUT        => B_3);
 
   b_4_rs : right_shifter

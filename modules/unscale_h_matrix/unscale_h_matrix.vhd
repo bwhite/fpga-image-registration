@@ -40,14 +40,25 @@ BEGIN
   BEGIN  -- process
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       IF RST = '1' THEN                 -- synchronous reset (active high)
-        h_0_0_reg  <= (OTHERS => '0');
-        h_0_1_reg  <= (OTHERS => '0');
-        h_0_2_reg  <= (OTHERS => '0');
-        h_1_0_reg  <= (OTHERS => '0');
-        h_1_1_reg  <= (OTHERS => '0');
-        h_1_2_reg  <= (OTHERS => '0');
-        valid_reg0 <= '0';
-        valid_reg1 <= '0';
+        h_0_0_reg       <= (OTHERS => '0');
+        h_0_1_reg       <= (OTHERS => '0');
+        h_0_2_reg       <= (OTHERS => '0');
+        h_1_0_reg       <= (OTHERS => '0');
+        h_1_1_reg       <= (OTHERS => '0');
+        h_1_2_reg       <= (OTHERS => '0');
+        h0_buf          <= (OTHERS => '0');
+        h1_buf          <= (OTHERS => '0');
+        h2_buf          <= (OTHERS => '0');
+        h3_buf          <= (OTHERS => '0');
+        h4_buf          <= (OTHERS => '0');
+        h5_buf          <= (OTHERS => '0');
+        coord_trans_buf <= (OTHERS => '0');
+        h0_t_xb         <= (OTHERS => '0');
+        h3_t_xb         <= (OTHERS => '0');
+        h1_t_yb         <= (OTHERS => '0');
+        h4_t_yb         <= (OTHERS => '0');
+        valid_reg0      <= '0';
+        valid_reg1      <= '0';
       ELSE
         -- inv(T)*X*T
         --[ h0, h1, h2 + xb - h0*xb - h1*yb]

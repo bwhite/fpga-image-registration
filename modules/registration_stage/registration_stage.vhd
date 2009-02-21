@@ -16,7 +16,8 @@ ENTITY registration_stage IS
         LEVEL            : IN  std_logic_vector(2 DOWNTO 0);
         COORD_SHIFT      : IN  std_logic_vector(3 DOWNTO 0);
         -- 1:IMGSIZE_BITS:1 Format
-        COORD_TRANS      : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+        COORD_TRANS_X    : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+        COORD_TRANS_Y    : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
         -- Rotation and Non-Isotropic Scale
         -- 1:6:11 Format
         H_0_0            : IN  std_logic_vector(17 DOWNTO 0);
@@ -49,6 +50,7 @@ ARCHITECTURE Behavioral OF registration_stage IS
   COMPONENT fetch_stage IS
     GENERIC (
       CONV_HEIGHT      : integer := 3;
+      BORDER_SIZE      : integer := 1;
       IMGSIZE_BITS     : integer := 10;
       PIXEL_BITS       : integer := 9;
       CONV_HEIGHT_BITS : integer := 2);
@@ -436,7 +438,8 @@ ARCHITECTURE Behavioral OF registration_stage IS
           H_1_1_I      : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
           H_1_2_I      : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
           -- 1:IMGSIZE_BITS:1 Format
-          COORD_TRANS  : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+          COORD_TRANS_X  : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+          COORD_TRANS_Y  : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
           INPUT_VALID  : IN  std_logic;
           OUTPUT_VALID : OUT std_logic;
           H_0_0        : OUT std_logic_vector(29 DOWNTO 0);
@@ -475,6 +478,12 @@ ARCHITECTURE Behavioral OF registration_stage IS
 -- Done/Valid
   SIGNAL done_f, done_cs, done_mab, done_sab                         : std_logic;
   SIGNAL valid_f, valid_cs, valid_mab, valid_sab, valid_ge, valid_ma : std_logic;
+
+-- Debug
+--  SIGNAL max_it_debug, min_it_debug                          : std_logic_vector(PIXEL_BITS DOWNTO 0) := (OTHERS => '0');
+--  SIGNAL it_new_debug                                        : std_logic                             := '0';
+--  ATTRIBUTE KEEP                                             : string;
+--  ATTRIBUTE keep OF max_it_debug, min_it_debug, it_new_debug : SIGNAL IS "true";
 BEGIN
 -- Advisory Stage (Control which pyramid level/iteration we are on)
 -- TODO Make a state machine (IDLE,SUMMING,SOLVING)
@@ -533,6 +542,30 @@ BEGIN
               TRANS_Y_COORD_BUF => y_cs,
               DONE_BUF          => done_cs,
               CSSS_VALID        => valid_cs);
+
+-- For debug purposes
+--  PROCESS (CLK) IS
+--  BEGIN  -- PROCESS
+--    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
+--      IF RST = '1' THEN                 -- synchronous reset (active high)
+--        it_new_debug <= '0';
+--        max_it_debug <= (OTHERS => '0');
+--        min_it_debug <= (OTHERS => '0');
+--      ELSE
+--        IF valid_cs = '1' THEN
+--          IF signed(it) > signed(max_it_debug) THEN
+--            max_it_debug <= it;
+--            it_new_debug <= '1';
+--          ELSIF signed(it) < signed(min_it_debug) THEN
+--            min_it_debug <= it;
+--            it_new_debug <= '1';
+--          ELSE
+--            it_new_debug <= '0';
+--          END IF;
+--        END IF;
+--      END IF;
+--    END IF;
+--  END PROCESS;
 
 -- Make A/b matrices
   make_a_b_matrices_i : make_a_b_matrices
@@ -810,7 +843,8 @@ BEGIN
               H_1_0_I      => h_1_0_ma,
               H_1_1_I      => h_1_1_ma,
               H_1_2_I      => h_1_2_ma,
-              COORD_TRANS  => COORD_TRANS,
+              COORD_TRANS_X  => COORD_TRANS_X,
+              COORD_TRANS_Y  => COORD_TRANS_Y,
               INPUT_VALID  => valid_ma,
               -- Output
               OUTPUT_VALID => OUTPUT_VALID,

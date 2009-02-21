@@ -42,7 +42,9 @@ ARCHITECTURE Behavioral OF registration_controller IS
           LEVEL            : IN  std_logic_vector(2 DOWNTO 0);
           COORD_SHIFT      : IN  std_logic_vector(3 DOWNTO 0);
           -- 1:IMGSIZE_BITS:1 Format
-          COORD_TRANS      : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+          COORD_TRANS_X      : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+          COORD_TRANS_Y      : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+          
           -- Rotation and Non-Isotropic Scale
           -- 1:6:11 Format
           H_0_0            : IN  std_logic_vector(17 DOWNTO 0);
@@ -79,7 +81,8 @@ BEGIN
       RST              => RST,
       LEVEL            => "111",
       COORD_SHIFT      => "1001",
-      COORD_TRANS      => "001010000000",
+      COORD_TRANS_X      => "001010000000",
+      COORD_TRANS_Y      => "000111100000",
       -- Make all H values the identity
       H_0_0            => "000000100000000000",
       H_0_1            => "000000000000000000",

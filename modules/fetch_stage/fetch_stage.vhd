@@ -30,6 +30,7 @@ USE ieee.numeric_std.ALL;
 ENTITY fetch_stage IS
   GENERIC (
     CONV_HEIGHT      : integer := 3;
+    BORDER_SIZE      : integer := 1;
     IMGSIZE_BITS     : integer := 10;
     PIXEL_BITS       : integer := 9;
     CONV_HEIGHT_BITS : integer := 2);
@@ -86,7 +87,7 @@ ARCHITECTURE Behavioral OF fetch_stage IS
   COMPONENT conv_pixel_ordering IS
     GENERIC (
       CONV_HEIGHT      : integer := 3;
-      BORDER_SIZE      : integer := 1;
+      BORDER_SIZE      : integer := BORDER_SIZE;
       WIDTH_BITS       : integer := IMGSIZE_BITS;
       HEIGHT_BITS      : integer := IMGSIZE_BITS;
       CONV_HEIGHT_BITS : integer := 2);

@@ -12,12 +12,18 @@ T=[1 0 -x_bar(1);0 1 -x_bar(2); 0 0 1];
 % im1 and im2 are images
 % M is 3x3 affine transform matrix: IM2COORD = M * IM1COORD
 [fx,fy,ft]=fp_derivative_computation_3x3_test(im1,im2);
+%[fx,fy,ft]=computeDerivatives2bra(im1,im2);
 
 % Create a mesh for the x and y values
 % This looks wrong
-[xgrid,ygrid]=meshgrid(3:(size(im1,1)-2),3:(size(im1,1)-2));
+[xgrid,ygrid]=meshgrid(2:(size(im1,1)-3),2:(size(im1,1)-3));
 
 % Transform coordinates to scaled form
+xgrid=xgrid';
+ygrid=ygrid';
+fx=fx';
+fy=fy';
+ft=ft';
 x=[xgrid(:)';ygrid(:)';ones([1,length(xgrid(:))])];
 x_wave=T*x;
 xgrid=x_wave(1,:)';

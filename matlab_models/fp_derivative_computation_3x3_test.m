@@ -1,7 +1,7 @@
 function [Ix,Iy,It]=fp_derivative_computation_3x3_test(im1,im2)
-Ix=zeros(size(im1)-4);
-Iy=zeros(size(im1)-4);
-It=zeros(size(im1)-4);
+Ix=zeros(size(im1)-2);
+Iy=zeros(size(im1)-2);
+It=zeros(size(im1)-2);
 
 img_word=10;
 img_whole=0;

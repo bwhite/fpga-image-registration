@@ -5,8 +5,8 @@ use ieee.numeric_std.all;
 entity sum_a_b_matrices is
   generic (
     FRAC_BITS_IN   : integer := 26;
-    FRAC_BITS_OUT  : integer := 19;
-    WHOLE_BITS_OUT : integer := 8);
+    FRAC_BITS_OUT  : integer := 13;
+    WHOLE_BITS_OUT : integer := 14);
   port (CLK : in std_logic;
         RST : in std_logic;
 
@@ -67,6 +67,8 @@ entity sum_a_b_matrices is
         OUTPUT_VALID : out std_logic;
         -- A Matrix Outputs (6x6)
         -- 1:WHOLE_BITS_OUT-1:FRAC_BITS_OUT
+        -- INTERNAL:1:13:26    --1:7:26
+        -- OUT: 1:13:13 --1:7:19
         A_0_0_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
         A_0_1_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
         A_0_2_S : out std_logic_vector(WHOLE_BITS_OUT+FRAC_BITS_OUT-1 downto 0);
@@ -240,54 +242,54 @@ begin
   end process;
   OUTPUT_VALID <= valid_reg;
 
-  A_0_0_S <= std_logic_vector(a_0_0_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_0_1_S <= std_logic_vector(a_0_1_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_0_2_S <= std_logic_vector(a_0_2_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_0_3_S <= std_logic_vector(a_0_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_0_4_S <= std_logic_vector(a_0_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_0_5_S <= std_logic_vector(a_0_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
+  A_0_0_S <= std_logic_vector(a_0_0_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_0_1_S <= std_logic_vector(a_0_1_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_0_2_S <= std_logic_vector(a_0_2_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_0_3_S <= std_logic_vector(a_0_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_0_4_S <= std_logic_vector(a_0_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_0_5_S <= std_logic_vector(a_0_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
 
-  A_1_0_S <= std_logic_vector(a_1_0_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_1_1_S <= std_logic_vector(a_1_1_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_1_2_S <= std_logic_vector(a_1_2_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_1_3_S <= std_logic_vector(a_1_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_1_4_S <= std_logic_vector(a_1_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_1_5_S <= std_logic_vector(a_1_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
+  A_1_0_S <= std_logic_vector(a_1_0_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_1_1_S <= std_logic_vector(a_1_1_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_1_2_S <= std_logic_vector(a_1_2_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_1_3_S <= std_logic_vector(a_1_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_1_4_S <= std_logic_vector(a_1_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_1_5_S <= std_logic_vector(a_1_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
 
-  A_2_0_S <= std_logic_vector(a_2_0_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_2_1_S <= std_logic_vector(a_2_1_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_2_2_S <= std_logic_vector(a_2_2_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_2_3_S <= std_logic_vector(a_2_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_2_4_S <= std_logic_vector(a_2_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_2_5_S <= std_logic_vector(a_2_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
+  A_2_0_S <= std_logic_vector(a_2_0_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_2_1_S <= std_logic_vector(a_2_1_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_2_2_S <= std_logic_vector(a_2_2_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_2_3_S <= std_logic_vector(a_2_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_2_4_S <= std_logic_vector(a_2_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_2_5_S <= std_logic_vector(a_2_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
 
-  A_3_0_S <= std_logic_vector(a_3_0_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_3_1_S <= std_logic_vector(a_3_1_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_3_2_S <= std_logic_vector(a_3_2_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_3_3_S <= std_logic_vector(a_3_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_3_4_S <= std_logic_vector(a_3_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_3_5_S <= std_logic_vector(a_3_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
+  A_3_0_S <= std_logic_vector(a_3_0_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_3_1_S <= std_logic_vector(a_3_1_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_3_2_S <= std_logic_vector(a_3_2_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_3_3_S <= std_logic_vector(a_3_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_3_4_S <= std_logic_vector(a_3_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_3_5_S <= std_logic_vector(a_3_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
 
-  A_4_0_S <= std_logic_vector(a_4_0_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_4_1_S <= std_logic_vector(a_4_1_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_4_2_S <= std_logic_vector(a_4_2_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_4_3_S <= std_logic_vector(a_4_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_4_4_S <= std_logic_vector(a_4_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_4_5_S <= std_logic_vector(a_4_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
+  A_4_0_S <= std_logic_vector(a_4_0_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_4_1_S <= std_logic_vector(a_4_1_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_4_2_S <= std_logic_vector(a_4_2_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_4_3_S <= std_logic_vector(a_4_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_4_4_S <= std_logic_vector(a_4_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_4_5_S <= std_logic_vector(a_4_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
 
-  A_5_0_S <= std_logic_vector(a_5_0_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_5_1_S <= std_logic_vector(a_5_1_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_5_2_S <= std_logic_vector(a_5_2_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_5_3_S <= std_logic_vector(a_5_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_5_4_S <= std_logic_vector(a_5_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  A_5_5_S <= std_logic_vector(a_5_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
+  A_5_0_S <= std_logic_vector(a_5_0_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_5_1_S <= std_logic_vector(a_5_1_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_5_2_S <= std_logic_vector(a_5_2_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_5_3_S <= std_logic_vector(a_5_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_5_4_S <= std_logic_vector(a_5_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  A_5_5_S <= std_logic_vector(a_5_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
 
 
-  B_0_S <= std_logic_vector(b_0_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  B_1_S <= std_logic_vector(b_1_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  B_2_S <= std_logic_vector(b_2_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  B_3_S <= std_logic_vector(b_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  B_4_S <= std_logic_vector(b_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
-  B_5_S <= std_logic_vector(b_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto 7));
+  B_0_S <= std_logic_vector(b_0_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  B_1_S <= std_logic_vector(b_1_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  B_2_S <= std_logic_vector(b_2_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  B_3_S <= std_logic_vector(b_3_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  B_4_S <= std_logic_vector(b_4_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
+  B_5_S <= std_logic_vector(b_5_reg(WHOLE_BITS_OUT+FRAC_BITS_IN-1 downto FRAC_BITS_IN-FRAC_BITS_OUT));
   DONE_BUF <= done_reg;
 end Behavioral;

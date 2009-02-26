@@ -633,8 +633,8 @@ BEGIN
 
 -- Sum A/b matrices
   -- IN:  1:0:26
-  -- INTERNAL: 1:7:26
-  -- OUT: 1:7:19
+  -- INTERNAL:1:13:26    --1:7:26
+  -- OUT: 1:13:13 --1:7:19
   sum_a_b_matrices_i : sum_a_b_matrices
     PORT MAP (CLK         => CLK,
               RST         => RST,

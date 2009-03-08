@@ -80,7 +80,7 @@ BEGIN
       CLK              => CLK,
       RST              => RST,
       LEVEL            => "111",
-      COORD_SHIFT      => "1001",
+      COORD_SHIFT      => "1010",
       COORD_TRANS_X      => "001010000000",
       COORD_TRANS_Y      => "000111100000",
       -- Make all H values the identity

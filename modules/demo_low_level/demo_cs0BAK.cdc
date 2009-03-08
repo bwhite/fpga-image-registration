@@ -1,5 +1,5 @@
 #ChipScope Core Inserter Project File Version 3.0
-#Sat Mar 07 17:32:25 GMT-05:00 2009
+#Sat Mar 07 19:05:06 GMT-05:00 2009
 Project.device.designInputFile=/home/brandyn/fpga-image-registration/modules/demo_low_level/demo_low_level_cs.ngc
 Project.device.designOutputFile=/home/brandyn/fpga-image-registration/modules/demo_low_level/demo_low_level_cs.ngc
 Project.device.deviceFamily=14
@@ -532,7 +532,7 @@ Project.unit<4>.dataChannel<12>=registration_controller_i/registration_stage_i/m
 Project.unit<4>.dataChannel<13>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_0_rs/DOUT<13>
 Project.unit<4>.dataChannel<14>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_0_rs/DOUT<14>
 Project.unit<4>.dataChannel<15>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_0_rs/DOUT<15>
-Project.unit<4>.dataChannel<16>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_0_rs/DOUT<16>
+Project.unit<4>.dataChannel<16>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_0_rs/DOUT<24>
 Project.unit<4>.dataChannel<17>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_0_rs/DOUT<24>
 Project.unit<4>.dataChannel<18>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_1_rs/DOUT<0>
 Project.unit<4>.dataChannel<19>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_1_rs/DOUT<1>
@@ -552,7 +552,7 @@ Project.unit<4>.dataChannel<30>=registration_controller_i/registration_stage_i/m
 Project.unit<4>.dataChannel<31>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_1_rs/DOUT<13>
 Project.unit<4>.dataChannel<32>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_1_rs/DOUT<14>
 Project.unit<4>.dataChannel<33>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_1_rs/DOUT<15>
-Project.unit<4>.dataChannel<34>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_1_rs/DOUT<16>
+Project.unit<4>.dataChannel<34>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_1_rs/DOUT<24>
 Project.unit<4>.dataChannel<35>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_1_rs/DOUT<24>
 Project.unit<4>.dataChannel<36>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/VALID_OUT
 Project.unit<4>.dataChannel<3>=registration_controller_i/registration_stage_i/make_a_b_matrices_i/b_0_rs/DOUT<3>

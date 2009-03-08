@@ -210,8 +210,8 @@ ARCHITECTURE Behavioral OF registration_stage IS
   COMPONENT sum_a_b_matrices IS
     GENERIC (
       FRAC_BITS_IN   : integer := 26;
-      FRAC_BITS_OUT  : integer := 19;
-      WHOLE_BITS_OUT : integer := 8);
+      FRAC_BITS_OUT  : integer := 11;
+      WHOLE_BITS_OUT : integer := 16);
     PORT (CLK : IN std_logic;
           RST : IN std_logic;
 
@@ -479,10 +479,13 @@ ARCHITECTURE Behavioral OF registration_stage IS
   SIGNAL done_f, done_cs, done_mab, done_sab                         : std_logic;
   SIGNAL valid_f, valid_cs, valid_mab, valid_sab, valid_ge, valid_ma : std_logic;
 
+  
 -- Debug
 --  SIGNAL max_it_debug, min_it_debug                          : std_logic_vector(PIXEL_BITS DOWNTO 0) := (OTHERS => '0');
 --  SIGNAL it_new_debug                                        : std_logic                             := '0';
---  ATTRIBUTE KEEP                                             : string;
+  SIGNAL ab_valid_count : std_logic_vector(19 DOWNTO 0);
+  ATTRIBUTE KEEP                                             : string;
+  ATTRIBUTE keep OF ab_valid_count : SIGNAL IS "true";
 --  ATTRIBUTE keep OF max_it_debug, min_it_debug, it_new_debug : SIGNAL IS "true";
 BEGIN
 -- Advisory Stage (Control which pyramid level/iteration we are on)
@@ -631,6 +634,20 @@ BEGIN
               B_4 => b_4,
               B_5 => b_5);
 
+  PROCESS (CLK) IS
+  BEGIN  -- PROCESS
+    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
+      IF RST = '1' THEN                 -- synchronous reset (active high)
+        ab_valid_count <= (OTHERS => '0');
+      ELSE
+        IF valid_mab='1' THEN
+          ab_valid_count <= std_logic_vector(unsigned(ab_valid_count) + 1);  
+        END IF;
+      END IF;
+    END IF;
+  END PROCESS;
+
+  
 -- Sum A/b matrices
   -- IN:  1:0:26
   -- INTERNAL:1:13:26    --1:7:26

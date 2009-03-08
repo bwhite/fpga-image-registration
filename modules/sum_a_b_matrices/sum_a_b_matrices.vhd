@@ -5,8 +5,8 @@ use ieee.numeric_std.all;
 entity sum_a_b_matrices is
   generic (
     FRAC_BITS_IN   : integer := 26;
-    FRAC_BITS_OUT  : integer := 13;
-    WHOLE_BITS_OUT : integer := 14);
+    FRAC_BITS_OUT  : integer := 11;
+    WHOLE_BITS_OUT : integer := 16);
   port (CLK : in std_logic;
         RST : in std_logic;
 

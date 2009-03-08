@@ -8,6 +8,8 @@ input_whole=7;
 div_frac=input_frac;
 div_whole=input_whole;
 
+F=fimath('MaxProductWordLength',(1+input_whole+input_frac)*2,'SumWordLength',(1+input_whole+input_frac),'RoundMode','Floor','SumMode','KeepLSB');
+
 A=fp(A,input_whole,input_frac);
 b=fp(b,input_whole,input_frac);
 
@@ -32,6 +34,9 @@ for i=1:(N-1) % Pivot iter
         % TODO Force to 1 when necessary
         pivot_row0(col_iter)=fp_gauss_elim_divider(aug(i,col_iter),aug(i,i));
     end
+    pivot_row0=fpf(pivot_row0,input_whole,input_frac,F);
+    aug=fpf(aug,input_whole,input_frac,F);
+    
     for j=(i+1):N
         pivot_row1=fp(aug(j,i)*pivot_row0,input_whole,input_frac);
         aug(j,:)=fp(pivot_row1-aug(j,:),input_whole,input_frac);
@@ -64,6 +69,10 @@ end
 
 function out=fp(val,whole,frac)
 out=fi(val,1,1+whole+frac,frac,'MaxProductWordLength',(1+whole+frac)*2,'SumWordLength',(1+whole+frac),'RoundMode','Floor','SumMode','KeepLSB');
+
+function out=fpf(val,whole,frac,F)
+out=fi(val,1,1+whole+frac,frac,F);
+
 
 function out=fpt(whole,frac)
 out=numerictype('Signed',true,'WordLength',whole+frac+1,'FractionLength',frac);

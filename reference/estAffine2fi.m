@@ -1,9 +1,9 @@
 function M = estAffine2fi()
-im1=make_test_img();
-im2=make_test_img();
+im1=make_test_img(0);
+im2=make_test_img(1);
 
 width = 640;
-sx = ceil(log2(width/2)); % == 9
+sx = 10;%ceil(log2(width/2)); % == 9
 
 x_bar=[320,240];
 
@@ -16,7 +16,7 @@ T=[1 0 -x_bar(1);0 1 -x_bar(2); 0 0 1];
 
 % Create a mesh for the x and y values
 % This looks wrong
-[xgrid,ygrid]=meshgrid(2:(size(im1,1)-3),2:(size(im1,1)-3));
+[xgrid,ygrid]=meshgrid(2:(size(im1,2)-3),2:(size(im1,1)-3));
 
 % Transform coordinates to scaled form
 xgrid=xgrid';

@@ -400,7 +400,12 @@ BEGIN
             we_b_next            <= '0';
             cs_b_next            <= NOT memory_dump_mem_out_valid;
             mem_addr_next        <= memory_dump_mem_addr;
-            mem_write_value_next <= memory_dump_mem_addr(8 DOWNTO 0);
+            IF gpio_dip_reg1(7)='0' THEN
+              mem_write_value_next <= memory_dump_mem_addr(8 DOWNTO 0);
+            ELSE
+              mem_write_value_next <= std_logic_vector(unsigned(memory_dump_mem_addr(8 DOWNTO 0))+1);
+            END IF;
+            
             CASE memory_dump_mem_addr(1 DOWNTO 0) IS
               WHEN "00" =>
                 bw_b_next <= "1110";

@@ -1,5 +1,5 @@
 /\div1_test/\
-DELAY:5
+DELAY:31
 CLK:CLK
 RST:RST
 IN:{VALID_IN,A[27],B[27]}

@@ -7,7 +7,7 @@
 -- \   \   \/     Version: K.39
 --  \   \         Application: netgen
 --  /   /         Filename: div1.vhd
--- /___/   /\     Timestamp: Wed Feb 11 13:46:36 2009
+-- /___/   /\     Timestamp: Tue Mar 10 19:05:57 2009
 -- \   \  /  \ 
 --  \___\/\___\
 --             
@@ -17,7 +17,7 @@
 -- Output file	: /home/brandyn/fpga-image-registration/modules/gauss_elim/tmp/_cg/div1.vhd
 -- # of Entities	: 1
 -- Design Name	: div1
--- Xilinx	: /home/brandyn/Xilinx/10.1/ISE
+-- Xilinx	: /home/brandyn/Xilinx10.1i/ISE
 --             
 -- Purpose:    
 --     This VHDL netlist is a verification model and uses simulation 

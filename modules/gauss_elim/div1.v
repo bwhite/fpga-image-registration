@@ -7,7 +7,7 @@
 // \   \   \/     Version: K.39
 //  \   \         Application: netgen
 //  /   /         Filename: div1.v
-// /___/   /\     Timestamp: Wed Feb 11 13:46:38 2009
+// /___/   /\     Timestamp: Tue Mar 10 19:05:59 2009
 // \   \  /  \ 
 //  \___\/\___\
 //             
@@ -17,7 +17,7 @@
 // Output file	: /home/brandyn/fpga-image-registration/modules/gauss_elim/tmp/_cg/div1.v
 // # of Modules	: 1
 // Design Name	: div1
-// Xilinx        : /home/brandyn/Xilinx/10.1/ISE
+// Xilinx        : /home/brandyn/Xilinx10.1i/ISE
 //             
 // Purpose:    
 //     This verilog netlist is a verification model and uses simulation 

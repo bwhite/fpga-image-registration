@@ -2,6 +2,9 @@ function c=fp_gauss_elim_divider(a,b,verbose)
 if ~exist('verbose')
     verbose=0;
 end
+
+%div_frac=11;
+%div_whole=15;
 div_frac=19;
 div_whole=7;
 a=fpr(a,div_whole,div_frac);

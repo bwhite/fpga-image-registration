@@ -3,6 +3,8 @@ function x=gauss_elim_fixed(A,b,verbose)
 if ~exist('verbose')
     verbose=0;
 end
+%input_frac=11;
+%input_whole=15;
 input_frac=19;
 input_whole=7;
 div_frac=input_frac;

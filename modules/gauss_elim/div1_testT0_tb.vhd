@@ -92,13 +92,7 @@ BEGIN
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            IF uut_c /= "111111110111001000001110110" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
-              FAIL <= '1';
-              FAIL_NUM <= "0000000";
-              state <= "1001101";
-            ELSE
-              state <= "0000111";
-            END IF;
+            state <= "0000111";
             uut_rst <= '0';
           WHEN "0000111" =>
             uut_valid_in <= '0';
@@ -128,13 +122,7 @@ BEGIN
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            IF uut_c /= "111111101110010010001010111" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
-              FAIL <= '1';
-              FAIL_NUM <= "0000101";
-              state <= "1001101";
-            ELSE
-              state <= "0001100";
-            END IF;
+            state <= "0001100";
             uut_rst <= '0';
           WHEN "0001100" =>
             uut_valid_in <= '0';
@@ -164,13 +152,7 @@ BEGIN
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            IF uut_c /= "111111111111111011001000011" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
-              FAIL <= '1';
-              FAIL_NUM <= "0001010";
-              state <= "1001101";
-            ELSE
-              state <= "0010001";
-            END IF;
+            state <= "0010001";
             uut_rst <= '0';
           WHEN "0010001" =>
             uut_valid_in <= '0';
@@ -200,13 +182,7 @@ BEGIN
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            IF uut_c /= "000000000011011101011111010" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
-              FAIL <= '1';
-              FAIL_NUM <= "0001111";
-              state <= "1001101";
-            ELSE
-              state <= "0010110";
-            END IF;
+            state <= "0010110";
             uut_rst <= '0';
           WHEN "0010110" =>
             uut_valid_in <= '0';
@@ -236,13 +212,7 @@ BEGIN
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            IF uut_c /= "000000101100011001111010011" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
-              FAIL <= '1';
-              FAIL_NUM <= "0010100";
-              state <= "1001101";
-            ELSE
-              state <= "0011011";
-            END IF;
+            state <= "0011011";
             uut_rst <= '0';
           WHEN "0011011" =>
             uut_valid_in <= '0';
@@ -272,19 +242,19 @@ BEGIN
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            IF uut_c /= "111111100111101001100110001" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
-              FAIL <= '1';
-              FAIL_NUM <= "0011001";
-              state <= "1001101";
-            ELSE
-              state <= "0100000";
-            END IF;
+            state <= "0100000";
             uut_rst <= '0';
           WHEN "0100000" =>
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            state <= "0100001";
+            IF uut_c /= "111111110111001000001110110" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
+              FAIL <= '1';
+              FAIL_NUM <= "0000000";
+              state <= "1100111";
+            ELSE
+              state <= "0100001";
+            END IF;
             uut_rst <= '0';
           WHEN "0100001" =>
             uut_valid_in <= '0';
@@ -308,19 +278,19 @@ BEGIN
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            IF uut_c /= "111111001011000101111001000" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
-              FAIL <= '1';
-              FAIL_NUM <= "0011110";
-              state <= "1001101";
-            ELSE
-              state <= "0100101";
-            END IF;
+            state <= "0100101";
             uut_rst <= '0';
           WHEN "0100101" =>
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            state <= "0100110";
+            IF uut_c /= "111111101110010010001010111" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
+              FAIL <= '1';
+              FAIL_NUM <= "0000101";
+              state <= "1100111";
+            ELSE
+              state <= "0100110";
+            END IF;
             uut_rst <= '0';
           WHEN "0100110" =>
             uut_valid_in <= '0';
@@ -344,19 +314,19 @@ BEGIN
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            IF uut_c /= "000000001011001101010100111" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
-              FAIL <= '1';
-              FAIL_NUM <= "0100011";
-              state <= "1001101";
-            ELSE
-              state <= "0101010";
-            END IF;
+            state <= "0101010";
             uut_rst <= '0';
           WHEN "0101010" =>
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            state <= "0101011";
+            IF uut_c /= "111111111111111011001000011" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
+              FAIL <= '1';
+              FAIL_NUM <= "0001010";
+              state <= "1100111";
+            ELSE
+              state <= "0101011";
+            END IF;
             uut_rst <= '0';
           WHEN "0101011" =>
             uut_valid_in <= '0';
@@ -380,19 +350,19 @@ BEGIN
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            IF uut_c /= "000000001100111101100111111" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
-              FAIL <= '1';
-              FAIL_NUM <= "0101000";
-              state <= "1001101";
-            ELSE
-              state <= "0101111";
-            END IF;
+            state <= "0101111";
             uut_rst <= '0';
           WHEN "0101111" =>
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            state <= "0110000";
+            IF uut_c /= "000000000011011101011111010" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
+              FAIL <= '1';
+              FAIL_NUM <= "0001111";
+              state <= "1100111";
+            ELSE
+              state <= "0110000";
+            END IF;
             uut_rst <= '0';
           WHEN "0110000" =>
             uut_valid_in <= '0';
@@ -416,19 +386,19 @@ BEGIN
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            IF uut_c /= "000000110100110110011010100" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
-              FAIL <= '1';
-              FAIL_NUM <= "0101101";
-              state <= "1001101";
-            ELSE
-              state <= "0110100";
-            END IF;
+            state <= "0110100";
             uut_rst <= '0';
           WHEN "0110100" =>
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            state <= "0110101";
+            IF uut_c /= "000000101100011001111010011" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
+              FAIL <= '1';
+              FAIL_NUM <= "0010100";
+              state <= "1100111";
+            ELSE
+              state <= "0110101";
+            END IF;
             uut_rst <= '0';
           WHEN "0110101" =>
             uut_valid_in <= '0';
@@ -452,19 +422,19 @@ BEGIN
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            IF uut_c /= "000001010101100100001110001" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
-              FAIL <= '1';
-              FAIL_NUM <= "0110010";
-              state <= "1001101";
-            ELSE
-              state <= "0111001";
-            END IF;
+            state <= "0111001";
             uut_rst <= '0';
           WHEN "0111001" =>
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            state <= "0111010";
+            IF uut_c /= "111111100111101001100110001" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
+              FAIL <= '1';
+              FAIL_NUM <= "0011001";
+              state <= "1100111";
+            ELSE
+              state <= "0111010";
+            END IF;
             uut_rst <= '0';
           WHEN "0111010" =>
             uut_valid_in <= '0';
@@ -488,19 +458,19 @@ BEGIN
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            IF uut_c /= "000000010100011000100011100" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
-              FAIL <= '1';
-              FAIL_NUM <= "0110111";
-              state <= "1001101";
-            ELSE
-              state <= "0111110";
-            END IF;
+            state <= "0111110";
             uut_rst <= '0';
           WHEN "0111110" =>
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            state <= "0111111";
+            IF uut_c /= "111111001011000101111001000" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
+              FAIL <= '1';
+              FAIL_NUM <= "0011110";
+              state <= "1100111";
+            ELSE
+              state <= "0111111";
+            END IF;
             uut_rst <= '0';
           WHEN "0111111" =>
             uut_valid_in <= '0';
@@ -524,19 +494,19 @@ BEGIN
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            IF uut_c /= "111010001110011100001101001" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
-              FAIL <= '1';
-              FAIL_NUM <= "0111100";
-              state <= "1001101";
-            ELSE
-              state <= "1000011";
-            END IF;
+            state <= "1000011";
             uut_rst <= '0';
           WHEN "1000011" =>
             uut_valid_in <= '0';
             uut_a <= "001010101111011100010101111";
             uut_b <= "010110000010101000010101101";
-            state <= "1000100";
+            IF uut_c /= "000000001011001101010100111" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
+              FAIL <= '1';
+              FAIL_NUM <= "0100011";
+              state <= "1100111";
+            ELSE
+              state <= "1000100";
+            END IF;
             uut_rst <= '0';
           WHEN "1000100" =>
             uut_valid_in <= '0';
@@ -557,16 +527,16 @@ BEGIN
             state <= "1000111";
             uut_rst <= '0';
           WHEN "1000111" =>
-            IF uut_c /= "111111101101000000110010111" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
-              FAIL <= '1';
-              FAIL_NUM <= "1000001";
-              state <= "1001101";
-            ELSE
-              state <= "1001000";
-            END IF;
+            state <= "1001000";
             uut_rst <= '0';
           WHEN "1001000" =>
-            state <= "1001001";
+            IF uut_c /= "000000001100111101100111111" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
+              FAIL <= '1';
+              FAIL_NUM <= "0101000";
+              state <= "1100111";
+            ELSE
+              state <= "1001001";
+            END IF;
             uut_rst <= '0';
           WHEN "1001001" =>
             state <= "1001010";
@@ -579,6 +549,114 @@ BEGIN
             uut_rst <= '0';
           WHEN "1001100" =>
             state <= "1001101";
+            uut_rst <= '0';
+          WHEN "1001101" =>
+            IF uut_c /= "000000110100110110011010100" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
+              FAIL <= '1';
+              FAIL_NUM <= "0101101";
+              state <= "1100111";
+            ELSE
+              state <= "1001110";
+            END IF;
+            uut_rst <= '0';
+          WHEN "1001110" =>
+            state <= "1001111";
+            uut_rst <= '0';
+          WHEN "1001111" =>
+            state <= "1010000";
+            uut_rst <= '0';
+          WHEN "1010000" =>
+            state <= "1010001";
+            uut_rst <= '0';
+          WHEN "1010001" =>
+            state <= "1010010";
+            uut_rst <= '0';
+          WHEN "1010010" =>
+            IF uut_c /= "000001010101100100001110001" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
+              FAIL <= '1';
+              FAIL_NUM <= "0110010";
+              state <= "1100111";
+            ELSE
+              state <= "1010011";
+            END IF;
+            uut_rst <= '0';
+          WHEN "1010011" =>
+            state <= "1010100";
+            uut_rst <= '0';
+          WHEN "1010100" =>
+            state <= "1010101";
+            uut_rst <= '0';
+          WHEN "1010101" =>
+            state <= "1010110";
+            uut_rst <= '0';
+          WHEN "1010110" =>
+            state <= "1010111";
+            uut_rst <= '0';
+          WHEN "1010111" =>
+            IF uut_c /= "000000010100011000100011100" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
+              FAIL <= '1';
+              FAIL_NUM <= "0110111";
+              state <= "1100111";
+            ELSE
+              state <= "1011000";
+            END IF;
+            uut_rst <= '0';
+          WHEN "1011000" =>
+            state <= "1011001";
+            uut_rst <= '0';
+          WHEN "1011001" =>
+            state <= "1011010";
+            uut_rst <= '0';
+          WHEN "1011010" =>
+            state <= "1011011";
+            uut_rst <= '0';
+          WHEN "1011011" =>
+            state <= "1011100";
+            uut_rst <= '0';
+          WHEN "1011100" =>
+            IF uut_c /= "111010001110011100001101001" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
+              FAIL <= '1';
+              FAIL_NUM <= "0111100";
+              state <= "1100111";
+            ELSE
+              state <= "1011101";
+            END IF;
+            uut_rst <= '0';
+          WHEN "1011101" =>
+            state <= "1011110";
+            uut_rst <= '0';
+          WHEN "1011110" =>
+            state <= "1011111";
+            uut_rst <= '0';
+          WHEN "1011111" =>
+            state <= "1100000";
+            uut_rst <= '0';
+          WHEN "1100000" =>
+            state <= "1100001";
+            uut_rst <= '0';
+          WHEN "1100001" =>
+            IF uut_c /= "111111101101000000110010111" OR uut_oob /= '0' OR uut_valid_out /= '1' THEN
+              FAIL <= '1';
+              FAIL_NUM <= "1000001";
+              state <= "1100111";
+            ELSE
+              state <= "1100010";
+            END IF;
+            uut_rst <= '0';
+          WHEN "1100010" =>
+            state <= "1100011";
+            uut_rst <= '0';
+          WHEN "1100011" =>
+            state <= "1100100";
+            uut_rst <= '0';
+          WHEN "1100100" =>
+            state <= "1100101";
+            uut_rst <= '0';
+          WHEN "1100101" =>
+            state <= "1100110";
+            uut_rst <= '0';
+          WHEN "1100110" =>
+            state <= "1100111";
             uut_rst <= '0';
           WHEN OTHERS =>
             DONE <= '1';

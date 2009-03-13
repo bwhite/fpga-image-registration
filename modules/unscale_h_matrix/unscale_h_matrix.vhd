@@ -74,11 +74,11 @@ BEGIN
         h3_buf     <= signed((2 DOWNTO 0                                 => H_1_0_I(26))&H_1_0_I);
         h4_buf     <= signed((2 DOWNTO 0                                 => H_1_1_I(26))&H_1_1_I);
         h5_buf     <= signed((2 DOWNTO 0                                 => H_1_2_I(26))&H_1_2_I);
-        -- 1:18:20         -- COORD_TRANS 1:10:1 -> 1:10:19
-        h0_t_xb    <= signed(H_0_0_I)*signed((COORD_TRANS_X&(17 DOWNTO 0 => '0')));
-        h1_t_yb    <= signed(H_0_1_I)*signed((COORD_TRANS_Y&(17 DOWNTO 0 => '0')));
-        h3_t_xb    <= signed(H_1_0_I)*signed((COORD_TRANS_X&(17 DOWNTO 0 => '0')));
-        h4_t_yb    <= signed(H_1_1_I)*signed((COORD_TRANS_Y&(17 DOWNTO 0 => '0')));
+        -- 1:7:19 * 1:10:1 -> 1:18:20
+        h0_t_xb    <= signed(H_0_0_I)*signed(COORD_TRANS_X);
+        h1_t_yb    <= signed(H_0_1_I)*signed(COORD_TRANS_Y);
+        h3_t_xb    <= signed(H_1_0_I)*signed(COORD_TRANS_X);
+        h4_t_yb    <= signed(H_1_1_I)*signed(COORD_TRANS_Y);
         valid_reg0 <= INPUT_VALID;
 
         -- Buffer multipliers and truncate the extended precision from the multiplication

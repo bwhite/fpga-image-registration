@@ -76,7 +76,8 @@ entity gauss_elim is
         );
 end gauss_elim;
 
-architecture Behavioral of gauss_elim is
+architecture Behavioral of gauss_elim IS
+  
   component div1_test is
     generic (
       QUOTIENT_BITS : integer := 27;
@@ -91,7 +92,7 @@ architecture Behavioral of gauss_elim is
           valid_out : out std_logic);
   end component;
 
-  type   overall_state_type is (IDLE, FP_MK_INV, FP_ELIM_COL, BP_ROW_MULT, BP_ROW_MULT_SUM, BP_DIFF_AB, BP_DIV, ERR);
+  type   overall_state_type is (IDLE, FP_MK_INV, FP_ELIM_COL, BP_ROW_MULT, BP_ROW_MULT_SUM, BP_DIFF_AB, BP_DIV);
   signal state                                : overall_state_type := IDLE;
   type   aug_row_type is array (6 downto 0) of signed(WHOLE_BITS+FRAC_BITS-1 downto 0);
   type   mult_aug_row_type is array (6 downto 0) of signed(2*(WHOLE_BITS+FRAC_BITS)-1 downto 0);
@@ -102,13 +103,11 @@ architecture Behavioral of gauss_elim is
 
 -- FP Signals
   signal cur_i, cur_j, cur_j_delay0, cur_j_delay1, cur_j_delay2, cur_j_delay3, cur_j_delay4, cur_j_delay5                         : unsigned(2 downto 0) := (others => '0');
-  signal fp_mk_inv_pivot                                                                                                          : signed(WHOLE_BITS+FRAC_BITS-1 downto 0);
   type   pivot_row_type is array (6 downto 0) of signed(WHOLE_BITS+FRAC_BITS-1 downto 0);
   signal pivot_row0                                                                                                               : pivot_row_type;
   signal new_aug, aug_i, aug_j, aug_j_delay0, aug_j_delay1, aug_j_delay2, aug_j_delay3, aug_j_delay4                              : aug_row_type;
-  signal new_aug_delay0, new_aug_delay1, new_aug_delay2, new_aug_delay3, new_aug_delay4                                           : mult_aug_row_type;
+  signal new_aug_delay0, new_aug_delay1, new_aug_delay2, new_aug_delay3                                           : mult_aug_row_type;
   signal aug_j_i, aug_i_j, aug_i_i,aug_j_i_buf                                                                                                : signed(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal fp_mk_inv_done, fp_mk_pivot_done, fp_elim_col_done, bp_row_mult_done, bp_row_mult_sum_done, bp_diff_ab_done, bp_div_done : std_logic;
 
 
 -- BP Signals
@@ -117,7 +116,6 @@ architecture Behavioral of gauss_elim is
   signal row_mult                                                                                         : row_mult_type;
   signal row_mult_delay0, row_mult_delay1, row_mult_delay2, row_mult_delay3, row_mult_delay4              : row_mult_type_ext;
   signal row_mult_sum, row_mult_sum_delay0, row_mult_sum_delay1, row_mult_sum_delay2, row_mult_sum_delay3 : signed(WHOLE_BITS+FRAC_BITS-1 downto 0);
-  signal new_x                                                                                            : signed(WHOLE_BITS+FRAC_BITS-1 downto 0);
   signal diff_ab                                                                                          : signed(WHOLE_BITS+FRAC_BITS-1 downto 0);
 
   type   x_type is array (5 downto 0) of signed(WHOLE_BITS+FRAC_BITS-1 downto 0);
@@ -128,9 +126,9 @@ architecture Behavioral of gauss_elim is
   signal divc                             : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 downto 0);
   signal div_valid_in                     : std_logic                                         := '0';
   signal div_valid_out, div_busy, div_oob : std_logic;
-  attribute KEEP                          : string;
-  attribute keep of aug                   : signal is "true";
   signal done_reg                         : std_logic                                         := '0';
+  attribute KEEP                          : string;
+  attribute keep OF aug, x_reg, done_reg, A_0_0, A_1_0, A_2_0, A_3_0, A_4_0, A_5_0, B_0, A_0_1, A_1_1, A_2_1, A_3_1, A_4_1, A_5_1, B_1, A_0_2, A_1_2, A_2_2, A_3_2, A_4_2, A_5_2, B_2, A_0_3, A_1_3, A_2_3, A_3_3, A_4_3, A_5_3, B_3, A_0_4, A_1_4, A_2_4, A_3_4, A_4_4, A_5_4, B_4,A_0_5, A_1_5, A_2_5, A_3_5, A_4_5, A_5_5, B_5                    : signal is "true";
 begin
   X_0          <= std_logic_vector(x_reg(0));
   X_1          <= std_logic_vector(x_reg(1));
@@ -140,7 +138,7 @@ begin
   X_5          <= std_logic_vector(x_reg(5));
   OUTPUT_VALID <= done_reg;
 
-  process (cur_i, cur_j, aug, aug_j, aug_j_i)
+  process (cur_i, cur_j, aug(0), aug(1), aug(2), aug(3), aug(4), aug(5), aug_j)
   begin  -- process
     case cur_i is
       when "000" =>
@@ -210,13 +208,56 @@ begin
         done_reg <= '0';
       else
         case state is
-          when ERR =>
-            null;
             ---------------------------------------------------------------------
             -- IDLE
           when IDLE =>
-            if INPUT_LOAD = '1' then
-              -- Row 0
+            if INPUT_LOAD = '1' THEN
+              state    <= FP_MK_INV;
+            END if;
+--            aug(0)(0) <= to_signed(16#000076a#,27);
+--            aug(0)(1) <= to_signed(16#7fffc4a#,27);
+--            aug(0)(2) <= to_signed(16#7fffc4a#,27);
+--            aug(0)(3) <= to_signed(16#00003b8#,27);
+--            aug(0)(4) <= to_signed(16#7fffe24#,27);
+--            aug(0)(5) <= to_signed(16#7fffe24#,27);
+--            aug(0)(6) <= to_signed(16#7fffc4f#,27);
+--            aug(1)(0) <= to_signed(16#7fffffa#,27);
+--            aug(1)(1) <= to_signed(16#00094c3#,27);
+--            aug(1)(2) <= to_signed(16#00000ac#,27);
+--            aug(1)(3) <= to_signed(16#7fffffb#,27);
+--            aug(1)(4) <= to_signed(16#0004a5d#,27);
+--            aug(1)(5) <= to_signed(16#000001a#,27);
+--            aug(1)(6) <= to_signed(16#0000005#,27);
+--            aug(2)(0) <= to_signed(16#7fffffa#,27);
+--            aug(2)(1) <= to_signed(16#00000ac#,27);
+--            aug(2)(2) <= to_signed(16#00088b7#,27);
+--            aug(2)(3) <= to_signed(16#7fffffb#,27);
+--            aug(2)(4) <= to_signed(16#000001a#,27);
+--            aug(2)(5) <= to_signed(16#000448e#,27);
+--            aug(2)(6) <= to_signed(16#0000005#,27);
+--            aug(3)(0) <= to_signed(16#00003b8#,27);
+--            aug(3)(1) <= to_signed(16#7fffe24#,27);
+--            aug(3)(2) <= to_signed(16#7fffe24#,27);
+--            aug(3)(3) <= to_signed(16#0024f48#,27);
+--            aug(3)(4) <= to_signed(16#7fed85c#,27);
+--            aug(3)(5) <= to_signed(16#7fed85c#,27);
+--            aug(3)(6) <= to_signed(16#7fffe24#,27);
+--            aug(4)(0) <= to_signed(16#7fffffb#,27);
+--            aug(4)(1) <= to_signed(16#0004a5d#,27);
+--            aug(4)(2) <= to_signed(16#000001a#,27);
+--            aug(4)(3) <= to_signed(16#7ffffb6#,27);
+--            aug(4)(4) <= to_signed(16#04c07df#,27);
+--            aug(4)(5) <= to_signed(16#0000024#,27);
+--            aug(4)(6) <= to_signed(16#0000004#,27);
+--            aug(5)(0) <= to_signed(16#7fffffb#,27);
+--            aug(5)(1) <= to_signed(16#000001a#,27);
+--            aug(5)(2) <= to_signed(16#000448e#,27);
+--            aug(5)(3) <= to_signed(16#7ffffb6#,27);
+--            aug(5)(4) <= to_signed(16#0000024#,27);
+--            aug(5)(5) <= to_signed(16#02a969d#,27);
+--            aug(5)(6) <= to_signed(16#0000004#,27);
+
+                            -- Row 0
               aug(0)(0) <= signed(A_0_0);
               aug(0)(1) <= signed(A_0_1);
               aug(0)(2) <= signed(A_0_2);
@@ -270,17 +311,21 @@ begin
               aug(5)(5) <= signed(A_5_5);
               aug(5)(6) <= signed(B_5);
 
-              state    <= FP_MK_INV;
-              cur_i    <= (others                           => '0');  -- Set the current pivot row to 0
-              cur_j    <= (others                           => '0');
-              -- Zero x_reg
-              x_reg    <= ((WHOLE_BITS+FRAC_BITS-1 downto 0 => '0'), (WHOLE_BITS+FRAC_BITS-1 downto 0 => '0'), (WHOLE_BITS+FRAC_BITS-1 downto 0 => '0'), (WHOLE_BITS+FRAC_BITS-1 downto 0 => '0'), (WHOLE_BITS+FRAC_BITS-1 downto 0 => '0'), (WHOLE_BITS+FRAC_BITS-1 downto 0 => '0'));
-              done_reg <= '0';
-              div_busy <= '0';
-            end if;
+            cur_i    <= (others                           => '0');  -- Set the current pivot row to 0
+            cur_j    <= (others                           => '0');
+            -- Zero x_reg
+            x_reg    <= ((WHOLE_BITS+FRAC_BITS-1 downto 0 => '0'), (WHOLE_BITS+FRAC_BITS-1 downto 0 => '0'), (WHOLE_BITS+FRAC_BITS-1 downto 0 => '0'), (WHOLE_BITS+FRAC_BITS-1 downto 0 => '0'), (WHOLE_BITS+FRAC_BITS-1 downto 0 => '0'), (WHOLE_BITS+FRAC_BITS-1 downto 0 => '0'));
+            done_reg <= '0';
+            div_busy <= '0';
+            diva <= (OTHERS => '0');
+            divb <= (OTHERS => '0');
+            div_valid_in <= '0';
+            
             -------------------------------------------------------------------
             -- FP
           when FP_MK_INV =>
+            -- Divide everything in the row by this rows diagonal element
+            -- Use it as the pivot row
             diva <= std_logic_vector(aug_i_j);
             divb <= std_logic_vector(aug_i_i);
 
@@ -307,15 +352,30 @@ begin
 
             if div_busy = '0' then
               if cur_j = "111" then           -- Done
-                fp_elim_col_done <= '0';
                 state            <= FP_ELIM_COL;
                 cur_j            <= cur_i+1;  -- Start at i+1
+                -- Clear temp variables
                 cur_j_delay0     <= (others => '0');
                 cur_j_delay1     <= (others => '0');
                 cur_j_delay2     <= (others => '0');
                 cur_j_delay3     <= (others => '0');
                 cur_j_delay4     <= (others => '0');
                 cur_j_delay5     <= (others => '0');
+
+                
+                aug_j_i_buf <= (others => '0');
+                for j in 6 downto 0 loop
+                  new_aug(j) <= (OTHERS => '0');
+                  new_aug_delay0(j) <= (others => '0');
+                  new_aug_delay1(j) <= (others => '0');
+                  new_aug_delay2(j) <= (others => '0');
+                  new_aug_delay3(j) <= (others => '0');
+                  aug_j_delay0(j)   <= (others => '0');
+                  aug_j_delay1(j)   <= (others => '0');
+                  aug_j_delay2(j)   <= (others => '0');
+                  aug_j_delay3(j)   <= (others => '0');
+                  aug_j_delay4(j)   <= (others => '0');
+                end loop;  -- j
               else
                 div_valid_in <= '1';
                 div_busy     <= '1';
@@ -329,6 +389,8 @@ begin
             end if;
             
           when FP_ELIM_COL =>  -- cur_i=current pivot row cur_j=current row
+            -- Multiply the pivot row by the element to be eliminated from this
+            -- row, subtract the result from the current row, store result
             -- Delay chain
             cur_j_delay0 <= cur_j;
             cur_j_delay1 <= cur_j_delay0;
@@ -388,7 +450,6 @@ begin
                 cur_i <= cur_i + 1;
               else
                 state            <= BP_ROW_MULT;
-                bp_row_mult_done <= '0';
                 cur_i            <= "101";  -- N-1=5
                 bp_row_mult_cnt  <= (others => '0');
               end if;

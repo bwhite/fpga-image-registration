@@ -485,7 +485,7 @@ ARCHITECTURE Behavioral OF registration_stage IS
 --  SIGNAL it_new_debug                                        : std_logic                             := '0';
   SIGNAL ab_valid_count : std_logic_vector(19 DOWNTO 0);
   ATTRIBUTE KEEP                                             : string;
-  ATTRIBUTE keep OF ab_valid_count : SIGNAL IS "true";
+  ATTRIBUTE keep OF ab_valid_count, A_0_0, A_1_0, A_2_0, A_3_0, A_4_0, A_5_0, B_0, A_0_1, A_1_1, A_2_1, A_3_1, A_4_1, A_5_1, B_1, A_0_2, A_1_2, A_2_2, A_3_2, A_4_2, A_5_2, B_2, A_0_3, A_1_3, A_2_3, A_3_3, A_4_3, A_5_3, B_3, A_0_4, A_1_4, A_2_4, A_3_4, A_4_4, A_5_4, B_4,A_0_5, A_1_5, A_2_5, A_3_5, A_4_5, A_5_5, B_5 : SIGNAL IS "true";
 --  ATTRIBUTE keep OF max_it_debug, min_it_debug, it_new_debug : SIGNAL IS "true";
 BEGIN
 -- Advisory Stage (Control which pyramid level/iteration we are on)
@@ -766,6 +766,7 @@ BEGIN
               RST        => RST,
               INPUT_LOAD => done_sab,
                                         -- 1:7:19
+
               A_0_0      => a_0_0_s,
               A_0_1      => a_0_1_s,
               A_0_2      => a_0_2_s,
@@ -814,6 +815,8 @@ BEGIN
               B_3          => b_3_s,
               B_4          => b_4_s,
               B_5          => b_5_s,
+              
+
               -- Output
               X_0          => x_0,
               X_1          => x_1,

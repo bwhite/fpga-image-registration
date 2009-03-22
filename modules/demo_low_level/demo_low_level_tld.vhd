@@ -33,8 +33,7 @@ ENTITY demo_low_level_tld IS
   GENERIC (
     IMGSIZE_BITS : integer := 10;
     PIXEL_BITS   : integer := 9);
-  PORT (CLK_P : IN std_logic;
-        CLK_N : IN std_logic;
+  PORT (CLK : IN std_logic;
 
         -- IO
         RST      : IN std_logic;
@@ -79,8 +78,8 @@ COMPONENT demo_low_level IS
   GENERIC (
     IMGSIZE_BITS : integer := 10;
     PIXEL_BITS   : integer := 9);
-  PORT (CLK_P : IN std_logic;
-        CLK_N : IN std_logic;
+  PORT (CLK : IN std_logic;
+       
 
         -- IO
         RST      : IN std_logic;
@@ -116,16 +115,16 @@ COMPONENT demo_low_level IS
         SRAM_OE_B   : OUT   std_logic;
         SRAM_DATA_I : IN std_logic_vector (35 DOWNTO 0);
         SRAM_DATA_O : OUT std_logic_vector (35 DOWNTO 0);
-        SRAM_DATA_T : OUT std_logic
+        SRAM_DATA_T : OUT std_logic;
 
         -- Output Signals
---        H_0_0_O      : OUT std_logic_vector(29 DOWNTO 0);
---        H_0_1_O      : OUT std_logic_vector(29 DOWNTO 0);
---        H_0_2_O      : OUT std_logic_vector(29 DOWNTO 0);
---        H_1_0_O      : OUT std_logic_vector(29 DOWNTO 0);
---        H_1_1_O      : OUT std_logic_vector(29 DOWNTO 0);
---        H_1_2_O      : OUT std_logic_vector(29 DOWNTO 0);
---        BUSY : OUT std_logic
+        H_0_0 : OUT std_logic_vector(29 DOWNTO 0);
+        H_0_1 : OUT std_logic_vector(29 DOWNTO 0);
+        H_0_2 : OUT std_logic_vector(29 DOWNTO 0);
+        H_1_0 : OUT std_logic_vector(29 DOWNTO 0);
+        H_1_1 : OUT std_logic_vector(29 DOWNTO 0);
+        H_1_2 : OUT std_logic_vector(29 DOWNTO 0);
+        BUSY : OUT std_logic
         );
 END COMPONENT;
   
@@ -137,8 +136,7 @@ BEGIN
   
 demo_low_level_i : demo_low_level
   PORT MAP (
-    CLK_P => CLK_P,
-    CLK_N => CLK_N,
+    CLK => CLK,
     RST => RST,
     GPIO_SW => GPIO_SW,
     GPIO_DIP => GPIO_DIP,

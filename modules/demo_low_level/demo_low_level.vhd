@@ -12,8 +12,7 @@ ENTITY demo_low_level IS
   GENERIC (
     IMGSIZE_BITS : integer := 10;
     PIXEL_BITS   : integer := 9);
-  PORT (CLK_P : IN std_logic;
-        CLK_N : IN std_logic;
+  PORT (CLK : IN std_logic;
 
         -- IO
         RST      : IN std_logic;
@@ -47,10 +46,17 @@ ENTITY demo_low_level IS
         SRAM_BW_B   : OUT   std_logic_vector (3 DOWNTO 0);
         SRAM_CS_B   : OUT   std_logic;
         SRAM_OE_B   : OUT   std_logic;
+        --SRAM_DATA : INOUT std_logic_vector (35 DOWNTO 0)
         SRAM_DATA_I : IN std_logic_vector (35 DOWNTO 0);
         SRAM_DATA_O : OUT std_logic_vector (35 DOWNTO 0);
-        SRAM_DATA_T : OUT std_logic
-        );
+        SRAM_DATA_T : OUT std_logic;
+        H_0_0 : OUT std_logic_vector(29 DOWNTO 0);
+        H_0_1 : OUT std_logic_vector(29 DOWNTO 0);
+        H_0_2 : OUT std_logic_vector(29 DOWNTO 0);
+        H_1_0 : OUT std_logic_vector(29 DOWNTO 0);
+        H_1_1 : OUT std_logic_vector(29 DOWNTO 0);
+        H_1_2 : OUT std_logic_vector(29 DOWNTO 0);
+        BUSY : OUT std_logic);
 END demo_low_level;
 
 ARCHITECTURE Behavioral OF demo_low_level IS
@@ -106,7 +112,7 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   END COMPONENT;
 
   COMPONENT i2c_video_programmer IS
-    PORT (CLK200Mhz : IN  std_logic;
+    PORT (CLK100Mhz : IN  std_logic;
           RST       : IN  std_logic;
           I2C_SDA   : OUT std_logic;
           I2C_SCL   : OUT std_logic);
@@ -229,8 +235,9 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   SIGNAL image_display_fifo_read_count0, image_display_fifo_write_count0, image_display_fifo_read_count1, image_display_fifo_write_count1                                             : std_logic_vector(8 DOWNTO 0);
 
   -- Homographies
-  SIGNAL h_0_0, h_0_1, h_0_2, h_1_0, h_1_1, h_1_2 : std_logic_vector(29 DOWNTO 0);
-  
+  --SIGNAL h_0_0, h_0_1, h_0_2, h_1_0, h_1_1, h_1_2 : std_logic_vector(29 DOWNTO 0);
+--  SIGNAL SRAM_DATA_I, SRAM_DATA_O : std_logic_vector(35 DOWNTO 0);
+--  SIGNAL SRAM_DATA_T : std_logic;
   ATTRIBUTE KEEP : string;
   ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value, cs_we_b, h_0_0, h_0_1, h_0_2, h_1_0, h_1_1, h_1_2, compute_affine_done : SIGNAL IS "true";
   
@@ -239,44 +246,28 @@ BEGIN
 -- CLK Management
   rst_not <= NOT RST;
 
-  IBUFGDS_inst : IBUFGDS
-    GENERIC MAP (
-      IOSTANDARD => "DEFAULT")
-    PORT MAP (
-      O  => clk200mhz_buf,              -- Clock buffer output
-      I  => CLK_P,                      -- Diff_p clock buffer input
-      IB => CLK_N                       -- Diff_n clock buffer input
-      );
+--    sram_data_i <= SRAM_DATA;
+--    PROCESS (sram_data_t,sram_data_o) IS
+--    BEGIN  -- PROCESS
+--      IF sram_data_t='1' THEN
+--        SRAM_DATA <= sram_data_o; 
+--      ELSE
+--        SRAM_DATA <= (OTHERS => 'Z');
+--      END IF;
+--    END PROCESS;
+  
 
-  DCM_BASE_freq : DCM_BASE
-    GENERIC MAP (
-      CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
-      CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
-      DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
-      DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
-      DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
-                                        --   an integer from 0 to 15
-      DFS_FREQUENCY_MODE    => "HIGH",  -- LOW or HIGH frequency mode for frequency synthesis
-      DLL_FREQUENCY_MODE    => "HIGH",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
-      DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
-      FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0"
-      STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
-    PORT MAP (
-      CLK0  => clk_buf,                 -- 0 degree DCM CLK ouptput
-      CLKFB => clk_buf,                 -- DCM clock feedback
-      CLKIN => clk200mhz_buf,        -- Clock input (from IBUFG, BUFG or DCM)
-      RST   => rst_not                  -- DCM asynchronous reset input
-      );
+
 
   DCM_BASE_internal : DCM_BASE
     GENERIC MAP (
-      CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
+      CLKIN_PERIOD          => 10.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
       DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
                                         --   an integer from 0 to 15
-      CLKIN_DIVIDE_BY_2     => true,
+      --CLKIN_DIVIDE_BY_2     => true,
       DFS_FREQUENCY_MODE    => "LOW",  -- LOW or HIGH frequency mode for frequency synthesis
       DLL_FREQUENCY_MODE    => "LOW",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
       DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
@@ -285,7 +276,7 @@ BEGIN
     PORT MAP (
       CLK0  => clk_int,                 -- 0 degree DCM CLK ouptput
       CLKFB => clk_intbuf,              -- DCM clock feedback
-      CLKIN => clk_buf,              -- Clock input (from IBUFG, BUFG or DCM)
+      CLKIN => CLK,              -- Clock input (from IBUFG, BUFG or DCM)
       RST   => rst_not                  -- DCM asynchronous reset input
       );
 
@@ -321,16 +312,16 @@ BEGIN
 
   DCM_BASE_dvi : DCM_BASE
     GENERIC MAP (
-      CLKDV_DIVIDE          => 8.0,  -- Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5
+      CLKDV_DIVIDE          => 4.0,  -- Divide by: 1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5,6.0,6.5
       --   7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0
-      CLKIN_PERIOD          => 5.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
+      CLKIN_PERIOD          => 10.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
       DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
                                         --   an integer from 0 to 15
-      DFS_FREQUENCY_MODE    => "HIGH",  -- LOW or HIGH frequency mode for frequency synthesis
-      DLL_FREQUENCY_MODE    => "HIGH",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
+      DFS_FREQUENCY_MODE    => "LOW",  -- LOW or HIGH frequency mode for frequency synthesis
+      DLL_FREQUENCY_MODE    => "LOW",  -- LOW, HIGH, or HIGH_SER frequency mode for DLL
       DUTY_CYCLE_CORRECTION => true,    -- Duty cycle correction, TRUE or FALSE
       FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0" 
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
@@ -338,10 +329,19 @@ BEGIN
       CLK0  => clk_dvi_fb,              -- 0 degree DCM CLK ouptput
       CLKDV => dvi_pixel_clk,
       CLKFB => clk_dvi_fb,              -- DCM clock feedback
-      CLKIN => clk_buf,              -- Clock input (from IBUFG, BUFG or DCM)
+      CLKIN => clk_intbuf,              -- Clock input (from IBUFG, BUFG or DCM)
       RST   => rst_not                  -- DCM asynchronous reset input
       );
 
+PROCESS (cur_state) IS
+BEGIN  -- PROCESS
+  IF cur_state = IDLE THEN
+    BUSY <= '0';
+  ELSE
+    BUSY <= '1';
+  END IF;
+END PROCESS;
+  
 -------------------------------------------------------------------------------
 -- Main State Machine
 -- DIP Switch selects state, center button press activates state
@@ -534,7 +534,7 @@ BEGIN
 -- Program Video In/Out Over I2C
   i2c_video_programmer_i : i2c_video_programmer
     PORT MAP (
-      CLK200Mhz => clk200mhz_buf,
+      CLK100Mhz => clk_intbuf,
       RST       => rst_not,
       I2C_SDA   => I2C_SDA,
       I2C_SCL   => I2C_SCL);

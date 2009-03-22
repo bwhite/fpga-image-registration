@@ -1,6 +1,7 @@
 # CLKs
-NET CLK_P		LOC="L19" |SLEW=FAST | PERIOD=5ns;
-NET CLK_N               LOC="K19" |SLEW=FAST;
+NET CLK		LOC="AH15" |SLEW=FAST | PERIOD=10ns | IOSTANDARD=LVCMOS33;
+#NET CLK_N               LOC="K19" |SLEW=FAST;
+
 
 # DVI Out Ports
 NET DVI_D<0>            LOC="AB8" | IOSTANDARD="LVDCI_33";   # Bank 22, Vcco=3.3V, DCI using 49.9 ohm resistors
@@ -191,7 +192,7 @@ NET "SRAM_OE_B" TNM = SRAM_OE;
 NET "SRAM_WE_B" TNM = SRAM_PORTS;
 
 # Clock to Pad(After) - The maximum time it can take for the data to be valid after the clock
-TIMEGRP "SRAM_PORTS" OFFSET = OUT 3290 ps AFTER "CLK_P";
-TIMEGRP "SRAM_OE" OFFSET = OUT 3250 ps AFTER "CLK_P";
+TIMEGRP "SRAM_PORTS" OFFSET = OUT 3290 ps AFTER "CLK";
+TIMEGRP "SRAM_OE" OFFSET = OUT 3250 ps AFTER "CLK";
 # Pad to Setup(Before) - The maximum time that the FPGA can require an external source to provide data before the clock (the FPGA's setup time).
-TIMEGRP "SRAM_DATA" OFFSET = IN 1900 ps BEFORE "CLK_P";
+TIMEGRP "SRAM_DATA" OFFSET = IN 1900 ps BEFORE "CLK";

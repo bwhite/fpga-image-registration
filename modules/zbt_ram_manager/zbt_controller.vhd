@@ -43,7 +43,9 @@ ENTITY zbt_controller IS
         SRAM_BW_B : OUT   std_logic_vector (3 DOWNTO 0);
         SRAM_CS_B : OUT   std_logic;
         SRAM_OE_B : OUT   std_logic;
-        SRAM_DATA : INOUT std_logic_vector (35 DOWNTO 0));
+        SRAM_DATA_I : IN std_logic_vector (35 DOWNTO 0);
+        SRAM_DATA_O : OUT std_logic_vector (35 DOWNTO 0);
+        SRAM_DATA_T : OUT std_logic);
 END zbt_controller;
 
 ARCHITECTURE Behavioral OF zbt_controller IS
@@ -58,7 +60,7 @@ BEGIN
   SRAM_WE_B       <= WE_B;
   SRAM_BW_B       <= BW_B;
   SRAM_CS_B       <= CS_B;
-  DATA_READ       <= SRAM_DATA;
+  DATA_READ       <= SRAM_DATA_I;
   DATA_READ_VALID <= data_read_valid_reg;
 
 -- purpose: This is the SRAM manager body, it receives data and outputs it with the correct timing to the ZBT ram.  It signals when read data is available (not provided by this module, it is read directly from the RAM,  this module just says when it is valid for reading).
@@ -68,15 +70,17 @@ BEGIN
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       -- Control write data output
       IF we_delay = '1' AND cs_b_delay = '0' THEN
-        SRAM_DATA <= data_write_delay;
+        SRAM_DATA_T <= '1';
+        SRAM_DATA_O <= data_write_delay;
       ELSE
-        SRAM_DATA <= (OTHERS => 'Z');
+        SRAM_DATA_T <= '0';
+        SRAM_DATA_O <= (OTHERS => '0');
       END IF;
 
       data_write_delay <= DATA_WRITE;
       SRAM_OE_B        <= NOT WE_B;--we_delay;
       IF RST = '1' THEN                 -- synchronous reset (active high)
-        cs_b_delay          <= '1';
+        cs_b_delay          <= '1'; 
         we_delay            <= '0';
         data_read_valid_reg <= '0';
       ELSE

@@ -47,7 +47,9 @@ ENTITY demo_low_level IS
         SRAM_BW_B   : OUT   std_logic_vector (3 DOWNTO 0);
         SRAM_CS_B   : OUT   std_logic;
         SRAM_OE_B   : OUT   std_logic;
-        SRAM_DATA   : INOUT std_logic_vector (35 DOWNTO 0)
+        SRAM_DATA_I : IN std_logic_vector (35 DOWNTO 0);
+        SRAM_DATA_O : OUT std_logic_vector (35 DOWNTO 0);
+        SRAM_DATA_T : OUT std_logic
         );
 END demo_low_level;
 
@@ -71,7 +73,9 @@ ARCHITECTURE Behavioral OF demo_low_level IS
           SRAM_BW_B : OUT   std_logic_vector (3 DOWNTO 0);
           SRAM_CS_B : OUT   std_logic;
           SRAM_OE_B : OUT   std_logic;
-          SRAM_DATA : INOUT std_logic_vector (35 DOWNTO 0));
+          SRAM_DATA_I : IN std_logic_vector (35 DOWNTO 0);
+          SRAM_DATA_O : OUT std_logic_vector (35 DOWNTO 0);
+          SRAM_DATA_T : OUT std_logic);
   END COMPONENT;
 
   COMPONENT pipeline_buffer IS
@@ -706,7 +710,10 @@ BEGIN
       SRAM_BW_B => SRAM_BW_B,
       SRAM_CS_B => SRAM_CS_B,
       SRAM_OE_B => SRAM_OE_B,
-      SRAM_DATA => SRAM_DATA);
+      
+      SRAM_DATA_I => SRAM_DATA_I,
+      SRAM_DATA_O => SRAM_DATA_O,
+      SRAM_DATA_T => SRAM_DATA_T);
   SRAM_ADDR <= sram_addr_wire;
 
 -------------------------------------------------------------------------------

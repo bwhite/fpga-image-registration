@@ -10,10 +10,11 @@ trans_whole=10;
 output_frac=19;
 output_whole=10;
 
-h=fp(h,input_whole,input_frac);
+fim=fimath('RoundMode','Floor','SumMode','KeepLSB');
+h=fpm(h,input_whole,input_frac,fim);
 
-xb=fp(xb,trans_whole,trans_frac);
-yb=fp(yb,trans_whole,trans_frac);
+xb=fpm(xb,trans_whole,trans_frac,fim);
+yb=fpm(yb,trans_whole,trans_frac,fim);
 
 if verbose
     h=h';
@@ -23,7 +24,6 @@ end
 ho=fpr(h,output_whole,output_frac);
 xbo=fpr(xb,output_whole,output_frac);
 ybo=fpr(yb,output_whole,output_frac);
-
 
 h_1_3=ho(1,3)+xbo-fpr(h(1,1)*xb,output_whole,output_frac)-fpr(h(1,2)*yb,output_whole,output_frac);
 h_2_3=ho(2,3)+ybo-fpr(h(2,1)*xb,output_whole,output_frac)-fpr(h(2,2)*yb,output_whole,output_frac);
@@ -40,6 +40,10 @@ end
 
 function out=fp(val,whole,frac)
 out=fi(val,1,1+whole+frac,frac,'RoundMode','Floor','SumMode','KeepLSB');
+
+function out=fpm(val,whole,frac,fim)
+out=fi(val,1,1+whole+frac,frac,fim);
+
 
 function out=fpr(val,whole,frac)
 out=fi(val,1,1+whole+frac,frac,'RoundMode','Floor','SumMode','KeepLSB','SumWordLength',1+whole+frac);

@@ -56,8 +56,8 @@ ARCHITECTURE Behavioral OF i2c_core IS
   SIGNAL i2c_clock_5x_posedge : std_logic                     := '1';
 
 BEGIN
-  i2c_scl       <= '0' WHEN i2c_clock = '0'   ELSE 'Z';  -- Output using {0,Z logic}
-  i2c_sda       <= '0' WHEN i2c_sda_reg = '0' ELSE 'Z';  -- Output using {0,Z logic}
+  i2c_scl       <= '0' WHEN i2c_clock = '0'   ELSE '1';  -- Output using {0,Z logic}
+  i2c_sda       <= '0' WHEN i2c_sda_reg = '0' ELSE '1';  -- Output using {0,Z logic}
   received_data <= received_data_reg;
 
   PROCESS(clk)

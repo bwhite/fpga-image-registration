@@ -41,8 +41,8 @@ ENTITY demo_low_level_tld IS
         GPIO_DIP : IN std_logic_vector(7 DOWNTO 0);
 
         -- I2C Signals
-        I2C_SDA : OUT std_logic;
-        I2C_SCL : OUT std_logic;
+        I2C_SDA : INOUT std_logic;
+        I2C_SCL : INOUT std_logic;
 
         -- DVI Signals
         DVI_D       : OUT std_logic_vector (11 DOWNTO 0);
@@ -87,8 +87,13 @@ COMPONENT demo_low_level IS
         GPIO_DIP : IN std_logic_vector(7 DOWNTO 0);
 
         -- I2C Signals
-        I2C_SDA : OUT std_logic;
-        I2C_SCL : OUT std_logic;
+        I2C_SDA_I : IN std_logic;       -- NOT Used
+        I2C_SDA_O : OUT std_logic;      -- Tied to 0
+        I2C_SDA_T : OUT std_logic;      -- Actual data signal
+        
+        I2C_SCL_I : IN std_logic;       -- NOT Used
+        I2C_SCL_O : OUT std_logic;      -- Tied to 0
+        I2C_SCL_T : OUT std_logic;      -- Actual data signal
 
         -- DVI Signals
         DVI_D       : OUT std_logic_vector (11 DOWNTO 0);
@@ -124,12 +129,15 @@ COMPONENT demo_low_level IS
         H_1_0 : OUT std_logic_vector(29 DOWNTO 0);
         H_1_1 : OUT std_logic_vector(29 DOWNTO 0);
         H_1_2 : OUT std_logic_vector(29 DOWNTO 0);
-        BUSY : OUT std_logic
+        BUSY : OUT std_logic;
+        OUT_STATE : OUT std_logic_vector(2 DOWNTO 0)
         );
 END COMPONENT;
   
 SIGNAL sram_data_i_wire,sram_data_o_wire : std_logic_vector(35 DOWNTO 0);
-SIGNAL sram_data_t_wire : std_logic;
+SIGNAL i2c_sda_t_wire, i2c_scl_t_wire, i2c_sda_o_wire, i2c_sda_i_wire, i2c_scl_i_wire, i2c_scl_o_wire, sram_data_t_wire : std_logic;
+
+
 
 BEGIN
 
@@ -140,8 +148,12 @@ demo_low_level_i : demo_low_level
     RST => RST,
     GPIO_SW => GPIO_SW,
     GPIO_DIP => GPIO_DIP,
-    I2C_SDA => I2C_SDA,
-    I2C_SCL => I2C_SCL,
+    I2C_SDA_I => i2c_sda_i_wire,
+    I2C_SDA_O => i2c_sda_o_wire,
+    I2C_SDA_T => i2c_sda_t_wire,
+    I2C_SCL_I => i2c_scl_i_wire,
+    I2C_SCL_O => i2c_scl_o_wire,
+    I2C_SCL_T => i2c_scl_t_wire,
     DVI_D => DVI_D,
     DVI_H => DVI_H,
     DVI_V => DVI_V,
@@ -167,11 +179,32 @@ demo_low_level_i : demo_low_level
     sram_data_i_wire <= SRAM_DATA;
     PROCESS (sram_data_t_wire,sram_data_o_wire) IS
     BEGIN  -- PROCESS
-      IF sram_data_t_wire='1' THEN
+      IF sram_data_t_wire='0' THEN
         SRAM_DATA <= sram_data_o_wire; 
       ELSE
         SRAM_DATA <= (OTHERS => 'Z');
       END IF;
     END PROCESS;
+
+    i2c_scl_i_wire <= I2C_SCL;
+    PROCESS (i2c_scl_t_wire,i2c_scl_o_wire) IS
+    BEGIN  -- PROCESS
+      IF i2c_scl_t_wire='0' THEN
+        I2C_SCL <= i2c_scl_o_wire; 
+      ELSE
+        I2C_SCL <= 'Z';
+      END IF;
+    END PROCESS;
+
+    i2c_sda_i_wire <= I2C_SDA;
+    PROCESS (i2c_sda_t_wire,i2c_sda_o_wire) IS
+    BEGIN  -- PROCESS
+      IF i2c_sda_t_wire='0' THEN
+        I2C_SDA <= i2c_sda_o_wire; 
+      ELSE
+        I2C_SDA <= 'Z';
+      END IF;
+    END PROCESS;
+
 END Behavioral;
 

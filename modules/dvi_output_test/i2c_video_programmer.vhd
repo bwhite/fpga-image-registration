@@ -59,7 +59,7 @@ ARCHITECTURE Behavioral OF i2c_video_programmer IS
   SIGNAL i2c_data      : std_logic_vector(23 DOWNTO 0);
                                         -- bytes sent over I2C
   SIGNAL i2c_clk       : std_logic;     -- 50Mhz i2c module input clock
-  SIGNAL i2c_dcm_fb    : std_logic;
+  SIGNAL i2c_dcm_fb, i2c_dcm_fb_unbuf    : std_logic;
 BEGIN
   PROCESS (data_count) IS
   BEGIN  -- PROCESS
@@ -121,11 +121,17 @@ BEGIN
       PHASE_SHIFT           => 0,       -- Amount of fixed phase shift from -255 to 1023
       STARTUP_WAIT          => false)   -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
     PORT MAP (
-      CLK0                  => i2c_dcm_fb,  -- 0 degree DCM CLK ouptput
+      CLK0                  => i2c_dcm_fb_unbuf,  -- 0 degree DCM CLK ouptput
       CLKDV                 => i2c_clk,
       CLKFB                 => i2c_dcm_fb,  -- DCM clock feedback
       CLKIN                 => CLK100Mhz,  -- Clock input (from IBUFG, BUFG or DCM)
       RST                   => '0'      -- DCM asynchronous reset input
+      );
+
+    BUFG_i2c : BUFG
+    PORT MAP (
+      O => i2c_dcm_fb,                  -- Clock buffer output
+      I => i2c_dcm_fb_unbuf                      -- Clock buffer input
       );
 
 

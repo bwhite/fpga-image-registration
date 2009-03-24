@@ -52,6 +52,9 @@ ARCHITECTURE Behavioral OF zbt_controller IS
   SIGNAL data_write_delay               : std_logic_vector(35 DOWNTO 0);
   SIGNAL we_delay, cs_b_delay           : std_logic := '0';
   SIGNAL data_read_valid_reg            : std_logic := '0';
+  attribute IOB : string;
+  attribute IOB of SRAM_DATA_I, SRAM_DATA_O: signal is "TRUE";
+  
   ATTRIBUTE KEEP                        : string;
   ATTRIBUTE KEEP OF data_write_delay    : SIGNAL IS "TRUE";
   ATTRIBUTE KEEP OF data_read_valid_reg : SIGNAL IS "TRUE";
@@ -70,11 +73,11 @@ BEGIN
     IF CLK'event AND CLK = '1' THEN     -- rising clock edge
       -- Control write data output
       IF we_delay = '1' AND cs_b_delay = '0' THEN
-        SRAM_DATA_T <= '1';
+        SRAM_DATA_T <= '0';
         SRAM_DATA_O <= data_write_delay;
       ELSE
-        SRAM_DATA_T <= '0';
-        SRAM_DATA_O <= (OTHERS => '0');
+        SRAM_DATA_T <= '1';
+        SRAM_DATA_O <= (OTHERS => 'X');
       END IF;
 
       data_write_delay <= DATA_WRITE;

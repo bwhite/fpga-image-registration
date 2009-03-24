@@ -20,8 +20,13 @@ ENTITY demo_low_level IS
         GPIO_DIP : IN std_logic_vector(7 DOWNTO 0);
 
         -- I2C Signals
-        I2C_SDA : OUT std_logic;
-        I2C_SCL : OUT std_logic;
+        I2C_SDA_I : IN  std_logic;      -- NOT Used
+        I2C_SDA_O : OUT std_logic;      -- Tied to 0
+        I2C_SDA_T : OUT std_logic;      -- Actual data signal
+
+        I2C_SCL_I : IN  std_logic;      -- NOT Used
+        I2C_SCL_O : OUT std_logic;      -- Tied to 0
+        I2C_SCL_T : OUT std_logic;      -- Actual data signal
 
         -- DVI Signals
         DVI_D       : OUT std_logic_vector (11 DOWNTO 0);
@@ -39,24 +44,26 @@ ENTITY demo_low_level IS
         VGA_VSYNC     : IN std_logic;
 
         -- SRAM Connections
-        SRAM_CLK_FB : IN    std_logic;
-        SRAM_CLK    : OUT   std_logic;
-        SRAM_ADDR   : OUT   std_logic_vector (17 DOWNTO 0);
-        SRAM_WE_B   : OUT   std_logic;
-        SRAM_BW_B   : OUT   std_logic_vector (3 DOWNTO 0);
-        SRAM_CS_B   : OUT   std_logic;
-        SRAM_OE_B   : OUT   std_logic;
+        SRAM_CLK_FB : IN  std_logic;
+        SRAM_CLK    : OUT std_logic;
+        SRAM_ADDR   : OUT std_logic_vector (17 DOWNTO 0);
+        SRAM_WE_B   : OUT std_logic;
+        SRAM_BW_B   : OUT std_logic_vector (3 DOWNTO 0);
+        SRAM_CS_B   : OUT std_logic;
+        SRAM_OE_B   : OUT std_logic;
         --SRAM_DATA : INOUT std_logic_vector (35 DOWNTO 0)
-        SRAM_DATA_I : IN std_logic_vector (35 DOWNTO 0);
+        SRAM_DATA_I : IN  std_logic_vector (35 DOWNTO 0);
         SRAM_DATA_O : OUT std_logic_vector (35 DOWNTO 0);
         SRAM_DATA_T : OUT std_logic;
-        H_0_0 : OUT std_logic_vector(29 DOWNTO 0);
-        H_0_1 : OUT std_logic_vector(29 DOWNTO 0);
-        H_0_2 : OUT std_logic_vector(29 DOWNTO 0);
-        H_1_0 : OUT std_logic_vector(29 DOWNTO 0);
-        H_1_1 : OUT std_logic_vector(29 DOWNTO 0);
-        H_1_2 : OUT std_logic_vector(29 DOWNTO 0);
-        BUSY : OUT std_logic);
+        H_0_0       : OUT std_logic_vector(29 DOWNTO 0);
+        H_0_1       : OUT std_logic_vector(29 DOWNTO 0);
+        H_0_2       : OUT std_logic_vector(29 DOWNTO 0);
+        H_1_0       : OUT std_logic_vector(29 DOWNTO 0);
+        H_1_1       : OUT std_logic_vector(29 DOWNTO 0);
+        H_1_2       : OUT std_logic_vector(29 DOWNTO 0);
+        BUSY        : OUT std_logic;
+        OUT_STATE   : OUT std_logic_vector(2 DOWNTO 0)
+        );
 END demo_low_level;
 
 ARCHITECTURE Behavioral OF demo_low_level IS
@@ -74,12 +81,12 @@ ARCHITECTURE Behavioral OF demo_low_level IS
           PIXEL_READ_VALID : OUT std_logic;
 
           -- SRAM Connections
-          SRAM_ADDR : OUT   std_logic_vector (17 DOWNTO 0);
-          SRAM_WE_B : OUT   std_logic;
-          SRAM_BW_B : OUT   std_logic_vector (3 DOWNTO 0);
-          SRAM_CS_B : OUT   std_logic;
-          SRAM_OE_B : OUT   std_logic;
-          SRAM_DATA_I : IN std_logic_vector (35 DOWNTO 0);
+          SRAM_ADDR   : OUT std_logic_vector (17 DOWNTO 0);
+          SRAM_WE_B   : OUT std_logic;
+          SRAM_BW_B   : OUT std_logic_vector (3 DOWNTO 0);
+          SRAM_CS_B   : OUT std_logic;
+          SRAM_OE_B   : OUT std_logic;
+          SRAM_DATA_I : IN  std_logic_vector (35 DOWNTO 0);
           SRAM_DATA_O : OUT std_logic_vector (35 DOWNTO 0);
           SRAM_DATA_T : OUT std_logic);
   END COMPONENT;
@@ -206,12 +213,12 @@ ARCHITECTURE Behavioral OF demo_low_level IS
           );
   END COMPONENT;
 
-  SIGNAL rst_not, clk200mhz_buf, clk_int, clk_buf, sram_int_clk, clk_intbuf, we_b, we_b_next, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, cs_b_next, image_store_rst, smooth_rst, smooth_rst_reg, compute_affine_rst_reg, compute_affine_rst, compute_affine_done, smooth_re, compute_affine_re, smooth_done, smooth_output_valid, compute_affine_output_valid, manual_offset_enabled, cs_mem_read_valid, vga_calibrate, cs_we_b : std_logic;
+  SIGNAL rst_not, clk200mhz_buf, clk_int, clk_buf, sram_int_clk, sram_int_clk_unbuf, clk_intbuf, we_b, we_b_next, image_store_done, image_store_mem_output_valid, image_display_mem_output_valid, cs_b, cs_b_next, image_store_rst, smooth_rst, smooth_rst_reg, compute_affine_rst_reg, compute_affine_rst, compute_affine_done, smooth_re, compute_affine_re, smooth_done, smooth_output_valid, compute_affine_output_valid, manual_offset_enabled, cs_mem_read_valid, vga_calibrate, cs_we_b : std_logic;
 
   SIGNAL memory_dump_done, memory_dump_rst, memory_dump_mem_out_valid, memory_dump_rst_reg : std_logic;
 
   SIGNAL image_store_mem_addr, mem_addr_next, image_store_mem_addr_fifo, image_display_mem_addr, memory_dump_mem_addr, mem_addr, smooth_addr, compute_affine_addr, manual_offset, cs_mem_addr_split : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
-  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_write_value_next, mem_read_value, smooth_pixel_write, cs_mem_read, cs_mem_write_value      : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
+  SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_write_value_next, mem_read_value, smooth_pixel_write, cs_mem_read, cs_mem_write_value                                  : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
   TYPE   current_state IS (IMAGE_STORE, IMAGE_DISPLAY, SMOOTH, IDLE, MEM_DUMP_WRITE, MEM_DUMP_READ, COMPUTE_AFFINE);
   SIGNAL cur_state, cur_state_next                                                                                                                                                                  : current_state := IDLE;
 
@@ -231,39 +238,26 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   SIGNAL image_store_fifo_empty, image_store_fifo_re               : std_logic;
 
   -- DVI Signals
-  SIGNAL clk_dvi_fb, dvi_pixel_clk, image_display_fifo_re, image_display_fifo_re_buf, image_display_fifo_empty, image_display_fifo_rst, image_display_fifo_we, dvi_h_wire, dvi_v_wire : std_logic;
-  SIGNAL image_display_fifo_read_count0, image_display_fifo_write_count0, image_display_fifo_read_count1, image_display_fifo_write_count1                                             : std_logic_vector(8 DOWNTO 0);
-
+  SIGNAL clk_dvi_fb, clk_dvi_fb_unbuf, dvi_pixel_clk, image_display_fifo_re, image_display_fifo_re_buf, image_display_fifo_empty, image_display_fifo_rst, image_display_fifo_we, dvi_h_wire, dvi_v_wire : std_logic;
+  SIGNAL image_display_fifo_read_count0, image_display_fifo_write_count0, image_display_fifo_read_count1, image_display_fifo_write_count1                                                               : std_logic_vector(8 DOWNTO 0);
+  SIGNAL i2c_sda_i_reg, i2c_scl_i_reg, i2c_scl_t_wire, i2c_sda_t_wire                                                                                                                                   : std_logic;
   -- Homographies
-  --SIGNAL h_0_0, h_0_1, h_0_2, h_1_0, h_1_1, h_1_2 : std_logic_vector(29 DOWNTO 0);
+  SIGNAL h_0_0w, h_0_1w, h_0_2w, h_1_0w, h_1_1w, h_1_2w                                                                                                                                                 : std_logic_vector(29 DOWNTO 0);
 --  SIGNAL SRAM_DATA_I, SRAM_DATA_O : std_logic_vector(35 DOWNTO 0);
 --  SIGNAL SRAM_DATA_T : std_logic;
-  ATTRIBUTE KEEP : string;
-  ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value, cs_we_b, h_0_0, h_0_1, h_0_2, h_1_0, h_1_1, h_1_2, compute_affine_done : SIGNAL IS "true";
+  ATTRIBUTE KEEP                                                                                                                                                                                        : string;
+  ATTRIBUTE keep OF memory_dump_mem_addr, cs_mem_addr_split, cs_mem_read, cs_mem_read_valid, cs_mem_write_value, cs_we_b, h_0_0, h_0_1, h_0_2, h_1_0, h_1_1, h_1_2, compute_affine_done                 : SIGNAL IS "true";
   
 BEGIN
 -------------------------------------------------------------------------------
 -- CLK Management
   rst_not <= NOT RST;
 
---    sram_data_i <= SRAM_DATA;
---    PROCESS (sram_data_t,sram_data_o) IS
---    BEGIN  -- PROCESS
---      IF sram_data_t='1' THEN
---        SRAM_DATA <= sram_data_o; 
---      ELSE
---        SRAM_DATA <= (OTHERS => 'Z');
---      END IF;
---    END PROCESS;
-  
-
-
-
   DCM_BASE_internal : DCM_BASE
     GENERIC MAP (
       CLKIN_PERIOD          => 10.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
-      DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
+      DCM_AUTOCALIBRATION   => true,  -- DCM calibrartion circuitry TRUE/FALSE
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
                                         --   an integer from 0 to 15
@@ -276,7 +270,7 @@ BEGIN
     PORT MAP (
       CLK0  => clk_int,                 -- 0 degree DCM CLK ouptput
       CLKFB => clk_intbuf,              -- DCM clock feedback
-      CLKIN => CLK,              -- Clock input (from IBUFG, BUFG or DCM)
+      CLKIN => CLK,                   -- Clock input (from IBUFG, BUFG or DCM)
       RST   => rst_not                  -- DCM asynchronous reset input
       );
 
@@ -302,10 +296,16 @@ BEGIN
       FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0" 
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
     PORT MAP (
-      CLK0  => sram_int_clk,            -- 0 degree DCM CLK output
+      CLK0  => sram_int_clk_unbuf,      -- 0 degree DCM CLK output
       CLKFB => SRAM_CLK_FB,             -- DCM clock feedback
       CLKIN => clk_intbuf,            -- Clock input (from IBUFG, BUFG or DCM)
       RST   => rst_not                  -- DCM asynchronous reset input
+      );
+  -- Buffer Internal Clock Signal
+  BUFG_sram : BUFG
+    PORT MAP (
+      O => sram_int_clk,                -- Clock buffer output
+      I => sram_int_clk_unbuf           -- Clock buffer input
       );
 
   SRAM_CLK <= sram_int_clk;
@@ -316,7 +316,7 @@ BEGIN
       --   7.0,7.5,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0 or 16.0
       CLKIN_PERIOD          => 10.0,  -- Specify period of input clock in ns from 1.25 to 1000.00
       CLK_FEEDBACK          => "1X",    -- Specify clock feedback of NONE or 1X
-      DCM_AUTOCALIBRATION   => true,   -- DCM calibrartion circuitry TRUE/FALSE
+      DCM_AUTOCALIBRATION   => true,  -- DCM calibrartion circuitry TRUE/FALSE
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",  -- Can be MAX_SPEED or MAX_RANGE
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",  -- SOURCE_SYNCHRONOUS, SYSTEM_SYNCHRONOUS or
                                         --   an integer from 0 to 15
@@ -326,22 +326,46 @@ BEGIN
       FACTORY_JF            => X"F0F0",  -- FACTORY JF Values Suggested to be set to X"F0F0" 
       STARTUP_WAIT          => false)  -- Delay configuration DONE until DCM LOCK, TRUE/FALSE
     PORT MAP (
-      CLK0  => clk_dvi_fb,              -- 0 degree DCM CLK ouptput
+      CLK0  => clk_dvi_fb_unbuf,        -- 0 degree DCM CLK ouptput
       CLKDV => dvi_pixel_clk,
       CLKFB => clk_dvi_fb,              -- DCM clock feedback
-      CLKIN => clk_intbuf,              -- Clock input (from IBUFG, BUFG or DCM)
+      CLKIN => clk_intbuf,           -- Clock input (from IBUFG, BUFG or DCM)
       RST   => rst_not                  -- DCM asynchronous reset input
       );
 
-PROCESS (cur_state) IS
-BEGIN  -- PROCESS
-  IF cur_state = IDLE THEN
-    BUSY <= '0';
-  ELSE
-    BUSY <= '1';
-  END IF;
-END PROCESS;
-  
+  BUFG_dvi : BUFG
+    PORT MAP (
+      O => clk_dvi_fb,                  -- Clock buffer output
+      I => clk_dvi_fb_unbuf             -- Clock buffer input
+      );
+
+  PROCESS (cur_state) IS
+  BEGIN  -- PROCESS
+    IF cur_state = IDLE THEN
+      BUSY <= '0';
+    ELSE
+      BUSY <= '1';
+    END IF;
+    CASE cur_state IS
+      WHEN IDLE =>
+        OUT_STATE <= "000";
+      WHEN MEM_DUMP_WRITE =>
+        OUT_STATE <= "001";
+      WHEN MEM_DUMP_READ =>
+        OUT_STATE <= "010";
+      WHEN IMAGE_STORE =>
+        OUT_STATE <= "011";
+      WHEN IMAGE_DISPLAY =>
+        OUT_STATE <= "100";
+      WHEN SMOOTH =>
+        OUT_STATE <= "101";
+      WHEN COMPUTE_AFFINE =>
+        OUT_STATE <= "110";
+      WHEN OTHERS =>
+        OUT_STATE <= "000";
+    END CASE;
+  END PROCESS;
+
 -------------------------------------------------------------------------------
 -- Main State Machine
 -- DIP Switch selects state, center button press activates state
@@ -349,6 +373,24 @@ END PROCESS;
   PROCESS (clk_intbuf) IS
   BEGIN  -- PROCESS
     IF clk_intbuf'event AND clk_intbuf = '1' THEN  -- rising clock edge
+      IF rst_not = '1' THEN
+        h_0_0 <= (OTHERS => '0');
+        h_0_1 <= (OTHERS => '0');
+        h_0_2 <= (OTHERS => '0');
+        h_1_0 <= (OTHERS => '0');
+        h_1_1 <= (OTHERS => '0');
+        h_1_2 <= (OTHERS => '0');
+      elsif compute_affine_done = '1' THEN
+        h_0_0 <= h_0_0w;
+        h_0_1 <= h_0_1w;
+        h_0_2 <= h_0_2w;
+        h_1_0 <= h_1_0w;
+        h_1_1 <= h_1_1w;
+        h_1_2 <= h_1_2w;
+      END IF;
+
+      i2c_scl_i_reg      <= I2C_SCL_I;
+      i2c_sda_i_reg      <= I2C_SDA_I;
       cs_mem_read        <= mem_read_value;
       cs_mem_read_valid  <= mem_read_valid;
       cs_mem_write_value <= mem_write_value;
@@ -372,7 +414,7 @@ END PROCESS;
             smooth_rst_reg         <= '1';
             compute_affine_rst_reg <= '1';
             -- Switch states on button press
-            IF gpio_sw_reg1 = "10000" THEN
+            IF gpio_sw_reg1 /= "00000" THEN
               -- Lower 6 bits select mode, upper bit selects image slot, next
               -- bit selects offset
               CASE gpio_dip_reg1(5 DOWNTO 0) IS
@@ -401,15 +443,15 @@ END PROCESS;
             IF memory_dump_done = '1' THEN
               cur_state <= IDLE;
             END IF;
-            we_b_next            <= '0';
-            cs_b_next            <= NOT memory_dump_mem_out_valid;
-            mem_addr_next        <= memory_dump_mem_addr;
-            IF gpio_dip_reg1(7)='0' THEN
+            we_b_next     <= '0';
+            cs_b_next     <= NOT memory_dump_mem_out_valid;
+            mem_addr_next <= memory_dump_mem_addr;
+            IF gpio_dip_reg1(7) = '0' THEN
               mem_write_value_next <= memory_dump_mem_addr(8 DOWNTO 0);
             ELSE
               mem_write_value_next <= std_logic_vector(unsigned(memory_dump_mem_addr(8 DOWNTO 0))+1);
             END IF;
-            
+
             CASE memory_dump_mem_addr(1 DOWNTO 0) IS
               WHEN "00" =>
                 bw_b_next <= "1110";
@@ -536,8 +578,14 @@ END PROCESS;
     PORT MAP (
       CLK100Mhz => clk_intbuf,
       RST       => rst_not,
-      I2C_SDA   => I2C_SDA,
-      I2C_SCL   => I2C_SCL);
+      I2C_SDA   => I2C_SDA_T_wire,
+      I2C_SCL   => I2C_SCL_T_wire);
+
+  I2C_SDA_T <= i2c_sda_t_wire;
+  I2C_SCL_T <= i2c_scl_t_wire;
+  I2C_SDA_O <= '0';
+  I2C_SCL_O <= '0';
+
 
 -- VGA Calibrate
   vga_calibrate <= gpio_sw_reg1(1);
@@ -710,7 +758,7 @@ END PROCESS;
       SRAM_BW_B => SRAM_BW_B,
       SRAM_CS_B => SRAM_CS_B,
       SRAM_OE_B => SRAM_OE_B,
-      
+
       SRAM_DATA_I => SRAM_DATA_I,
       SRAM_DATA_O => SRAM_DATA_O,
       SRAM_DATA_T => SRAM_DATA_T);
@@ -737,20 +785,20 @@ END PROCESS;
 -- Compute Affine
   compute_affine_rst <= compute_affine_rst_reg OR rst_not;
   registration_controller_i : registration_controller PORT MAP(
-    CLK              => clk_intbuf,
-    RST              => compute_affine_rst,
-    
+    CLK => clk_intbuf,
+    RST => compute_affine_rst,
+
     MEM_VALUE        => mem_read_value,
     MEM_INPUT_VALID  => mem_read_valid,
     MEM_ADDR         => compute_affine_addr,
     MEM_BW_B         => compute_affine_bw_b,
     MEM_OUTPUT_VALID => compute_affine_output_valid,
-    H_0_0_O          => h_0_0,
-    H_0_1_O          => h_0_1,
-    H_0_2_O          => h_0_2,
-    H_1_0_O          => h_1_0,
-    H_1_1_O          => h_1_1,
-    H_1_2_O          => h_1_2,
+    H_0_0_O          => h_0_0w,
+    H_0_1_O          => h_0_1w,
+    H_0_2_O          => h_0_2w,
+    H_1_0_O          => h_1_0w,
+    H_1_1_O          => h_1_1w,
+    H_1_2_O          => h_1_2w,
     OUTPUT_VALID     => compute_affine_done
     );
 END Behavioral;

@@ -1,0 +1,31 @@
+# CLKs
+NET CLK		LOC="L19" |SLEW=FAST | PERIOD=5ns;
+#NET CLK_N               LOC="K19" |SLEW=FAST;
+
+# Board General Purpose I/O
+NET RST 	        LOC="E9" |TIG |IOSTANDARD=LVDCI_33;
+
+#NET "GPIO_DIP<*>" TNM = USER_IO;
+#NET "GPIO_SW<*>" TNM = USER_IO;
+#TIMEGRP "USER_IO" TIG;
+
+NET DONE         LOC="H18";   # Bank 3, Vcco=2.5V, No DCI
+
+
+
+#NET GPIO_DIP[0]      LOC="U25" | IOSTANDARD=LVDCI_18;   # Bank 15, Vcco=1.8V, DCI using 49.9 ohm resistors
+#NET GPIO_DIP[1]      LOC="AG27" | IOSTANDARD=LVDCI_18;  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+#NET GPIO_DIP[2]      LOC="AF25" | IOSTANDARD=LVDCI_18;  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+#NET GPIO_DIP[3]      LOC="AF26" | IOSTANDARD=LVDCI_18;  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+#NET GPIO_DIP[4]      LOC="AE27" | IOSTANDARD=LVDCI_18;  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+#NET GPIO_DIP[5]      LOC="AE26" | IOSTANDARD=LVDCI_18;  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+#NET GPIO_DIP[6]      LOC="AC25" | IOSTANDARD=LVDCI_18;  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+#NET GPIO_DIP[7]      LOC="AC24" | IOSTANDARD=LVDCI_18;  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+
+#NET GPIO_LED[2]         LOC="G15";   # Bank 3, Vcco=2.5V, No DCI
+#NET GPIO_LED[3]         LOC="AD26";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+#NET GPIO_LED[4]         LOC="G16";   # Bank 3, Vcco=2.5V, No DCI
+#NET GPIO_LED[5]         LOC="AD25";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+#NET GPIO_LED[6]         LOC="AD24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+#NET GPIO_LED[7]         LOC="AE24";  # Bank 21, Vcco=1.8V, DCI using 49.9 ohm resistors
+

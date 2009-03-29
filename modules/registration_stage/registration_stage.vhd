@@ -429,28 +429,63 @@ ARCHITECTURE Behavioral OF registration_stage IS
       FRAC_BITS    : integer := 19;
       IMGSIZE_BITS : integer := 10
       );
-    PORT (CLK          : IN  std_logic;
-          RST          : IN  std_logic;
-          H_0_0_I      : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
-          H_0_1_I      : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
-          H_0_2_I      : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
-          H_1_0_I      : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
-          H_1_1_I      : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
-          H_1_2_I      : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+    PORT (CLK           : IN  std_logic;
+          RST           : IN  std_logic;
+          H_0_0_I       : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_0_1_I       : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_0_2_I       : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_1_0_I       : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_1_1_I       : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+          H_1_2_I       : IN  std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
           -- 1:IMGSIZE_BITS:1 Format
-          COORD_TRANS_X  : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
-          COORD_TRANS_Y  : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
-          INPUT_VALID  : IN  std_logic;
-          OUTPUT_VALID : OUT std_logic;
-          H_0_0        : OUT std_logic_vector(29 DOWNTO 0);
-          H_0_1        : OUT std_logic_vector(29 DOWNTO 0);
-          H_0_2        : OUT std_logic_vector(29 DOWNTO 0);
-          H_1_0        : OUT std_logic_vector(29 DOWNTO 0);
-          H_1_1        : OUT std_logic_vector(29 DOWNTO 0);
-          H_1_2        : OUT std_logic_vector(29 DOWNTO 0));
+          COORD_TRANS_X : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+          COORD_TRANS_Y : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
+          INPUT_VALID   : IN  std_logic;
+          OUTPUT_VALID  : OUT std_logic;
+          H_0_0         : OUT std_logic_vector(29 DOWNTO 0);
+          H_0_1         : OUT std_logic_vector(29 DOWNTO 0);
+          H_0_2         : OUT std_logic_vector(29 DOWNTO 0);
+          H_1_0         : OUT std_logic_vector(29 DOWNTO 0);
+          H_1_1         : OUT std_logic_vector(29 DOWNTO 0);
+          H_1_2         : OUT std_logic_vector(29 DOWNTO 0));
   END COMPONENT;
+
+component compose_h_matrix is
+  generic (
+    STAGES : integer := 6);
+  port (CLK : in std_logic;
+        RST : in std_logic;
+
+        VALID_IN : in std_logic;
+
+        -- 1:10:19
+        H_0_0_I   : in  std_logic_vector(29 downto 0);
+        H_0_1_I   : in  std_logic_vector(29 downto 0);
+        H_0_2_I   : in  std_logic_vector(29 downto 0);
+        H_1_0_I   : in  std_logic_vector(29 downto 0);
+        H_1_1_I   : in  std_logic_vector(29 downto 0);
+        H_1_2_I   : in  std_logic_vector(29 downto 0);
+        -- 1:10:19 Format
+        P_0_0     : in  std_logic_vector(29 downto 0);
+        P_0_1     : in  std_logic_vector(29 downto 0);
+        P_1_0     : in  std_logic_vector(29 downto 0);
+        P_1_1     : in  std_logic_vector(29 downto 0);
+        -- 1:10:19 Format 
+        P_0_2     : in  std_logic_vector(29 downto 0);
+        P_1_2     : in  std_logic_vector(29 downto 0);
+        -- 1:10:19 Format 
+        H_0_0     : out std_logic_vector(29 downto 0);
+        H_0_1     : out std_logic_vector(29 downto 0);
+        H_0_2     : out std_logic_vector(29 downto 0);
+        H_1_0     : out std_logic_vector(29 downto 0);
+        H_1_1     : out std_logic_vector(29 downto 0);
+        H_1_2     : out std_logic_vector(29 downto 0);
+        VALID_OUT : out std_logic);
+end component;
+  
 -- Homographies
   SIGNAL h_0_0_ma, h_0_1_ma, h_0_2_ma, h_1_0_ma, h_1_1_ma, h_1_2_ma : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL h_0_0_unsc, h_0_1_unsc, h_0_2_unsc, h_1_0_unsc, h_1_1_unsc, h_1_2_unsc : std_logic_vector(29 DOWNTO 0);
 
   SIGNAL x_0, x_1, x_2, x_3, x_4, x_5                               : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
   SIGNAL img0_0_1, img0_1_0, img0_1_1, img0_1_2, img0_2_1, img1_1_1 : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
@@ -477,15 +512,18 @@ ARCHITECTURE Behavioral OF registration_stage IS
 
 -- Done/Valid
   SIGNAL done_f, done_cs, done_mab, done_sab                         : std_logic;
-  SIGNAL valid_f, valid_cs, valid_mab, valid_sab, valid_ge, valid_ma : std_logic;
+  SIGNAL valid_f, valid_cs, valid_mab, valid_sab, valid_ge, valid_ma, valid_unsc : std_logic;
 
-  
+
 -- Debug
 --  SIGNAL max_it_debug, min_it_debug                          : std_logic_vector(PIXEL_BITS DOWNTO 0) := (OTHERS => '0');
 --  SIGNAL it_new_debug                                        : std_logic                             := '0';
-  SIGNAL ab_valid_count : std_logic_vector(19 DOWNTO 0);
-  ATTRIBUTE KEEP                                             : string;
-  ATTRIBUTE keep OF ab_valid_count, A_0_0, A_1_0, A_2_0, A_3_0, A_4_0, A_5_0, B_0, A_0_1, A_1_1, A_2_1, A_3_1, A_4_1, A_5_1, B_1, A_0_2, A_1_2, A_2_2, A_3_2, A_4_2, A_5_2, B_2, A_0_3, A_1_3, A_2_3, A_3_3, A_4_3, A_5_3, B_3, A_0_4, A_1_4, A_2_4, A_3_4, A_4_4, A_5_4, B_4,A_0_5, A_1_5, A_2_5, A_3_5, A_4_5, A_5_5, B_5 : SIGNAL IS "true";
+
+
+  SIGNAL p_0_0,p_0_1,p_0_2,p_1_0,p_1_1,p_1_2 : std_logic_vector(29 DOWNTO 0);
+  SIGNAL ab_valid_count                                                                                                                                                                                                                                                                                                      : std_logic_vector(19 DOWNTO 0);
+  ATTRIBUTE KEEP                                                                                                                                                                                                                                                                                                             : string;
+  ATTRIBUTE keep OF ab_valid_count, A_0_0, A_1_0, A_2_0, A_3_0, A_4_0, A_5_0, B_0, A_0_1, A_1_1, A_2_1, A_3_1, A_4_1, A_5_1, B_1, A_0_2, A_1_2, A_2_2, A_3_2, A_4_2, A_5_2, B_2, A_0_3, A_1_3, A_2_3, A_3_3, A_4_3, A_5_3, B_3, A_0_4, A_1_4, A_2_4, A_3_4, A_4_4, A_5_4, B_4, A_0_5, A_1_5, A_2_5, A_3_5, A_4_5, A_5_5, B_5 : SIGNAL IS "true";
 --  ATTRIBUTE keep OF max_it_debug, min_it_debug, it_new_debug : SIGNAL IS "true";
 BEGIN
 -- Advisory Stage (Control which pyramid level/iteration we are on)
@@ -545,30 +583,6 @@ BEGIN
               TRANS_Y_COORD_BUF => y_cs,
               DONE_BUF          => done_cs,
               CSSS_VALID        => valid_cs);
-
--- For debug purposes
---  PROCESS (CLK) IS
---  BEGIN  -- PROCESS
---    IF CLK'event AND CLK = '1' THEN     -- rising clock edge
---      IF RST = '1' THEN                 -- synchronous reset (active high)
---        it_new_debug <= '0';
---        max_it_debug <= (OTHERS => '0');
---        min_it_debug <= (OTHERS => '0');
---      ELSE
---        IF valid_cs = '1' THEN
---          IF signed(it) > signed(max_it_debug) THEN
---            max_it_debug <= it;
---            it_new_debug <= '1';
---          ELSIF signed(it) < signed(min_it_debug) THEN
---            min_it_debug <= it;
---            it_new_debug <= '1';
---          ELSE
---            it_new_debug <= '0';
---          END IF;
---        END IF;
---      END IF;
---    END IF;
---  END PROCESS;
 
 -- Make A/b matrices
   make_a_b_matrices_i : make_a_b_matrices
@@ -640,14 +654,14 @@ BEGIN
       IF RST = '1' THEN                 -- synchronous reset (active high)
         ab_valid_count <= (OTHERS => '0');
       ELSE
-        IF valid_mab='1' THEN
-          ab_valid_count <= std_logic_vector(unsigned(ab_valid_count) + 1);  
+        IF valid_mab = '1' THEN
+          ab_valid_count <= std_logic_vector(unsigned(ab_valid_count) + 1);
         END IF;
       END IF;
     END IF;
   END PROCESS;
 
-  
+
 -- Sum A/b matrices
   -- IN:  1:0:26
   -- INTERNAL:1:13:26    --1:7:26
@@ -767,12 +781,12 @@ BEGIN
               INPUT_LOAD => done_sab,
                                         -- 1:7:19
 
-              A_0_0      => a_0_0_s,
-              A_0_1      => a_0_1_s,
-              A_0_2      => a_0_2_s,
-              A_0_3      => a_0_3_s,
-              A_0_4      => a_0_4_s,
-              A_0_5      => a_0_5_s,
+              A_0_0 => a_0_0_s,
+              A_0_1 => a_0_1_s,
+              A_0_2 => a_0_2_s,
+              A_0_3 => a_0_3_s,
+              A_0_4 => a_0_4_s,
+              A_0_5 => a_0_5_s,
 
               A_1_0 => a_1_0_s,
               A_1_1 => a_1_1_s,
@@ -809,13 +823,13 @@ BEGIN
               A_5_4 => a_5_4_s,
               A_5_5 => a_5_5_s,
 
-              B_0          => b_0_s,
-              B_1          => b_1_s,
-              B_2          => b_2_s,
-              B_3          => b_3_s,
-              B_4          => b_4_s,
-              B_5          => b_5_s,
-              
+              B_0 => b_0_s,
+              B_1 => b_1_s,
+              B_2 => b_2_s,
+              B_3 => b_3_s,
+              B_4 => b_4_s,
+              B_5 => b_5_s,
+
 
               -- Output
               X_0          => x_0,
@@ -855,28 +869,68 @@ BEGIN
 -- [                 h3,                 h4, -h3*xb-h4*yb+h5+yb]
 -- [                  0,                  0,                  1]
   unscale_h_matrix_i : unscale_h_matrix
-    PORT MAP (CLK          => CLK,
-              RST          => RST,
-              H_0_0_I      => h_0_0_ma,
-              H_0_1_I      => h_0_1_ma,
-              H_0_2_I      => h_0_2_ma,
-              H_1_0_I      => h_1_0_ma,
-              H_1_1_I      => h_1_1_ma,
-              H_1_2_I      => h_1_2_ma,
-              COORD_TRANS_X  => COORD_TRANS_X,
-              COORD_TRANS_Y  => COORD_TRANS_Y,
-              INPUT_VALID  => valid_ma,
+    PORT MAP (CLK           => CLK,
+              RST           => RST,
+              H_0_0_I       => h_0_0_ma,
+              H_0_1_I       => h_0_1_ma,
+              H_0_2_I       => h_0_2_ma,
+              H_1_0_I       => h_1_0_ma,
+              H_1_1_I       => h_1_1_ma,
+              H_1_2_I       => h_1_2_ma,
+              COORD_TRANS_X => COORD_TRANS_X,
+              COORD_TRANS_Y => COORD_TRANS_Y,
+              INPUT_VALID   => valid_ma,
               -- Output
-              OUTPUT_VALID => OUTPUT_VALID,
-              H_0_0        => H_0_0_O,
-              H_0_1        => H_0_1_O,
-              H_0_2        => H_0_2_O,
-              H_1_0        => H_1_0_O,
-              H_1_1        => H_1_1_O,
-              H_1_2        => H_1_2_O);
+              OUTPUT_VALID  => valid_unsc,
+              H_0_0         => h_0_0_unsc,
+              H_0_1         => h_0_1_unsc,
+              H_0_2         => h_0_2_unsc,
+              H_1_0         => h_1_0_unsc,
+              H_1_1         => h_1_1_unsc,
+              H_1_2         => h_1_2_unsc);
+
+p_0_0 <= (3 DOWNTO 0 => (H_0_0(17)))&H_0_0&(7 DOWNTO 0 => '0');
+p_0_1 <= (3 DOWNTO 0 => (H_0_1(17)))&H_0_1&(7 DOWNTO 0 => '0');
+p_0_2 <= H_0_2&(7 DOWNTO 0 => '0');
+p_1_0 <= (3 DOWNTO 0 => (H_1_0(17)))&H_1_0&(7 DOWNTO 0 => '0');
+p_1_1 <= (3 DOWNTO 0 => (H_1_1(17)))&H_1_1&(7 DOWNTO 0 => '0');
+p_1_2 <= H_1_2&(7 DOWNTO 0 => '0');
+  
+  
+  compose_h_matrix_i : compose_h_matrix
+    PORT MAP (
+      CLK      => CLK,
+      RST      => RST,
+      VALID_IN => valid_unsc,
+      H_0_0_I  => h_0_0_unsc,
+      H_0_1_I  => h_0_1_unsc,
+      H_0_2_I  => h_0_2_unsc,
+      H_1_0_I  => h_1_0_unsc,
+      H_1_1_I  => h_1_1_unsc,
+      H_1_2_I  => h_1_2_unsc,
+
+      -- 1:10:19 Format
+      P_0_0     => p_0_0,
+      P_0_1     => p_0_1,
+      P_0_2     => p_0_2,
+      P_1_0     => p_1_0,
+      P_1_1     => p_1_1,
+      P_1_2     => p_1_2,
+      
+      H_0_0     => H_0_0_O,
+      H_0_1     => H_0_1_O,
+      H_0_2     => H_0_2_O,
+      H_1_0     => H_1_0_O,
+      H_1_1     => H_1_1_O,
+      H_1_2     => H_1_2_O,
+      VALID_OUT => OUTPUT_VALID
+      );
 
 -- Make composed homography from the previous to the next
 -- H*P
+
+
+
 -- [    h0*p0+h1*p3,    h0*p1+h1*p4, h0*p2+h1*p5+h2]
 -- [    h3*p0+h4*p3,    h3*p1+h4*p4, h3*p2+h4*p5+h5]
 -- [              0,              0,              1]

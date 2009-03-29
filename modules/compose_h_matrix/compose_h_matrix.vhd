@@ -8,7 +8,6 @@ entity compose_h_matrix is
   port (CLK : in std_logic;
         RST : in std_logic;
 
-        DONE_IN  : in std_logic;
         VALID_IN : in std_logic;
 
         -- 1:10:19
@@ -33,8 +32,7 @@ entity compose_h_matrix is
         H_1_0     : out std_logic_vector(29 downto 0);
         H_1_1     : out std_logic_vector(29 downto 0);
         H_1_2     : out std_logic_vector(29 downto 0);
-        VALID_OUT : out std_logic;
-        DONE_OUT  : out std_logic);
+        VALID_OUT : out std_logic);
 end compose_h_matrix;
 architecture Behavioral of compose_h_matrix is
   component pipeline_buffer is
@@ -98,18 +96,6 @@ begin
       CLKEN => '1',
       DIN   => VALID_IN,
       DOUT  => VALID_OUT);
-
-
-  done_buffer : pipeline_bit_buffer
-    generic map (
-      STAGES => STAGES+1)
-    port map (
-      CLK   => CLK,
-      RST   => RST,
-      SET   => '0',
-      CLKEN => '1',
-      DIN   => DONE_IN,
-      DOUT  => DONE_OUT);
 
   
   -- H0's 0,1,2

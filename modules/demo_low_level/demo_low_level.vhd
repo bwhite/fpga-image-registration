@@ -196,6 +196,14 @@ ARCHITECTURE Behavioral OF demo_low_level IS
       PIXEL_BITS   : integer := 9);
     PORT (CLK              : IN  std_logic;
           RST              : IN  std_logic;
+          H_0_0            : IN  std_logic_vector(17 DOWNTO 0);
+          H_0_1            : IN  std_logic_vector(17 DOWNTO 0);
+          H_1_0            : IN  std_logic_vector(17 DOWNTO 0);
+          H_1_1            : IN  std_logic_vector(17 DOWNTO 0);
+          -- Translation
+          -- 1:10:11 Format 
+          H_0_2            : IN  std_logic_vector(21 DOWNTO 0);
+          H_1_2            : IN  std_logic_vector(21 DOWNTO 0);
           -- Memory Connections
           MEM_VALUE        : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
           MEM_INPUT_VALID  : IN  std_logic;
@@ -243,6 +251,8 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   SIGNAL i2c_sda_i_reg, i2c_scl_i_reg, i2c_scl_t_wire, i2c_sda_t_wire                                                                                                                                   : std_logic;
   -- Homographies
   SIGNAL h_0_0w, h_0_1w, h_0_2w, h_1_0w, h_1_1w, h_1_2w                                                                                                                                                 : std_logic_vector(29 DOWNTO 0);
+  SIGNAL h_0_0p, h_1_1p                                                                                                                                                 : std_logic_vector(29 DOWNTO 0) := "000000000010000000000000000000";
+    SIGNAL h_0_1p, h_0_2p, h_1_0p, h_1_2p                                                                                                                                                 : std_logic_vector(29 DOWNTO 0) := (OTHERS => '0');
 --  SIGNAL SRAM_DATA_I, SRAM_DATA_O : std_logic_vector(35 DOWNTO 0);
 --  SIGNAL SRAM_DATA_T : std_logic;
   ATTRIBUTE KEEP                                                                                                                                                                                        : string;
@@ -252,6 +262,13 @@ BEGIN
 -------------------------------------------------------------------------------
 -- CLK Management
   rst_not <= NOT RST;
+
+  H_0_0 <= h_0_0p;
+  H_0_1 <= h_0_1p;
+  H_0_2 <= h_0_2p;
+  H_1_0 <= h_1_0p;
+  H_1_1 <= h_1_1p;
+  H_1_2 <= h_1_2p;
 
   DCM_BASE_internal : DCM_BASE
     GENERIC MAP (
@@ -374,19 +391,19 @@ BEGIN
   BEGIN  -- PROCESS
     IF clk_intbuf'event AND clk_intbuf = '1' THEN  -- rising clock edge
       IF rst_not = '1' THEN
-        h_0_0 <= (OTHERS => '0');
-        h_0_1 <= (OTHERS => '0');
-        h_0_2 <= (OTHERS => '0');
-        h_1_0 <= (OTHERS => '0');
-        h_1_1 <= (OTHERS => '0');
-        h_1_2 <= (OTHERS => '0');
-      elsif compute_affine_done = '1' THEN
-        h_0_0 <= h_0_0w;
-        h_0_1 <= h_0_1w;
-        h_0_2 <= h_0_2w;
-        h_1_0 <= h_1_0w;
-        h_1_1 <= h_1_1w;
-        h_1_2 <= h_1_2w;
+        h_0_0p <= "000000000010000000000000000000";
+        h_0_1p <= (OTHERS => '0');
+        h_0_2p <= (OTHERS => '0');
+        h_1_0p <= (OTHERS => '0');
+        h_1_1p <= "000000000010000000000000000000";
+        h_1_2p <= (OTHERS => '0');
+      ELSIF compute_affine_done = '1' THEN
+        h_0_0p <= h_0_0w;
+        h_0_1p <= h_0_1w;
+        h_0_2p <= h_0_2w;
+        h_1_0p <= h_1_0w;
+        h_1_1p <= h_1_1w;
+        h_1_2p <= h_1_2w;
       END IF;
 
       i2c_scl_i_reg      <= I2C_SCL_I;
@@ -787,6 +804,15 @@ BEGIN
   registration_controller_i : registration_controller PORT MAP(
     CLK => clk_intbuf,
     RST => compute_affine_rst,
+
+    -- 1:6:11 Format
+    H_0_0 => h_0_0p(25 DOWNTO 8),
+    H_0_1 => h_0_1p(25 DOWNTO 8),
+    H_1_0 => h_1_0p(25 DOWNTO 8),
+    H_1_1 => h_1_1p(25 DOWNTO 8),
+    -- 1:10:11 Format 
+    H_0_2 => h_0_2p(29 DOWNTO 8),
+    H_1_2 => h_1_2p(29 DOWNTO 8),
 
     MEM_VALUE        => mem_read_value,
     MEM_INPUT_VALID  => mem_read_valid,

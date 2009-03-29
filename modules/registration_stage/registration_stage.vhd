@@ -35,7 +35,7 @@ ENTITY registration_stage IS
         MEM_BW_B         : OUT std_logic_vector(3 DOWNTO 0);
         MEM_OUTPUT_VALID : OUT std_logic;
 
-        -- 1:10:9 Format 
+        -- 1:10:19 Format 
         H_0_0_O      : OUT std_logic_vector(29 DOWNTO 0);
         H_0_1_O      : OUT std_logic_vector(29 DOWNTO 0);
         H_1_0_O      : OUT std_logic_vector(29 DOWNTO 0);

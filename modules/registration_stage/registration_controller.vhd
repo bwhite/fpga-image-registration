@@ -9,6 +9,15 @@ ENTITY registration_controller IS
       PIXEL_BITS   : integer := 9);
   PORT (CLK               : IN  std_logic;
          RST              : IN  std_logic;
+        H_0_0            : IN  std_logic_vector(17 DOWNTO 0);
+        H_0_1            : IN  std_logic_vector(17 DOWNTO 0);
+        H_1_0            : IN  std_logic_vector(17 DOWNTO 0);
+        H_1_1            : IN  std_logic_vector(17 DOWNTO 0);
+        -- Translation
+        -- 1:10:11 Format 
+        H_0_2            : IN  std_logic_vector(21 DOWNTO 0);
+        H_1_2            : IN  std_logic_vector(21 DOWNTO 0);
+         
          -- Memory Connections
          MEM_VALUE        : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
          MEM_INPUT_VALID  : IN  std_logic;
@@ -84,12 +93,12 @@ BEGIN
       COORD_TRANS_X      => "001010000000",
       COORD_TRANS_Y      => "000111100000",
       -- Make all H values the identity
-      H_0_0            => "000000100000000000",
-      H_0_1            => "000000000000000000",
-      H_1_0            => "000000000000000000",
-      H_1_1            => "000000100000000000",
-      H_0_2            => "0000000000000000000000",
-      H_1_2            => "0000000000000000000000",
+      H_0_0            => H_0_0,
+      H_0_1            => H_0_1,
+      H_1_0            => H_1_0,
+      H_1_1            => H_1_1,
+      H_0_2            => H_0_2,
+      H_1_2            => H_1_2,
       -- Memory Inputs
       MEM_VALUE        => MEM_VALUE,
       MEM_INPUT_VALID  => MEM_INPUT_VALID,

@@ -91,26 +91,18 @@ BEGIN
         valid_buf(0)     <= INPUT_VALID;
       END IF;
 
-      -- Rounding occurs in this stage (as we can add .5 here and it will
-      -- be added to the result)
-      -- H_0_2 1:10:11
-      IF H_0_2(21) = '0' THEN
-        h_0_2_x_0 <= signed(H_0_2)+POSHALF;  -- +.5
-      ELSE
-        h_0_2_x_0 <= signed(H_0_2)+NEGHALF;  -- -.5
-      END IF;
+      -- H_0_2 1:10:11      
+      h_0_2_x_0 <= signed(H_0_2);      
       h_0_2_x_1   <= h_0_2_x_0;
       h_0_2_x_2   <= h_0_2_x_1;
 
       -- H_1_2 1:10:11
-      IF H_1_2(21) = '0' THEN
-        h_1_2_y_0 <= signed(H_1_2)+POSHALF;  -- +.5
-      ELSE
-        h_1_2_y_0 <= signed(H_1_2)+NEGHALF;  -- -.5
-      END IF;
+      h_1_2_y_0 <= signed(H_1_2);
       h_1_2_y_1   <= h_1_2_y_0;
       h_1_2_y_2   <= h_1_2_y_1;
 
+      -- H_AFFINE 1:6:11 Format
+      -- 1:IMGSIZE_BITS:0
       -- H_0_0*X 1:7+IMGSIZE_BITS:11
       h_0_0_x_0        <= signed(H_0_0)*signed('0'&X_COORD);
       h_0_0_x_1        <= h_0_0_x_0;
@@ -127,6 +119,7 @@ BEGIN
       xsum_h_0_0_h_0_1 <= (h_0_0_x_1(18+IMGSIZE_BITS)&h_0_0_x_1) + (h_0_1_y_1(18+IMGSIZE_BITS)&h_0_1_y_1);
       ysum_h_1_0_h_1_1 <= (h_1_0_x_1(18+IMGSIZE_BITS)&h_1_0_x_1) + (h_1_1_y_1(18+IMGSIZE_BITS)&h_1_1_y_1);
       -- 1:9+IMGSIZE_BITS:11
+      -- 1:10:11
       xp_coord_reg     <= (xsum_h_0_0_h_0_1(19+IMGSIZE_BITS)&xsum_h_0_0_h_0_1)+h_0_2_x_2;
       yp_coord_reg     <= (ysum_h_1_0_h_1_1(19+IMGSIZE_BITS)&ysum_h_1_0_h_1_1)+h_1_2_y_2;
     END IF;

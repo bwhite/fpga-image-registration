@@ -120,8 +120,8 @@ BEGIN
       ysum_h_1_0_h_1_1 <= (h_1_0_x_1(18+IMGSIZE_BITS)&h_1_0_x_1) + (h_1_1_y_1(18+IMGSIZE_BITS)&h_1_1_y_1);
       -- 1:9+IMGSIZE_BITS:11
       -- 1:10:11
-      xp_coord_reg     <= (xsum_h_0_0_h_0_1(19+IMGSIZE_BITS)&xsum_h_0_0_h_0_1)+h_0_2_x_2;
-      yp_coord_reg     <= (ysum_h_1_0_h_1_1(19+IMGSIZE_BITS)&ysum_h_1_0_h_1_1)+h_1_2_y_2;
+      xp_coord_reg     <= (xsum_h_0_0_h_0_1(19+IMGSIZE_BITS)&xsum_h_0_0_h_0_1)+h_0_2_x_2+POSHALF;
+      yp_coord_reg     <= (ysum_h_1_0_h_1_1(19+IMGSIZE_BITS)&ysum_h_1_0_h_1_1)+h_1_2_y_2+POSHALF;
     END IF;
   END PROCESS;
 END Behavioral;

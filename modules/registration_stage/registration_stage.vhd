@@ -19,15 +19,15 @@ ENTITY registration_stage IS
         COORD_TRANS_X    : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
         COORD_TRANS_Y    : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
         -- Rotation and Non-Isotropic Scale
-        -- 1:6:11 Format
-        H_0_0            : IN  std_logic_vector(17 DOWNTO 0);
-        H_0_1            : IN  std_logic_vector(17 DOWNTO 0);
-        H_1_0            : IN  std_logic_vector(17 DOWNTO 0);
-        H_1_1            : IN  std_logic_vector(17 DOWNTO 0);
+        -- 1:10:19 Format
+        H_0_0            : IN  std_logic_vector(29 DOWNTO 0);
+        H_0_1            : IN  std_logic_vector(29 DOWNTO 0);
+        H_1_0            : IN  std_logic_vector(29 DOWNTO 0);
+        H_1_1            : IN  std_logic_vector(29 DOWNTO 0);
         -- Translation
-        -- 1:10:11 Format 
-        H_0_2            : IN  std_logic_vector(21 DOWNTO 0);
-        H_1_2            : IN  std_logic_vector(21 DOWNTO 0);
+        -- 1:10:19 Format
+        H_0_2            : IN  std_logic_vector(29 DOWNTO 0);
+        H_1_2            : IN  std_logic_vector(29 DOWNTO 0);
         -- Memory Connections
         MEM_VALUE        : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
         MEM_INPUT_VALID  : IN  std_logic;
@@ -54,22 +54,24 @@ ARCHITECTURE Behavioral OF registration_stage IS
       IMGSIZE_BITS     : integer := 10;
       PIXEL_BITS       : integer := 9;
       CONV_HEIGHT_BITS : integer := 2);
-    PORT (CLK              : IN  std_logic;  -- NOTE: The clock should not be gated
+    PORT (CLK   : IN std_logic;         -- NOTE: The clock should not be gated
                                         -- as the timing in this module depends
                                         -- on the timing of an external RAM
-          RST              : IN  std_logic;
-          LEVEL            : IN  std_logic_vector(2 DOWNTO 0);
+          RST   : IN std_logic;
+          LEVEL : IN std_logic_vector(2 DOWNTO 0);
           -- Affine Homography elements IMG2_VEC=H*IMG1_VEC
           -- Rotation and Non-Isotropic Scale
+
           -- 1:6:11 Format
-          H_0_0            : IN  std_logic_vector(17 DOWNTO 0);
-          H_0_1            : IN  std_logic_vector(17 DOWNTO 0);
-          H_1_0            : IN  std_logic_vector(17 DOWNTO 0);
-          H_1_1            : IN  std_logic_vector(17 DOWNTO 0);
+          H_0_0 : IN std_logic_vector(17 DOWNTO 0);
+          H_0_1 : IN std_logic_vector(17 DOWNTO 0);
+          H_1_0 : IN std_logic_vector(17 DOWNTO 0);
+          H_1_1 : IN std_logic_vector(17 DOWNTO 0);
           -- Translation
           -- 1:10:11 Format 
-          H_0_2            : IN  std_logic_vector(21 DOWNTO 0);
-          H_1_2            : IN  std_logic_vector(21 DOWNTO 0);
+          H_0_2 : IN std_logic_vector(21 DOWNTO 0);
+          H_1_2 : IN std_logic_vector(21 DOWNTO 0);
+
           -- External Memory Connections
           -- 0:0:PIXEL_BITS Format
           MEM_VALUE        : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
@@ -450,41 +452,41 @@ ARCHITECTURE Behavioral OF registration_stage IS
           H_1_2         : OUT std_logic_vector(29 DOWNTO 0));
   END COMPONENT;
 
-component compose_h_matrix is
-  generic (
-    STAGES : integer := 6);
-  port (CLK : in std_logic;
-        RST : in std_logic;
+  COMPONENT compose_h_matrix IS
+    GENERIC (
+      STAGES : integer := 6);
+    PORT (CLK : IN std_logic;
+          RST : IN std_logic;
 
-        VALID_IN : in std_logic;
+          VALID_IN : IN std_logic;
 
-        -- 1:10:19
-        H_0_0_I   : in  std_logic_vector(29 downto 0);
-        H_0_1_I   : in  std_logic_vector(29 downto 0);
-        H_0_2_I   : in  std_logic_vector(29 downto 0);
-        H_1_0_I   : in  std_logic_vector(29 downto 0);
-        H_1_1_I   : in  std_logic_vector(29 downto 0);
-        H_1_2_I   : in  std_logic_vector(29 downto 0);
-        -- 1:10:19 Format
-        P_0_0     : in  std_logic_vector(29 downto 0);
-        P_0_1     : in  std_logic_vector(29 downto 0);
-        P_1_0     : in  std_logic_vector(29 downto 0);
-        P_1_1     : in  std_logic_vector(29 downto 0);
-        -- 1:10:19 Format 
-        P_0_2     : in  std_logic_vector(29 downto 0);
-        P_1_2     : in  std_logic_vector(29 downto 0);
-        -- 1:10:19 Format 
-        H_0_0     : out std_logic_vector(29 downto 0);
-        H_0_1     : out std_logic_vector(29 downto 0);
-        H_0_2     : out std_logic_vector(29 downto 0);
-        H_1_0     : out std_logic_vector(29 downto 0);
-        H_1_1     : out std_logic_vector(29 downto 0);
-        H_1_2     : out std_logic_vector(29 downto 0);
-        VALID_OUT : out std_logic);
-end component;
-  
+          -- 1:10:19
+          H_0_0_I   : IN  std_logic_vector(29 DOWNTO 0);
+          H_0_1_I   : IN  std_logic_vector(29 DOWNTO 0);
+          H_0_2_I   : IN  std_logic_vector(29 DOWNTO 0);
+          H_1_0_I   : IN  std_logic_vector(29 DOWNTO 0);
+          H_1_1_I   : IN  std_logic_vector(29 DOWNTO 0);
+          H_1_2_I   : IN  std_logic_vector(29 DOWNTO 0);
+          -- 1:10:19 Format
+          P_0_0     : IN  std_logic_vector(29 DOWNTO 0);
+          P_0_1     : IN  std_logic_vector(29 DOWNTO 0);
+          P_1_0     : IN  std_logic_vector(29 DOWNTO 0);
+          P_1_1     : IN  std_logic_vector(29 DOWNTO 0);
+          -- 1:10:19 Format 
+          P_0_2     : IN  std_logic_vector(29 DOWNTO 0);
+          P_1_2     : IN  std_logic_vector(29 DOWNTO 0);
+          -- 1:10:19 Format 
+          H_0_0     : OUT std_logic_vector(29 DOWNTO 0);
+          H_0_1     : OUT std_logic_vector(29 DOWNTO 0);
+          H_0_2     : OUT std_logic_vector(29 DOWNTO 0);
+          H_1_0     : OUT std_logic_vector(29 DOWNTO 0);
+          H_1_1     : OUT std_logic_vector(29 DOWNTO 0);
+          H_1_2     : OUT std_logic_vector(29 DOWNTO 0);
+          VALID_OUT : OUT std_logic);
+  END COMPONENT;
+
 -- Homographies
-  SIGNAL h_0_0_ma, h_0_1_ma, h_0_2_ma, h_1_0_ma, h_1_1_ma, h_1_2_ma : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
+  SIGNAL h_0_0_ma, h_0_1_ma, h_0_2_ma, h_1_0_ma, h_1_1_ma, h_1_2_ma             : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
   SIGNAL h_0_0_unsc, h_0_1_unsc, h_0_2_unsc, h_1_0_unsc, h_1_1_unsc, h_1_2_unsc : std_logic_vector(29 DOWNTO 0);
 
   SIGNAL x_0, x_1, x_2, x_3, x_4, x_5                               : std_logic_vector(WHOLE_BITS+FRAC_BITS-1 DOWNTO 0);
@@ -511,16 +513,13 @@ end component;
 
 
 -- Done/Valid
-  SIGNAL done_f, done_cs, done_mab, done_sab                         : std_logic;
+  SIGNAL done_f, done_cs, done_mab, done_sab                                     : std_logic;
   SIGNAL valid_f, valid_cs, valid_mab, valid_sab, valid_ge, valid_ma, valid_unsc : std_logic;
 
 
 -- Debug
 --  SIGNAL max_it_debug, min_it_debug                          : std_logic_vector(PIXEL_BITS DOWNTO 0) := (OTHERS => '0');
 --  SIGNAL it_new_debug                                        : std_logic                             := '0';
-
-
-  SIGNAL p_0_0,p_0_1,p_0_2,p_1_0,p_1_1,p_1_2 : std_logic_vector(29 DOWNTO 0);
   SIGNAL ab_valid_count                                                                                                                                                                                                                                                                                                      : std_logic_vector(19 DOWNTO 0);
   ATTRIBUTE KEEP                                                                                                                                                                                                                                                                                                             : string;
   ATTRIBUTE keep OF ab_valid_count, A_0_0, A_1_0, A_2_0, A_3_0, A_4_0, A_5_0, B_0, A_0_1, A_1_1, A_2_1, A_3_1, A_4_1, A_5_1, B_1, A_0_2, A_1_2, A_2_2, A_3_2, A_4_2, A_5_2, B_2, A_0_3, A_1_3, A_2_3, A_3_3, A_4_3, A_5_3, B_3, A_0_4, A_1_4, A_2_4, A_3_4, A_4_4, A_5_4, B_4, A_0_5, A_1_5, A_2_5, A_3_5, A_4_5, A_5_5, B_5 : SIGNAL IS "true";
@@ -535,12 +534,15 @@ BEGIN
       CLK              => CLK,
       RST              => RST,
       LEVEL            => LEVEL,
-      H_0_0            => H_0_0,
-      H_0_1            => H_0_1,
-      H_0_2            => H_0_2,
-      H_1_0            => H_1_0,
-      H_1_1            => H_1_1,
-      H_1_2            => H_1_2,
+      -- From 1:10:19
+      -- 1:6:11 Format
+      H_0_0            => H_0_0(25 DOWNTO 8),
+      H_0_1            => H_0_1(25 DOWNTO 8),
+      H_1_0            => H_1_0(25 DOWNTO 8),
+      H_1_1            => H_1_1(25 DOWNTO 8),
+      -- 1:10:11 Format
+      H_0_2            => H_0_2(29 DOWNTO 8),
+      H_1_2            => H_1_2(29 DOWNTO 8),
       -- EXT INPUT
       MEM_VALUE        => MEM_VALUE,
       MEM_INPUT_VALID  => MEM_INPUT_VALID,
@@ -889,13 +891,13 @@ BEGIN
               H_1_1         => h_1_1_unsc,
               H_1_2         => h_1_2_unsc);
 
-p_0_0 <= (3 DOWNTO 0 => (H_0_0(17)))&H_0_0&(7 DOWNTO 0 => '0');
-p_0_1 <= (3 DOWNTO 0 => (H_0_1(17)))&H_0_1&(7 DOWNTO 0 => '0');
-p_0_2 <= H_0_2&(7 DOWNTO 0 => '0');
-p_1_0 <= (3 DOWNTO 0 => (H_1_0(17)))&H_1_0&(7 DOWNTO 0 => '0');
-p_1_1 <= (3 DOWNTO 0 => (H_1_1(17)))&H_1_1&(7 DOWNTO 0 => '0');
-p_1_2 <= H_1_2&(7 DOWNTO 0 => '0');
-  
+
+-- Make composed homography from the previous to the next
+-- H*P
+
+-- [    h0*p0+h1*p3,    h0*p1+h1*p4, h0*p2+h1*p5+h2]
+-- [    h3*p0+h4*p3,    h3*p1+h4*p4, h3*p2+h4*p5+h5]
+-- [              0,              0,              1]
   
   compose_h_matrix_i : compose_h_matrix
     PORT MAP (
@@ -910,13 +912,15 @@ p_1_2 <= H_1_2&(7 DOWNTO 0 => '0');
       H_1_2_I  => h_1_2_unsc,
 
       -- 1:10:19 Format
-      P_0_0     => p_0_0,
-      P_0_1     => p_0_1,
-      P_0_2     => p_0_2,
-      P_1_0     => p_1_0,
-      P_1_1     => p_1_1,
-      P_1_2     => p_1_2,
-      
+      -- Assumes that the H matrix doesn't change until this is
+      -- completed
+      P_0_0 => H_0_0,
+      P_0_1 => H_0_1,
+      P_0_2 => H_0_2,
+      P_1_0 => H_1_0,
+      P_1_1 => H_1_1,
+      P_1_2 => H_1_2,
+
       H_0_0     => H_0_0_O,
       H_0_1     => H_0_1_O,
       H_0_2     => H_0_2_O,
@@ -925,16 +929,6 @@ p_1_2 <= H_1_2&(7 DOWNTO 0 => '0');
       H_1_2     => H_1_2_O,
       VALID_OUT => OUTPUT_VALID
       );
-
--- Make composed homography from the previous to the next
--- H*P
-
-
-
--- [    h0*p0+h1*p3,    h0*p1+h1*p4, h0*p2+h1*p5+h2]
--- [    h3*p0+h4*p3,    h3*p1+h4*p4, h3*p2+h4*p5+h5]
--- [              0,              0,              1]
---TODO Finish
 
 END Behavioral;
 

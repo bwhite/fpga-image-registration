@@ -9,14 +9,15 @@ ENTITY registration_controller IS
       PIXEL_BITS   : integer := 9);
   PORT (CLK               : IN  std_logic;
          RST              : IN  std_logic;
-        H_0_0            : IN  std_logic_vector(17 DOWNTO 0);
-        H_0_1            : IN  std_logic_vector(17 DOWNTO 0);
-        H_1_0            : IN  std_logic_vector(17 DOWNTO 0);
-        H_1_1            : IN  std_logic_vector(17 DOWNTO 0);
+        -- 1:10:19
+        H_0_0            : IN  std_logic_vector(29 DOWNTO 0);
+        H_0_1            : IN  std_logic_vector(29 DOWNTO 0);
+        H_1_0            : IN  std_logic_vector(29 DOWNTO 0);
+        H_1_1            : IN  std_logic_vector(29 DOWNTO 0);
         -- Translation
-        -- 1:10:11 Format 
-        H_0_2            : IN  std_logic_vector(21 DOWNTO 0);
-        H_1_2            : IN  std_logic_vector(21 DOWNTO 0);
+        -- 1:10:19 Format 
+        H_0_2            : IN  std_logic_vector(29 DOWNTO 0);
+        H_1_2            : IN  std_logic_vector(29 DOWNTO 0);
          
          -- Memory Connections
          MEM_VALUE        : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
@@ -55,15 +56,13 @@ ARCHITECTURE Behavioral OF registration_controller IS
           COORD_TRANS_Y      : IN  std_logic_vector(IMGSIZE_BITS+1 DOWNTO 0);
           
           -- Rotation and Non-Isotropic Scale
-          -- 1:6:11 Format
-          H_0_0            : IN  std_logic_vector(17 DOWNTO 0);
-          H_0_1            : IN  std_logic_vector(17 DOWNTO 0);
-          H_1_0            : IN  std_logic_vector(17 DOWNTO 0);
-          H_1_1            : IN  std_logic_vector(17 DOWNTO 0);
-          -- Translation
+          H_0_0            : IN  std_logic_vector(29 DOWNTO 0);
+          H_0_1            : IN  std_logic_vector(29 DOWNTO 0);
+          H_1_0            : IN  std_logic_vector(29 DOWNTO 0);
+          H_1_1            : IN  std_logic_vector(29 DOWNTO 0);
           -- 1:10:11 Format 
-          H_0_2            : IN  std_logic_vector(21 DOWNTO 0);
-          H_1_2            : IN  std_logic_vector(21 DOWNTO 0);
+          H_0_2            : IN  std_logic_vector(29 DOWNTO 0);
+          H_1_2            : IN  std_logic_vector(29 DOWNTO 0);
           -- Memory Connections
           MEM_VALUE        : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
           MEM_INPUT_VALID  : IN  std_logic;

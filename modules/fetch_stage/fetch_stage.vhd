@@ -590,5 +590,5 @@ BEGIN
       IMG_1_2      => IMG0_1_2,
       IMG_2_1      => IMG0_2_1);
   IMG1_1_1   <= MEM_VALUE;
-  FSCS_VALID <= conv_buf_output_valid;
+  FSCS_VALID <= conv_buf_output_valid='1' AND MEM_INPUT_VALID='1';
 END Behavioral;

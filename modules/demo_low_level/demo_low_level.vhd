@@ -196,14 +196,14 @@ ARCHITECTURE Behavioral OF demo_low_level IS
       PIXEL_BITS   : integer := 9);
     PORT (CLK              : IN  std_logic;
           RST              : IN  std_logic;
-          H_0_0            : IN  std_logic_vector(17 DOWNTO 0);
-          H_0_1            : IN  std_logic_vector(17 DOWNTO 0);
-          H_1_0            : IN  std_logic_vector(17 DOWNTO 0);
-          H_1_1            : IN  std_logic_vector(17 DOWNTO 0);
+          H_0_0            : IN  std_logic_vector(29 DOWNTO 0);
+          H_0_1            : IN  std_logic_vector(29 DOWNTO 0);
+          H_1_0            : IN  std_logic_vector(29 DOWNTO 0);
+          H_1_1            : IN  std_logic_vector(29 DOWNTO 0);
           -- Translation
           -- 1:10:11 Format 
-          H_0_2            : IN  std_logic_vector(21 DOWNTO 0);
-          H_1_2            : IN  std_logic_vector(21 DOWNTO 0);
+          H_0_2            : IN  std_logic_vector(29 DOWNTO 0);
+          H_1_2            : IN  std_logic_vector(29 DOWNTO 0);
           -- Memory Connections
           MEM_VALUE        : IN  std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
           MEM_INPUT_VALID  : IN  std_logic;
@@ -804,15 +804,12 @@ BEGIN
   registration_controller_i : registration_controller PORT MAP(
     CLK => clk_intbuf,
     RST => compute_affine_rst,
-
-    -- 1:6:11 Format
-    H_0_0 => h_0_0p(25 DOWNTO 8),
-    H_0_1 => h_0_1p(25 DOWNTO 8),
-    H_1_0 => h_1_0p(25 DOWNTO 8),
-    H_1_1 => h_1_1p(25 DOWNTO 8),
-    -- 1:10:11 Format 
-    H_0_2 => h_0_2p(29 DOWNTO 8),
-    H_1_2 => h_1_2p(29 DOWNTO 8),
+    H_0_0 => h_0_0p,
+    H_0_1 => h_0_1p,
+    H_1_0 => h_1_0p,
+    H_1_1 => h_1_1p,
+    H_0_2 => h_0_2p,
+    H_1_2 => h_1_2p,
 
     MEM_VALUE        => mem_read_value,
     MEM_INPUT_VALID  => mem_read_valid,

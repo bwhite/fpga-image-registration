@@ -15,6 +15,9 @@ ENTITY image_store_stage IS
         VGA_Y     : IN std_logic_vector (7 DOWNTO 0);
         VGA_HSYNC : IN std_logic;
         VGA_VSYNC : IN std_logic;
+        INC_EXEC  : IN std_logic;
+        INC       : IN std_logic;
+        INC_HORIZ : IN std_logic;
         CALIBRATE : IN std_logic;
 
         -- External Memory Connections
@@ -29,7 +32,7 @@ ARCHITECTURE Behavioral OF image_store_stage IS
     GENERIC (
       HEIGHT      : integer := 480;
       WIDTH       : integer := 640;
-      H_BP        : integer := 125;
+      H_BP        : integer := 116;
       V_BP        : integer := 42;
       HCOUNT_BITS : integer := IMGSIZE_BITS+1;
       VCOUNT_BITS : integer := IMGSIZE_BITS+1;
@@ -42,6 +45,9 @@ ARCHITECTURE Behavioral OF image_store_stage IS
           VSYNC       : IN  std_logic;
           HSYNC       : IN  std_logic;
           CALIBRATE   : IN  std_logic;
+          INC_EXEC    : IN  std_logic;
+          INC         : IN  std_logic;
+          INC_HORIZ   : IN  std_logic;
           VGA_Y       : IN  std_logic_vector (7 DOWNTO 0);
           X_COORD     : OUT unsigned(WIDTH_BITS-1 DOWNTO 0);
           Y_COORD     : OUT unsigned(HEIGHT_BITS-1 DOWNTO 0);
@@ -71,6 +77,9 @@ BEGIN
       RST         => RST,
       VSYNC       => VGA_VSYNC,
       HSYNC       => VGA_HSYNC,
+      INC_EXEC    => INC_EXEC,
+      INC         => INC,
+      INC_HORIZ   => INC_HORIZ,
       CALIBRATE   => CALIBRATE,
       VGA_Y       => VGA_Y,
       DATA_VALID  => vga_data_valid,

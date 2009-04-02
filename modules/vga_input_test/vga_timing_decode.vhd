@@ -30,7 +30,7 @@ ENTITY vga_timing_decode IS
   GENERIC (
     HEIGHT      : integer := 480;
     WIDTH       : integer := 640;
-    H_BP        : integer := 125;
+    H_BP        : integer := 116;
     V_BP        : integer := 42;
     HEIGHT_BITS : integer := 10;
     WIDTH_BITS  : integer := 10;
@@ -42,8 +42,11 @@ ENTITY vga_timing_decode IS
         RST         : IN  std_logic;
         HSYNC       : IN  std_logic;
         VSYNC       : IN  std_logic;
-        VGA_Y     : IN std_logic_vector (7 DOWNTO 0);
-        CALIBRATE : IN std_logic;
+        INC_EXEC    : IN  std_logic;
+        INC         : IN  std_logic;
+        INC_HORIZ   : IN  std_logic;
+        VGA_Y       : IN  std_logic_vector (7 DOWNTO 0);
+        CALIBRATE   : IN  std_logic;
         X_COORD     : OUT unsigned(WIDTH_BITS-1 DOWNTO 0);
         Y_COORD     : OUT unsigned(HEIGHT_BITS-1 DOWNTO 0);
         PIXEL_COUNT : OUT unsigned(HEIGHT_BITS+WIDTH_BITS-1 DOWNTO 0);
@@ -52,23 +55,24 @@ ENTITY vga_timing_decode IS
 END vga_timing_decode;
 
 ARCHITECTURE Behavioral OF vga_timing_decode IS
-  SIGNAL hcount                   : unsigned(HCOUNT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
-  SIGNAL vcount                   : unsigned(VCOUNT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
-  SIGNAL pixel_count_reg          : unsigned(HEIGHT_BITS+WIDTH_BITS-1 DOWNTO 0) := (OTHERS => '0');
-  SIGNAL x_coord_reg              : unsigned(WIDTH_BITS-1 DOWNTO 0)             := (OTHERS => '0');
-  SIGNAL y_coord_reg              : unsigned(HEIGHT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
-  SIGNAL prev_hsync, prev_vsync   : std_logic                                   := '0';
-  SIGNAL data_valid_reg           : std_logic                                   := '0';
-  SIGNAL vsync_asserted, done_reg : std_logic                                   := '0';  -- Used to ensure that we only signal the output as valid when we have started from the beginning of a frame
-  SIGNAL calibration_done, calibrate_reg : std_logic := '0';
-  signal v_bp_lower : unsigned(VCOUNT_BITS-1 downto 0) := to_unsigned(V_BP,VCOUNT_BITS);
-  signal v_bp_upper : unsigned(VCOUNT_BITS-1 downto 0) := to_unsigned(V_BP+HEIGHT,VCOUNT_BITS);
-  signal h_bp_lower : unsigned(HCOUNT_BITS-1 downto 0) := to_unsigned(H_BP-DATA_DELAY,HCOUNT_BITS);
-  signal h_bp_upper : unsigned(HCOUNT_BITS-1 downto 0) := to_unsigned(H_BP+WIDTH-DATA_DELAY, HCOUNT_BITS);
-  SIGNAL tracking_signal : std_logic := '0';  -- True when we are in the steady
-                                              -- state region of tracking the signal
-    ATTRIBUTE KEEP                                                                                                : string;
-  ATTRIBUTE keep OF hcount, vcount,v_bp_lower,h_bp_lower,v_bp_upper,h_bp_upper: SIGNAL IS "true";
+  SIGNAL hcount                                                                    : unsigned(HCOUNT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
+  SIGNAL vcount                                                                    : unsigned(VCOUNT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
+  SIGNAL pixel_count_reg                                                           : unsigned(HEIGHT_BITS+WIDTH_BITS-1 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL x_coord_reg                                                               : unsigned(WIDTH_BITS-1 DOWNTO 0)             := (OTHERS => '0');
+  SIGNAL y_coord_reg                                                               : unsigned(HEIGHT_BITS-1 DOWNTO 0)            := (OTHERS => '0');
+  SIGNAL prev_hsync, prev_vsync                                                    : std_logic                                   := '0';
+  SIGNAL data_valid_reg                                                            : std_logic                                   := '0';
+  SIGNAL vsync_asserted, done_reg                                                  : std_logic                                   := '0';  -- Used to ensure that we only signal the output as valid when we have started from the beginning of a frame
+  SIGNAL calibration_done, calibrate_reg                                           : std_logic                                   := '0';
+  SIGNAL v_bp_lower                                                                : unsigned(VCOUNT_BITS-1 DOWNTO 0)            := to_unsigned(V_BP, VCOUNT_BITS);
+  SIGNAL v_bp_upper                                                                : unsigned(VCOUNT_BITS-1 DOWNTO 0)            := to_unsigned(V_BP+HEIGHT, VCOUNT_BITS);
+  SIGNAL h_bp_lower                                                                : unsigned(HCOUNT_BITS-1 DOWNTO 0)            := to_unsigned(H_BP-DATA_DELAY, HCOUNT_BITS);
+  SIGNAL h_bp_upper                                                                : unsigned(HCOUNT_BITS-1 DOWNTO 0)            := to_unsigned(H_BP+WIDTH-DATA_DELAY, HCOUNT_BITS);
+  SIGNAL tracking_signal                                                           : std_logic                                   := '0';  -- True when we are in the steady
+                                        -- state region of tracking the signal
+  ATTRIBUTE KEEP                                                                   : string;
+  ATTRIBUTE keep OF hcount, vcount, v_bp_lower, h_bp_lower, v_bp_upper, h_bp_upper : SIGNAL IS "true";
+  SIGNAL prev_exec                                                                 : std_logic                                   := '1';
 BEGIN
   X_COORD     <= x_coord_reg;
   Y_COORD     <= y_coord_reg;
@@ -80,6 +84,7 @@ BEGIN
   BEGIN  -- PROCESS 
     IF CLK'event AND CLK = '1' THEN
       IF RST = '1' THEN
+        prev_exec       <= '1';
         hcount          <= (OTHERS => '0');
         vcount          <= (OTHERS => '0');
         pixel_count_reg <= (OTHERS => '0');
@@ -90,11 +95,12 @@ BEGIN
         vsync_asserted  <= '0';
         done_reg        <= '0';
         tracking_signal <= '0';
-        h_bp_lower <= to_unsigned(H_BP-DATA_DELAY,HCOUNT_BITS);
-        h_bp_upper <= to_unsigned(H_BP+WIDTH-DATA_DELAY, HCOUNT_BITS);
-        v_bp_lower <= to_unsigned(V_BP,VCOUNT_BITS);
-        v_bp_upper <= to_unsigned(V_BP+HEIGHT,VCOUNT_BITS);
+        h_bp_lower      <= to_unsigned(H_BP-DATA_DELAY, HCOUNT_BITS);
+        h_bp_upper      <= to_unsigned(H_BP+WIDTH-DATA_DELAY, HCOUNT_BITS);
+        v_bp_lower      <= to_unsigned(V_BP, VCOUNT_BITS);
+        v_bp_upper      <= to_unsigned(V_BP+HEIGHT, VCOUNT_BITS);
       ELSE
+        prev_exec  <= INC_EXEC;
         prev_hsync <= HSYNC;
         prev_vsync <= VSYNC;
 
@@ -103,16 +109,35 @@ BEGIN
         -- If calibrate_reg is true, then if we see a 'bright' value (i.e., not
         -- part of the back porch value) then we save that sync position and
         -- disable calibration for that type ()
-        IF calibrate_reg='1' THEN
-          IF unsigned(VGA_Y) > 30 AND calibration_done='0' THEN
-              calibration_done <= '1';
-              h_bp_lower <= hcount-DATA_DELAY;
-              h_bp_upper <= hcount+WIDTH-DATA_DELAY;
-              v_bp_lower <= vcount;
-              v_bp_upper <= vcount+HEIGHT;
+        IF calibrate_reg = '1' THEN
+          IF unsigned(VGA_Y) > 50 AND calibration_done = '0' THEN
+            calibration_done <= '1';
+            h_bp_lower       <= hcount-DATA_DELAY-1;
+            h_bp_upper       <= hcount+WIDTH-DATA_DELAY-1;
+            v_bp_lower       <= vcount;
+            v_bp_upper       <= vcount+HEIGHT;
           END IF;
         ELSE
-          IF done_reg='1' THEN          -- When done is on and we are here,
+          IF INC_EXEC = '1' AND prev_exec = '0' THEN
+            IF INC_HORIZ = '1' THEN
+              IF INC = '1' THEN
+                h_bp_lower <= h_bp_lower+1;
+                h_bp_upper <= h_bp_upper+1;
+              ELSE
+                h_bp_lower <= h_bp_lower-1;
+                h_bp_upper <= h_bp_upper-1;
+              END IF;
+            ELSE
+              IF INC = '1' THEN
+                v_bp_lower <= v_bp_lower+1;
+                v_bp_upper <= v_bp_upper+1;
+              ELSE
+                v_bp_lower <= v_bp_lower-1;
+                v_bp_upper <= v_bp_upper-1;
+              END IF;
+            END IF;
+          END IF;
+          IF done_reg = '1' THEN        -- When done is on and we are here,
                                         -- unset the calibration done bit
                                         -- because we are between frames
             calibration_done <= '0';
@@ -125,8 +150,8 @@ BEGIN
         -- H_BP+WIDTH-1<=X              -       Front Porch/HSYNC
 
         -- The backporch -1 is due to the register delay
-        IF HSYNC = '0' AND VSYNC = '0' AND hcount >= h_bp_lower AND hcount < h_bp_upper AND vcount >= v_bp_lower AND vcount < v_bp_upper THEN    
-          IF vsync_asserted='1' THEN
+        IF HSYNC = '0' AND VSYNC = '0' AND hcount >= h_bp_lower AND hcount < h_bp_upper AND vcount >= v_bp_lower AND vcount < v_bp_upper THEN
+          IF vsync_asserted = '1' THEN
             data_valid_reg <= '1';
           END IF;
 
@@ -137,7 +162,7 @@ BEGIN
 
           -- This makes the first valid pixel 0, and properly increments the
           -- first pixels of every other line
-          IF (data_valid_reg = '1' AND vcount = V_BP) OR vcount > V_BP THEN
+          IF (data_valid_reg = '1' AND vcount = v_bp_lower) OR vcount > v_bp_lower THEN
             pixel_count_reg <= pixel_count_reg + 1;
           END IF;
         ELSE
@@ -146,10 +171,10 @@ BEGIN
         END IF;
 
         IF VSYNC = '0' THEN
-          IF HSYNC = '1' AND prev_hsync = '0' AND vcount >= V_BP AND vcount < V_BP+HEIGHT-1 THEN
+          IF HSYNC = '1' AND prev_hsync = '0' AND vcount >= v_bp_lower AND vcount < v_bp_upper-1 THEN
             y_coord_reg <= y_coord_reg + 1;
           END IF;
-        ELSE          -- End of Frame
+        ELSE                            -- End of Frame
           vcount          <= (OTHERS => '0');
           pixel_count_reg <= (OTHERS => '0');
           y_coord_reg     <= (OTHERS => '0');
@@ -161,12 +186,12 @@ BEGIN
           -- NOTE: This assumes that the VSYNC level has no glitches
           -- NOTE: Done will be high for one CT every full frame processed
           IF prev_vsync = '0' AND vsync_asserted = '1' THEN
-            done_reg <= '1';
+            done_reg        <= '1';
             tracking_signal <= '1';
-            calibrate_reg <= CALIBRATE;
+            calibrate_reg   <= CALIBRATE;
           ELSE
             done_reg <= '0';
-          END IF;     
+          END IF;
         END IF;
 
         IF HSYNC = '0' THEN

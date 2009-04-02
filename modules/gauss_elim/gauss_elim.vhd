@@ -446,7 +446,7 @@ begin
               if cur_i /= 4 then        -- 0 to N-2, If we haven't gone through
                                         -- all of the pivot rows
                 state <= FP_MK_INV;
-                cur_j <= (others => '0');
+                cur_j <= cur_i + 1;
                 cur_i <= cur_i + 1;
               else
                 state            <= BP_ROW_MULT;

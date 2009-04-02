@@ -136,6 +136,9 @@ ARCHITECTURE Behavioral OF demo_low_level IS
           VGA_Y     : IN std_logic_vector (7 DOWNTO 0);
           VGA_HSYNC : IN std_logic;
           VGA_VSYNC : IN std_logic;
+          INC_EXEC  : IN std_logic;
+          INC       : IN std_logic;
+          INC_HORIZ : IN std_logic;
           CALIBRATE : IN std_logic;
 
           -- External Memory Connections
@@ -227,7 +230,7 @@ ARCHITECTURE Behavioral OF demo_low_level IS
 
   SIGNAL image_store_mem_addr, mem_addr_next, image_store_mem_addr_fifo, image_display_mem_addr, memory_dump_mem_addr, mem_addr, smooth_addr, compute_affine_addr, manual_offset, cs_mem_addr_split : std_logic_vector(2*IMGSIZE_BITS-1 DOWNTO 0);
   SIGNAL mem_out_value, image_store_mem_out_value_fifo, mem_write_value, mem_write_value_next, mem_read_value, smooth_pixel_write, cs_mem_read, cs_mem_write_value                                  : std_logic_vector(PIXEL_BITS-1 DOWNTO 0);
-  TYPE   current_state IS (IMAGE_STORE, IMAGE_DISPLAY, SMOOTH, IDLE, MEM_DUMP_WRITE, MEM_DUMP_READ, COMPUTE_AFFINE);
+  TYPE   current_state IS (IMAGE_STORE, IMAGE_DISPLAY, SMOOTH, IDLE, MEM_DUMP_WRITE, MEM_DUMP_READ, COMPUTE_AFFINE, CLEAR_H);
   SIGNAL cur_state, cur_state_next                                                                                                                                                                  : current_state := IDLE;
 
   SIGNAL sram_addr_wire                                    : std_logic_vector(17 DOWNTO 0);
@@ -251,8 +254,8 @@ ARCHITECTURE Behavioral OF demo_low_level IS
   SIGNAL i2c_sda_i_reg, i2c_scl_i_reg, i2c_scl_t_wire, i2c_sda_t_wire                                                                                                                                   : std_logic;
   -- Homographies
   SIGNAL h_0_0w, h_0_1w, h_0_2w, h_1_0w, h_1_1w, h_1_2w                                                                                                                                                 : std_logic_vector(29 DOWNTO 0);
-  SIGNAL h_0_0p, h_1_1p                                                                                                                                                 : std_logic_vector(29 DOWNTO 0) := "000000000010000000000000000000";
-    SIGNAL h_0_1p, h_0_2p, h_1_0p, h_1_2p                                                                                                                                                 : std_logic_vector(29 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL h_0_0p, h_1_1p                                                                                                                                                                                 : std_logic_vector(29 DOWNTO 0) := "000000000010000000000000000000";
+  SIGNAL h_0_1p, h_0_2p, h_1_0p, h_1_2p                                                                                                                                                                 : std_logic_vector(29 DOWNTO 0) := (OTHERS => '0');
 --  SIGNAL SRAM_DATA_I, SRAM_DATA_O : std_logic_vector(35 DOWNTO 0);
 --  SIGNAL SRAM_DATA_T : std_logic;
   ATTRIBUTE KEEP                                                                                                                                                                                        : string;
@@ -431,7 +434,7 @@ BEGIN
             smooth_rst_reg         <= '1';
             compute_affine_rst_reg <= '1';
             -- Switch states on button press
-            IF gpio_sw_reg1 /= "00000" THEN
+            IF gpio_sw_reg1(4) = '1' THEN
               -- Lower 6 bits select mode, upper bit selects image slot, next
               -- bit selects offset
               CASE gpio_dip_reg1(5 DOWNTO 0) IS
@@ -447,6 +450,8 @@ BEGIN
                   cur_state <= SMOOTH;
                 WHEN "011000" =>
                   cur_state <= COMPUTE_AFFINE;
+                WHEN "111111" =>
+                  cur_state <= CLEAR_H;
                 WHEN OTHERS => NULL;
               END CASE;
             END IF;
@@ -553,6 +558,14 @@ BEGIN
             IF compute_affine_done = '1'THEN
               cur_state <= IDLE;
             END IF;
+          WHEN CLEAR_H =>
+            h_0_0p    <= "000000000010000000000000000000";
+            h_0_1p    <= (OTHERS => '0');
+            h_0_2p    <= (OTHERS => '0');
+            h_1_0p    <= (OTHERS => '0');
+            h_1_1p    <= "000000000010000000000000000000";
+            h_1_2p    <= (OTHERS => '0');
+            cur_state <= IDLE;
           WHEN OTHERS => NULL;
         END CASE;
       END IF;
@@ -565,18 +578,28 @@ BEGIN
   BEGIN  -- PROCESS
     CASE cur_state_next IS
       WHEN SMOOTH =>
-        we_b            <= smooth_re;
-        cs_b            <= NOT smooth_output_valid;
-        bw_b            <= smooth_bw_b;
-        mem_addr        <= smooth_addr;
-        mem_write_value <= smooth_pixel_write;
+        we_b <= smooth_re;
+        cs_b <= NOT smooth_output_valid;
+        bw_b <= smooth_bw_b;
+        IF smooth_addr(19) = gpio_dip_reg1(7) THEN
+          mem_addr(19) <= '0';
+        ELSE
+          mem_addr(19) <= '1';
+        END IF;
+        mem_addr(18 DOWNTO 0) <= smooth_addr(18 DOWNTO 0);
+        mem_write_value       <= smooth_pixel_write;
 
       WHEN COMPUTE_AFFINE =>
-        we_b            <= '1';
-        cs_b            <= NOT compute_affine_output_valid;
-        bw_b            <= compute_affine_bw_b;
-        mem_addr        <= compute_affine_addr;
-        mem_write_value <= (PIXEL_BITS-1 DOWNTO 0 => '0');
+        we_b <= '1';
+        cs_b <= NOT compute_affine_output_valid;
+        bw_b <= compute_affine_bw_b;
+        IF compute_affine_addr(19) = gpio_dip_reg1(7) THEN
+          mem_addr(19) <= '0';
+        ELSE
+          mem_addr(19) <= '1';
+        END IF;
+        mem_addr(18 DOWNTO 0) <= compute_affine_addr(18 DOWNTO 0);
+        mem_write_value       <= (PIXEL_BITS-1 DOWNTO 0 => '0');
 
       WHEN OTHERS =>
         we_b                  <= we_b_next;
@@ -605,17 +628,20 @@ BEGIN
 
 
 -- VGA Calibrate
-  vga_calibrate <= gpio_sw_reg1(1);
+  vga_calibrate <= gpio_sw_reg1(0);
 -------------------------------------------------------------------------------  
 -- Image Store Stage
   image_store_stage_i : image_store_stage
     PORT MAP (
-      CLK              => VGA_PIXEL_CLK,
-      RST              => rst_not,      --image_store_rst,
+      CLK       => VGA_PIXEL_CLK,
+      RST       => rst_not,             --image_store_rst,
       -- VGA Chip Connections
-      VGA_Y            => VGA_Y_GREEN,
-      VGA_HSYNC        => VGA_HSYNC,
-      VGA_VSYNC        => VGA_VSYNC,
+      VGA_Y     => VGA_Y_GREEN,
+      VGA_HSYNC => VGA_HSYNC,
+      VGA_VSYNC => VGA_VSYNC,
+      INC_EXEC => gpio_sw_reg1(3),
+      INC => gpio_sw_reg1(2),
+      INC_HORIZ => gpio_sw_reg1(1),
       CALIBRATE        => vga_calibrate,
       -- External Memory Connections
       -- 0:0:PIXEL_BITS Format
@@ -802,8 +828,8 @@ BEGIN
 -- Compute Affine
   compute_affine_rst <= compute_affine_rst_reg OR rst_not;
   registration_controller_i : registration_controller PORT MAP(
-    CLK => clk_intbuf,
-    RST => compute_affine_rst,
+    CLK   => clk_intbuf,
+    RST   => compute_affine_rst,
     H_0_0 => h_0_0p,
     H_0_1 => h_0_1p,
     H_1_0 => h_1_0p,

@@ -1,0 +1,22 @@
+microblaze_0
+REGISTRATION_TEST_SOURCES = /home/brandyn/Xilinx10.1i/edk_user_repository/MyProcessorIPLib/drivers/registration_core_v1_00_a/src/registration_core.c 
+REGISTRATION_TEST_HEADERS = /home/brandyn/Xilinx10.1i/edk_user_repository/MyProcessorIPLib/drivers/registration_core_v1_00_a/src/registration_core.h 
+REGISTRATION_TEST_CC = mb-gcc
+REGISTRATION_TEST_CC_SIZE = mb-size
+REGISTRATION_TEST_CC_OPT = -Os
+REGISTRATION_TEST_CFLAGS = 
+REGISTRATION_TEST_CC_SEARCH = # -B
+REGISTRATION_TEST_LIBPATH = -L./microblaze_0/lib/ # -L
+REGISTRATION_TEST_INCLUDES = -I./microblaze_0/include/  -I/home/brandyn/Xilinx10.1i/edk_user_repository/MyProcessorIPLib/drivers/registration_core_v1_00_a/src/ # -I
+REGISTRATION_TEST_LFLAGS = # -l
+REGISTRATION_TEST_LINKER_SCRIPT = registration_test/registration_test_linker_script.ld
+REGISTRATION_TEST_CC_DEBUG_FLAG = # -[g|gstabs]
+REGISTRATION_TEST_CC_PROFILE_FLAG = # -pg
+REGISTRATION_TEST_CC_GLOBPTR_FLAG= # -mxl-gp-opt
+REGISTRATION_TEST_MODE = executable
+REGISTRATION_TEST_LIBG_OPT = -$(REGISTRATION_TEST_MODE) microblaze_0
+REGISTRATION_TEST_CC_INFERRED_FLAGS= -mno-xl-soft-mul -mxl-pattern-compare -mcpu=v7.10.d 
+REGISTRATION_TEST_CC_START_ADDR_FLAG=  #  # -Wl,-defsym -Wl,_TEXT_START_ADDR=
+REGISTRATION_TEST_CC_STACK_SIZE_FLAG=  #  # -Wl,-defsym -Wl,_STACK_SIZE=
+REGISTRATION_TEST_CC_HEAP_SIZE_FLAG=  #  # -Wl,-defsym -Wl,_HEAP_SIZE=
+                  $(REGISTRATION_TEST_CC_INFERRED_FLAGS)  \

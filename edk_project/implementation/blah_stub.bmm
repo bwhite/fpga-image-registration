@@ -1,0 +1,26 @@
+// File: /home/brandyn/fpga-image-registration/edk_project/implementation/blah_stub.bmm
+
+ADDRESS_MAP microblaze_0 MICROBLAZE 100
+	ADDRESS_SPACE lmb_bram_combined COMBINED [0x00000000:0x0000ffff]
+		ADDRESS_RANGE RAMB32
+		BUS_BLOCK
+			blah_i/lmb_bram/lmb_bram/ramb36_0 [31:30] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_1 [29:28] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_2 [27:26] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_3 [25:24] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_4 [23:22] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_5 [21:20] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_6 [19:18] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_7 [17:16] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_8 [15:14] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_9 [13:12] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_10 [11:10] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_11 [9:8] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_12 [7:6] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_13 [5:4] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_14 [3:2] ;
+			blah_i/lmb_bram/lmb_bram/ramb36_15 [1:0] ;
+		END_BUS_BLOCK;
+		END_ADDRESS_RANGE;
+	END_ADDRESS_SPACE;
+END_ADDRESS_MAP;

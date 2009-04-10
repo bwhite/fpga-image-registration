@@ -1,0 +1,25 @@
+Manifest-Version: 1.0
+Generated-from: 1202717220000;type=2
+Bundle-ManifestVersion: 2
+Bundle-Name: Xilinx Platform Studio SDK Managed Builder
+Bundle-SymbolicName: com.xilinx.mdt.edk.managedbuilder; singleton:=true
+Bundle-Version: 10.1.0
+Bundle-ClassPath: xpssdkmanagedbuilder.jar
+Bundle-Activator: org.eclipse.core.internal.compatibility.PluginActivator
+Bundle-Vendor: %providerName
+Bundle-Localization: plugin
+Export-Package: com.xilinx.mdt.edk.managedbuilder,
+ com.xilinx.mdt.edk.managedbuilder.engine,
+ com.xilinx.mdt.edk.managedbuilder.ui,
+ com.xilinx.mdt.edk.managedbuilder.ui.wizards
+Require-Bundle: org.eclipse.cdt.managedbuilder.core,
+ org.eclipse.cdt.core,
+ org.eclipse.cdt.ui,
+ org.eclipse.core.resources,
+ org.eclipse.core.runtime.compatibility,
+ org.eclipse.ui,
+ org.eclipse.ui.ide,
+ org.eclipse.cdt.managedbuilder.ui,
+ com.xilinx.mdt.edk.portability
+Eclipse-AutoStart: true
+Plugin-Class: com.xilinx.mdt.edk.managedbuilder.XilManagedBuilderUIPlugin

@@ -1,0 +1,26 @@
+// File: c:\ml506_bsb_design\implementation\ml506_bsb_system.bmm
+
+ADDRESS_MAP microblaze_0 MICROBLAZE 100
+	ADDRESS_SPACE lmb_bram_combined COMBINED [0x00000000:0x0000ffff]
+		ADDRESS_RANGE RAMB32
+		BUS_BLOCK
+			lmb_bram/lmb_bram/ramb36_0 [31:30] ;
+			lmb_bram/lmb_bram/ramb36_1 [29:28] ;
+			lmb_bram/lmb_bram/ramb36_2 [27:26] ;
+			lmb_bram/lmb_bram/ramb36_3 [25:24] ;
+			lmb_bram/lmb_bram/ramb36_4 [23:22] ;
+			lmb_bram/lmb_bram/ramb36_5 [21:20] ;
+			lmb_bram/lmb_bram/ramb36_6 [19:18] ;
+			lmb_bram/lmb_bram/ramb36_7 [17:16] ;
+			lmb_bram/lmb_bram/ramb36_8 [15:14] ;
+			lmb_bram/lmb_bram/ramb36_9 [13:12] ;
+			lmb_bram/lmb_bram/ramb36_10 [11:10] ;
+			lmb_bram/lmb_bram/ramb36_11 [9:8] ;
+			lmb_bram/lmb_bram/ramb36_12 [7:6] ;
+			lmb_bram/lmb_bram/ramb36_13 [5:4] ;
+			lmb_bram/lmb_bram/ramb36_14 [3:2] ;
+			lmb_bram/lmb_bram/ramb36_15 [1:0] ;
+		END_BUS_BLOCK;
+		END_ADDRESS_RANGE;
+	END_ADDRESS_SPACE;
+END_ADDRESS_MAP;

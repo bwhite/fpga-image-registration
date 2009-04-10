@@ -1,0 +1,27 @@
+Manifest-Version: 1.0
+Generated-from: 1202717222000;type=2
+Bundle-ManifestVersion: 2
+Bundle-Name: %pluginName
+Bundle-SymbolicName: com.xilinx.mdt.edk.tools; singleton:=true
+Bundle-Version: 10.1.0
+Bundle-ClassPath: xpssdktools.jar
+Bundle-Activator: org.eclipse.core.internal.compatibility.PluginActivator
+Bundle-Vendor: %providerName
+Bundle-Localization: plugin
+Export-Package: com.xilinx.mdt.edk.app,
+ com.xilinx.mdt.edk.tools,
+ com.xilinx.mdt.edk.tools.linkgen,
+ com.xilinx.mdt.edk.tools.xbash
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.core.runtime.compatibility,
+ org.eclipse.jface,
+ org.eclipse.swt,
+ org.eclipse.cdt.core,
+ org.eclipse.core.resources,
+ org.eclipse.ui,
+ com.xilinx.mdt.edk.portability,
+ org.eclipse.cdt.managedbuilder.core,
+ com.xilinx.mdt.edk.managedbuilder,
+ org.eclipse.ui.console
+Eclipse-AutoStart: true
+Plugin-Class: com.xilinx.mdt.edk.tools.ToolsPlugin

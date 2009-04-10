@@ -1,0 +1,29 @@
+Release 10.1.03 ngcbuild K.39 (lin)
+Copyright (c) 1995-2008 Xilinx, Inc.  All rights reserved.
+
+Command Line: /home/brandyn/Xilinx10.1i/ISE/bin/lin/unwrapped/ngcbuild -p
+xc5vsx50tff1136-1 -intstyle silent -sd .. registration_core_0_wrapper.ngc
+../registration_core_0_wrapper.ngc
+
+Reading NGO file
+"/home/brandyn/Documents/implementation/registration_core_0_wrapper/registration
+_core_0_wrapper.ngc" ...
+Loading design module
+"/home/brandyn/Documents/implementation/registration_core_0_wrapper/div1.ngc"...
+
+Partition Implementation Status
+-------------------------------
+
+  No Partitions were found in this design.
+
+-------------------------------
+
+NGCBUILD Design Results Summary:
+  Number of errors:     0
+  Number of warnings:   0
+
+Total memory usage is 109032 kilobytes
+
+Writing NGC file "../registration_core_0_wrapper.ngc" ...
+
+Writing NGCBUILD log file "../registration_core_0_wrapper.blc"...

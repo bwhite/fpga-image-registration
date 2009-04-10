@@ -1,0 +1,1 @@
+ -p virtex5 -lang vhdl -lp /home/brandyn/fpga-image-registration/edk_user_repository/   registration_test/executable.elf -s mti

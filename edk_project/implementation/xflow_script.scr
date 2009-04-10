@@ -1,0 +1,25 @@
+#!/bin/csh -f
+###########################################
+# Script file to run the flow 
+# 
+###########################################
+#
+# Command line for ngdbuild
+#
+ngdbuild -p xc5vsx50tff1136-1 -nt timestamp -bm blah.bmm "/home/brandyn/Documents/implementation/blah.ngc" -uc blah.ucf blah.ngd 
+
+#
+# Command line for map
+#
+map -o blah_map.ncd -w -pr b -ol high -timing -logic_opt on -xe n -t 1 -register_duplication -cm speed -ignore_keep_hierarchy -k 6 -lc off -power off blah.ngd blah.pcf 
+
+#
+# Command line for par
+#
+par -w -ol high -xe n -t 1 blah_map.ncd blah.ncd blah.pcf 
+
+#
+# Command line for post_par_trce
+#
+trce -e 3 -xml blah.twx blah.ncd blah.pcf 
+

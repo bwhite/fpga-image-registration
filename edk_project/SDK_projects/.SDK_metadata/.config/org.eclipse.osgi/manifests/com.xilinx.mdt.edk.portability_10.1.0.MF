@@ -1,0 +1,23 @@
+Manifest-Version: 1.0
+Generated-from: 1202717218000;type=2
+Bundle-ManifestVersion: 2
+Bundle-Name: %pluginName
+Bundle-SymbolicName: com.xilinx.mdt.edk.portability; singleton:=true
+Bundle-Version: 10.1.0
+Bundle-ClassPath: xpssdkportability.jar
+Bundle-Activator: org.eclipse.core.internal.compatibility.PluginActivator
+Bundle-Vendor: %providerName
+Bundle-Localization: plugin
+Export-Package: com.xilinx.mdt.edk.platstudio,
+ com.xilinx.mdt.edk.portability
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.core.runtime.compatibility,
+ org.eclipse.swt,
+ org.eclipse.cdt.core,
+ org.eclipse.debug.core,
+ org.eclipse.core.resources,
+ org.eclipse.ui,
+ org.eclipse.cdt.debug.core,
+ org.eclipse.ui.console
+Eclipse-AutoStart: true
+Plugin-Class: com.xilinx.mdt.edk.portability.XilinxPortabilityPlugin

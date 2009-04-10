@@ -1,0 +1,91 @@
+#Please do not modify this file by hand
+XmpVersion: 10.1.03
+VerMgmt: 10.1.03
+IntStyle: default
+ModuleSearchPath: /home/brandyn/fpga-image-registration/edk_user_repository/MyProcessorIPLib/pcores/registration_core_v1_00_a/../../../
+MHS File: blah.mhs
+MSS File: blah.mss
+NPL File: projnav/blah.ise
+Architecture: virtex5
+Device: xc5vsx50t
+Package: ff1136
+SpeedGrade: -1
+UserCmd1: 
+UserCmd1Type: 0
+UserCmd2: 
+UserCmd2Type: 0
+TopInst: system_i
+GenSimTB: 0
+InsertNoPads: 0
+WarnForEAArch: 1
+HdlLang: VHDL
+Simulator: mti
+SimModel: BEHAVIORAL
+MixLangSim: 1
+UcfFile: data/blah.ucf
+FpgaImpMode: 0
+EnableParTimingError: 0
+EnableResetOptimization: 0
+ShowLicenseDialog: 1
+Processor: microblaze_0
+BootLoop: 0
+XmdStub: 0
+SwProj: TestApp_Memory
+Processor: microblaze_0
+Executable: TestApp_Memory/executable.elf
+Source: TestApp_Memory/src/TestApp_Memory.c
+DefaultInit: EXECUTABLE
+InitBram: 0
+Active: 0
+CompilerOptLevel: 2
+GlobPtrOpt: 0
+DebugSym: 1
+ProfileFlag: 0
+ProgStart: 
+StackSize: 
+HeapSize: 
+LinkerScript: TestApp_Memory/src/TestApp_Memory_LinkScr.ld
+ProgCCFlags: 
+CompileInXps: 1
+NonXpsApp: 0
+SwProj: TestApp_Peripheral
+Processor: microblaze_0
+Executable: TestApp_Peripheral/executable.elf
+Source: TestApp_Peripheral/src/TestApp_Peripheral.c
+Source: TestApp_Peripheral/src/xgpio_tapp_example.c
+Source: TestApp_Peripheral/src/xuartlite_selftest_example.c
+Header: TestApp_Peripheral/src/gpio_header.h
+Header: TestApp_Peripheral/src/uartlite_header.h
+DefaultInit: EXECUTABLE
+InitBram: 0
+Active: 0
+CompilerOptLevel: 2
+GlobPtrOpt: 0
+DebugSym: 1
+ProfileFlag: 0
+ProgStart: 
+StackSize: 
+HeapSize: 
+LinkerScript: TestApp_Peripheral/src/TestApp_Peripheral_LinkScr.ld
+ProgCCFlags: 
+CompileInXps: 1
+NonXpsApp: 0
+SwProj: registration_test
+Processor: microblaze_0
+Executable: registration_test/executable.elf
+Source: /home/brandyn/Xilinx10.1i/edk_user_repository/MyProcessorIPLib/drivers/registration_core_v1_00_a/src/registration_core.c
+Header: /home/brandyn/Xilinx10.1i/edk_user_repository/MyProcessorIPLib/drivers/registration_core_v1_00_a/src/registration_core.h
+DefaultInit: EXECUTABLE
+InitBram: 1
+Active: 1
+CompilerOptLevel: 4
+GlobPtrOpt: 0
+DebugSym: 0
+ProfileFlag: 0
+ProgStart: 
+StackSize: 
+HeapSize: 
+LinkerScript: registration_test/registration_test_linker_script.ld
+ProgCCFlags: 
+CompileInXps: 1
+NonXpsApp: 0

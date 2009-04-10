@@ -1,0 +1,47 @@
+// BMM LOC annotation file.
+//
+// Release 10.1i - Data2MEM K.39, build 1.5.7 Nov 8, 2007
+// Copyright (c) 1995-2008 Xilinx, Inc.  All rights reserved.
+//
+// Created on 09/10/08 07:14 pm
+//
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Processor 'microblaze_0', ID 100, memory map.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+ADDRESS_MAP microblaze_0 MICROBLAZE 100
+
+
+    ///////////////////////////////////////////////////////////////////////////////
+    //
+    // Processor 'microblaze_0' address space 'lmb_bram_combined' 0x00000000:0x0000FFFF (64 KB).
+    //
+    ///////////////////////////////////////////////////////////////////////////////
+
+    ADDRESS_SPACE lmb_bram_combined RAMB32 [0x00000000:0x0000FFFF]
+        BUS_BLOCK
+            lmb_bram/lmb_bram/ramb36_0 [31:30] PLACED = X4Y13;
+            lmb_bram/lmb_bram/ramb36_1 [29:28] PLACED = X4Y12;
+            lmb_bram/lmb_bram/ramb36_2 [27:26] PLACED = X3Y12;
+            lmb_bram/lmb_bram/ramb36_3 [25:24] PLACED = X3Y13;
+            lmb_bram/lmb_bram/ramb36_4 [23:22] PLACED = X2Y15;
+            lmb_bram/lmb_bram/ramb36_5 [21:20] PLACED = X2Y14;
+            lmb_bram/lmb_bram/ramb36_6 [19:18] PLACED = X2Y12;
+            lmb_bram/lmb_bram/ramb36_7 [17:16] PLACED = X2Y13;
+            lmb_bram/lmb_bram/ramb36_8 [15:14] PLACED = X3Y15;
+            lmb_bram/lmb_bram/ramb36_9 [13:12] PLACED = X3Y14;
+            lmb_bram/lmb_bram/ramb36_10 [11:10] PLACED = X4Y15;
+            lmb_bram/lmb_bram/ramb36_11 [9:8] PLACED = X4Y14;
+            lmb_bram/lmb_bram/ramb36_12 [7:6] PLACED = X3Y11;
+            lmb_bram/lmb_bram/ramb36_13 [5:4] PLACED = X3Y10;
+            lmb_bram/lmb_bram/ramb36_14 [3:2] PLACED = X4Y10;
+            lmb_bram/lmb_bram/ramb36_15 [1:0] PLACED = X4Y11;
+        END_BUS_BLOCK;
+    END_ADDRESS_SPACE;
+
+END_ADDRESS_MAP;
+

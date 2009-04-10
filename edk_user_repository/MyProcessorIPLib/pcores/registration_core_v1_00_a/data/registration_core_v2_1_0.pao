@@ -1,0 +1,54 @@
+##############################################################################
+## Filename:          /home/brandyn/Xilinx10.1i/edk_user_repository/MyProcessorIPLib/pcores/registration_core_v1_00_a/data/registration_core_v2_1_0.pao
+## Description:       Peripheral Analysis Order
+## Date:              Wed Mar 18 00:17:45 2009 (by Create and Import Peripheral Wizard)
+##############################################################################
+
+lib proc_common_v2_00_a proc_common_pkg vhdl
+lib proc_common_v2_00_a ipif_pkg vhdl
+lib proc_common_v2_00_a or_muxcy vhdl
+lib proc_common_v2_00_a or_gate128 vhdl
+lib proc_common_v2_00_a family_support vhdl
+lib proc_common_v2_00_a pselect_f vhdl
+lib proc_common_v2_00_a counter_f vhdl
+lib plbv46_slave_single_v1_00_a plb_address_decoder vhdl
+lib plbv46_slave_single_v1_00_a plb_slave_attachment vhdl
+lib plbv46_slave_single_v1_00_a plbv46_slave_single vhdl
+lib registration_core_v1_00_a user_logic vhdl
+lib registration_core_v1_00_a registration_core vhdl
+lib registration_core_v1_00_a affine_coord_transform vhdl
+lib registration_core_v1_00_a compute_stage vhdl
+lib registration_core_v1_00_a convert_2d_to_1d_coord vhdl
+lib registration_core_v1_00_a conv_pixel_ordering vhdl
+lib registration_core_v1_00_a demo_low_level_tld vhdl
+lib registration_core_v1_00_a demo_low_level vhdl
+lib registration_core_v1_00_a div1_test vhdl
+lib registration_core_v1_00_a div1 vhdl
+lib registration_core_v1_00_a fetch_stage vhdl
+lib registration_core_v1_00_a gauss_elim vhdl
+lib registration_core_v1_00_a i2c_core vhdl
+lib registration_core_v1_00_a i2c_video_programmer vhdl
+lib registration_core_v1_00_a image_display_stage vhdl
+lib registration_core_v1_00_a image_store_stage vhdl
+lib registration_core_v1_00_a img1_compute_mem_addr vhdl
+lib registration_core_v1_00_a make_a_b_matrices vhdl
+lib registration_core_v1_00_a make_affine_homography vhdl
+lib registration_core_v1_00_a mem_addr_selector vhdl
+lib registration_core_v1_00_a memory_dump vhdl
+lib registration_core_v1_00_a pipeline_bit_buffer vhdl
+lib registration_core_v1_00_a pipeline_buffer vhdl
+lib registration_core_v1_00_a pixel_buffer_3x3 vhdl
+lib registration_core_v1_00_a pixel_memory_controller vhdl
+lib registration_core_v1_00_a registration_controller vhdl
+lib registration_core_v1_00_a registration_stage vhdl
+lib registration_core_v1_00_a right_shifter vhdl
+lib registration_core_v1_00_a signed_norm_mult vhdl
+lib registration_core_v1_00_a smooth_address_selector vhdl
+lib registration_core_v1_00_a smooth_conv_3x3 vhdl
+lib registration_core_v1_00_a smooth_stage vhdl
+lib registration_core_v1_00_a sum_a_b_matrices vhdl
+lib registration_core_v1_00_a unscale_h_matrix vhdl
+lib registration_core_v1_00_a vga_timing_decode vhdl
+lib registration_core_v1_00_a vga_timing_generator vhdl
+lib registration_core_v1_00_a zbt_controller vhdl
+lib registration_core_v1_00_a compose_h_matrix vhdl

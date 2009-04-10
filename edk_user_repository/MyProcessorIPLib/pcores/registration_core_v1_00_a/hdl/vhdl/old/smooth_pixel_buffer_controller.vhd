@@ -1,0 +1,1 @@
+/home/brandyn/fpga-image-registration/modules/./smooth_stage/smooth_pixel_buffer_controller.vhd

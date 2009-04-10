@@ -1,0 +1,1 @@
+/home/brandyn/fpga-image-registration/modules/./smooth_stage/smooth_stage.vhd

@@ -1,0 +1,10 @@
+-batch 
+-create registration_core 
+-ver 1.00.a 
+-dir "/home/brandyn/Xilinx10.1i/edk_user_repository/MyProcessorIPLib" 
+-lang vhdl 
+-bus plbv46 s 
+-reg 3 
+-xps 
+-ise 
+-driver 

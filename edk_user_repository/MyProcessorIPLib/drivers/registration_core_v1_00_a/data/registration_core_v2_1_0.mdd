@@ -1,0 +1,15 @@
+##############################################################################
+## Filename:          /home/brandyn/Xilinx10.1i/edk_user_repository/MyProcessorIPLib/drivers/registration_core_v1_00_a/data/registration_core_v2_1_0.mdd
+## Description:       Microprocessor Driver Definition
+## Date:              Wed Mar 18 00:17:50 2009 (by Create and Import Peripheral Wizard)
+##############################################################################
+
+OPTION psf_version = 2.1.0;
+
+BEGIN DRIVER registration_core
+
+  OPTION supported_peripherals = (registration_core);
+  OPTION depends = (common_v1_00_a);
+  OPTION copyfiles = all;
+
+END DRIVER

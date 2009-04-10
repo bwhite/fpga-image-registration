@@ -2,7 +2,6 @@
 XmpVersion: 10.1.03
 VerMgmt: 10.1.03
 IntStyle: default
-ModuleSearchPath: /home/brandyn/fpga-image-registration/edk_user_repository/MyProcessorIPLib/pcores/registration_core_v1_00_a/../../../
 MHS File: blah.mhs
 MSS File: blah.mss
 NPL File: projnav/blah.ise
